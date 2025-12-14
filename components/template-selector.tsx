@@ -47,6 +47,16 @@ export function TemplateSelector({ onTemplateSelect, onClose }: TemplateSelector
         return <Coins className="w-6 h-6 text-yellow-500" />
       case 'basic':
         return <Code className="w-6 h-6 text-blue-500" />
+      case 'governance':
+        return <FileText className="w-6 h-6 text-purple-500" />
+      case 'nft':
+        return <FileText className="w-6 h-6 text-pink-500" />
+      case 'defi':
+        return <FileText className="w-6 h-6 text-green-500" />
+      case 'security':
+        return <FileText className="w-6 h-6 text-red-500" />
+      case 'marketplace':
+        return <FileText className="w-6 h-6 text-orange-500" />
       default:
         return <FileText className="w-6 h-6 text-gray-500" />
     }
@@ -58,6 +68,16 @@ export function TemplateSelector({ onTemplateSelect, onClose }: TemplateSelector
         return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
       case 'basic':
         return 'bg-blue-500/10 text-blue-500 border-blue-500/20'
+      case 'governance':
+        return 'bg-purple-500/10 text-purple-500 border-purple-500/20'
+      case 'nft':
+        return 'bg-pink-500/10 text-pink-500 border-pink-500/20'
+      case 'defi':
+        return 'bg-green-500/10 text-green-500 border-green-500/20'
+      case 'security':
+        return 'bg-red-500/10 text-red-500 border-red-500/20'
+      case 'marketplace':
+        return 'bg-orange-500/10 text-orange-500 border-orange-500/20'
       default:
         return 'bg-gray-500/10 text-gray-500 border-gray-500/20'
     }
