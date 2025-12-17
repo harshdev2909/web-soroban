@@ -13,6 +13,7 @@ import { EditorPanel } from '@/components/editor-panel'
 import { RightPanel } from '@/components/right-panel'
 import { BottomPanel, LogEntry } from '@/components/bottom-panel'
 import { Navbar } from '@/components/navbar'
+import { InviteModal } from '@/components/invite-modal'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
 
 export default function IDEPage() {
@@ -23,6 +24,9 @@ export default function IDEPage() {
   const [isDeploying, setIsDeploying] = useState(false)
   const [logs, setLogs] = useState<LogEntry[]>([])
   const [isBottomPanelOpen, setIsBottomPanelOpen] = useState(false)
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
+  const [userEmail, setUserEmail] = useState<string>('')
+  const [hasAccess, setHasAccess] = useState(false)
   const currentJobIdRef = useRef<string | null>(null)
 
   const account = useAccount()
@@ -41,8 +45,20 @@ export default function IDEPage() {
     };
   }, [])
 
-  // Load initial project on component mount
+  // Always require invite verification - no localStorage dependency
   useEffect(() => {
+    // Always show invite modal - require verification every time
+    setHasAccess(false)
+    setIsInviteModalOpen(true)
+    setIsLoading(false)
+  }, [])
+
+  // Load initial project on component mount - ONLY if user has access
+  useEffect(() => {
+    if (!hasAccess) {
+      return // Don't load project if no access
+    }
+    
     const loadInitialProject = async () => {
       try {
         const projects = await projectApi.getProjects();
@@ -238,7 +254,7 @@ mod tests {
     };
 
     loadInitialProject();
-  }, []);
+  }, [hasAccess]);
 
   const handleCompile = async () => {
     if (!project || !activeFile) return;
@@ -997,6 +1013,57 @@ impl From<Error> for soroban_sdk::Error {
     console.log("Right panel close requested");
   };
 
+  const handleInviteSuccess = () => {
+    // Grant access after successful verification - no localStorage
+    setHasAccess(true)
+    setIsInviteModalOpen(false)
+    setIsLoading(true) // Start loading IDE now that access is granted
+    toast.success('Welcome! You now have access to the IDE.')
+    
+    // Load project after access is granted
+    const loadInitialProject = async () => {
+      try {
+        const projects = await projectApi.getProjects();
+        if (projects.length > 0) {
+          setProject(projects[0]);
+          setActiveFile(projects[0].files[0]);
+        } else {
+          // Create a default project if none exist
+          const newProject = await projectApi.createProject("My Soroban Contract");
+          setProject(newProject);
+          setActiveFile(newProject.files[0]);
+        }
+      } catch (error) {
+        console.error("Failed to load initial project:", error);
+        toast.error("Failed to load project");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadInitialProject();
+  };
+
+  // Show invite modal if no access - BLOCK IDE ACCESS
+  if (!hasAccess) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900/20 to-slate-900">
+        <div className="text-center">
+          <InviteModal
+            open={isInviteModalOpen}
+            onOpenChange={setIsInviteModalOpen}
+            userEmail={userEmail}
+            onSuccess={handleInviteSuccess}
+          />
+          <div className="mb-8">
+            <h1 className="text-4xl font-bold text-white mb-4">Access Required</h1>
+            <p className="text-gray-400">Please enter your invite code to access the IDE</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="h-screen flex items-center justify-center">
@@ -1023,6 +1090,7 @@ impl From<Error> for soroban_sdk::Error {
       <Navbar 
         walletAddress={account?.address || null}
         onConnectWallet={connect}
+        onInviteClick={() => setIsInviteModalOpen(true)}
         projectSelector={
           <ProjectSelector
             currentProject={project}

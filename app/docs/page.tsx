@@ -482,7 +482,10 @@ Request Body:
               </div>
             </div>
             <Button 
-              onClick={() => window.location.href = '/ide'}
+              onClick={() => {
+                // Always redirect to home where invite modal will appear
+                window.location.href = '/'
+              }}
               className="bg-gradient-to-r from-blue-600 to-slate-700 hover:from-blue-700 hover:to-slate-800 text-white"
             >
               <Play className="w-4 h-4 mr-2" />

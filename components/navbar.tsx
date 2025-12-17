@@ -19,7 +19,8 @@ import {
   Bell,
   Search,
   Menu,
-  X
+  X,
+  Mail
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { WalletData } from './wallet-data';
@@ -28,9 +29,10 @@ interface NavbarProps {
   walletAddress: string | null;
   onConnectWallet: () => void;
   projectSelector?: React.ReactNode;
+  onInviteClick?: () => void;
 }
 
-export function Navbar({ walletAddress, onConnectWallet, projectSelector }: NavbarProps) {
+export function Navbar({ walletAddress, onConnectWallet, projectSelector, onInviteClick }: NavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
@@ -85,6 +87,19 @@ export function Navbar({ walletAddress, onConnectWallet, projectSelector }: Navb
           <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
           <span className="text-sm text-slate-300 font-medium">Testnet</span>
         </div>
+
+        {/* Invite Code Button */}
+        {onInviteClick && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onInviteClick}
+            className="text-slate-400 hover:text-slate-200 hover:bg-slate-700/50"
+            title="Enter Invite Code"
+          >
+            <Mail className="w-4 h-4" />
+          </Button>
+        )}
 
         {/* Notifications */}
         <Button

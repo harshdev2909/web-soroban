@@ -1,15 +1,20 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import PlaygroundNavbar from '@/components/playground-navbar'
 import PlaygroundFooter from '@/components/playground-footer'
 import PlaygroundSubscription from '@/components/playground-subscription'
+import { InviteModal } from '@/components/invite-modal'
 import { Cloud, Bot, Rocket } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 export default function HomePage() {
   const heroRef = useRef<HTMLDivElement>(null)
   const featuresRef = useRef<HTMLDivElement>(null)
   const stepsRef = useRef<HTMLDivElement>(null)
+  const router = useRouter()
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
+  const [userEmail, setUserEmail] = useState<string>('')
 
   useEffect(() => {
     const observerOptions = {
@@ -32,8 +37,22 @@ export default function HomePage() {
     return () => observer.disconnect()
   }, [])
 
+  const handleInviteSuccess = () => {
+    // No localStorage - just redirect to IDE after successful validation
+    setIsInviteModalOpen(false)
+    router.push('/ide')
+  }
+
   return (
     <main className="min-h-screen bg-black text-white overflow-x-hidden">
+      {/* Invite Modal */}
+      <InviteModal
+        open={isInviteModalOpen}
+        onOpenChange={setIsInviteModalOpen}
+        userEmail={userEmail}
+        onSuccess={handleInviteSuccess}
+      />
+      
       <div className="animate-fade-in">
         <PlaygroundNavbar />
       </div>
@@ -51,15 +70,18 @@ export default function HomePage() {
             </h1>
 
             <div className="relative animate-on-scroll opacity-0 translate-y-8 transition-all duration-1000 delay-500">
-              <a
-                href="/contract"
+              <button
+                onClick={() => {
+                  // Always show invite modal - no localStorage dependency
+                  setIsInviteModalOpen(true)
+                }}
                 className="relative mx-auto bg-gradient-to-r from-[#A3FF12] to-[#8FE600] hover:from-[#8FE600] hover:to-[#7BD300] rounded-xl w-64 h-20 shadow-[8px_0_16px_rgba(160,32,240,0.8)] z-10 transform translate-y-6 hover:scale-105 hover:shadow-[12px_0_24px_rgba(160,32,240,1)] transition-all duration-300 animate-pulse-glow group active:scale-95 flex items-center justify-center"
               >
                 <span className="text-black font-bold text-xl tracking-wide group-hover:scale-110 transition-transform duration-200">
                   Code Now
                 </span>
                 <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              </a>
+              </button>
               <img
                 src="/placeholder.svg?height=400&width=400"
                 alt="Ellipse"

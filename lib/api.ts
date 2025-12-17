@@ -400,4 +400,69 @@ export const deployApi = {
     }
     return response.json();
   },
+};
+
+// Invite API
+export interface InviteCheckResponse {
+  success: boolean;
+  hasInvite: boolean;
+  isWaitlist?: boolean;
+  isNew?: boolean;
+  used?: boolean;
+  message: string;
+}
+
+export interface InviteValidateResponse {
+  success: boolean;
+  message: string;
+  invite?: {
+    email: string;
+    inviteCode: string;
+    usedAt?: string;
+  };
+  error?: string;
+}
+
+export const inviteApi = {
+  // Check if user has invite
+  async checkInvite(email: string): Promise<InviteCheckResponse> {
+    const response = await fetch(`${API_BASE_URL}/invites/check`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    });
+    if (!response.ok) {
+      throw new Error('Failed to check invite status');
+    }
+    return response.json();
+  },
+
+  // Validate invite code
+  async validateInvite(email: string, inviteCode: string): Promise<InviteValidateResponse> {
+    const response = await fetch(`${API_BASE_URL}/invites/validate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, inviteCode }),
+    });
+    
+    const data = await response.json();
+    
+    // Handle waitlist error (404 status)
+    if (response.status === 404 && data.error === 'waitlist') {
+      return {
+        success: false,
+        error: 'waitlist',
+        message: data.message || 'You are on the waitlist'
+      };
+    }
+    
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to validate invite code');
+    }
+    return data;
+  },
 }; 

@@ -248,7 +248,7 @@ export function BottomPanel({ logs, onClose, onClear }: BottomPanelProps) {
                 >
                   <div className="flex items-start gap-3">
                     <div className="mt-0.5">
-                      {getLogIcon(log.type)}
+                  {getLogIcon(log.type)}
                     </div>
                     <div className="flex-1 min-w-0">
                       {/* Header with timestamp and actions */}
@@ -288,7 +288,7 @@ export function BottomPanel({ logs, onClose, onClear }: BottomPanelProps) {
                               </>
                             ) : (
                               <div className="whitespace-pre-wrap break-words">
-                                {formatMessage(log.message)}
+                      {formatMessage(log.message)}
                                 {isExpanded && (
                                   <Button
                                     variant="ghost"
@@ -308,20 +308,20 @@ export function BottomPanel({ logs, onClose, onClear }: BottomPanelProps) {
                         {/* Action buttons */}
                         <div className="flex items-center gap-1 flex-shrink-0">
                           {(contractAddress || transactionHash) && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
+                        <Button
+                          size="sm"
+                          variant="ghost"
                               className="h-6 w-6 p-0 text-gray-400 hover:text-gray-200"
                               onClick={() => copyToClipboard(contractAddress || transactionHash || '')}
                               title="Copy to clipboard"
-                            >
-                              <Copy className="w-3 h-3" />
-                            </Button>
-                          )}
+                        >
+                          <Copy className="w-3 h-3" />
+                        </Button>
+                      )}
                           {isLongMessage && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
+                        <Button
+                          size="sm"
+                          variant="ghost"
                               className="h-6 w-6 p-0 text-gray-400 hover:text-gray-200"
                               onClick={() => toggleExpand(index)}
                               title={isExpanded ? "Collapse" : "Expand"}
@@ -331,14 +331,14 @@ export function BottomPanel({ logs, onClose, onClear }: BottomPanelProps) {
                               ) : (
                                 <ChevronRight className="w-3 h-3" />
                               )}
-                            </Button>
-                          )}
-                        </div>
+                        </Button>
+                      )}
+                    </div>
                       </div>
                       
                       {/* Timestamp */}
                       <div className="text-xs text-gray-500 mt-2 font-mono">
-                        {new Date(log.timestamp).toLocaleTimeString()}
+                      {new Date(log.timestamp).toLocaleTimeString()}
                       </div>
                     </div>
                   </div>
