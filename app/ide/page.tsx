@@ -741,13 +741,8 @@ mod tests {
     const updatedProject = { ...project, files: updatedFiles };
     setProject(updatedProject);
 
-    // Save to backend
-    try {
-      await projectApi.updateProject(project._id, { files: updatedFiles });
-    } catch (error) {
-      console.error("Failed to save file:", error);
-      toast.error("Failed to save file");
-    }
+    // Don't send PUT request when template code changes
+    // File changes are saved locally only
   };
 
   const handleProjectSelect = (selectedProject: Project) => {
@@ -804,13 +799,8 @@ mod tests {
 
   const handleProjectNameChange = async (name: string) => {
     if (!project) return;
-    try {
-      const updatedProject = await projectApi.updateProject(project._id, { name });
-      setProject(updatedProject);
-    } catch (error) {
-      console.error("Failed to update project name:", error);
-      toast.error("Failed to update project name");
-    }
+    // Update local state only, don't send PUT request
+    setProject({ ...project, name });
   };
 
   const handleNewFile = (fileName?: string) => {
