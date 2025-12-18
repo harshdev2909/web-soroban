@@ -115,13 +115,13 @@ export const projectApi = {
   },
 
   // Create new project
-  async createProject(name?: string, files?: ProjectFile[], template?: string): Promise<Project> {
+  async createProject(name?: string, files?: ProjectFile[], template?: string, isLocal?: boolean): Promise<Project> {
     const response = await fetch(`${API_BASE_URL}/projects`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ name, files, template }),
+      body: JSON.stringify({ name, files, template, isLocal }),
     });
     if (!response.ok) {
       throw new Error('Failed to create project');

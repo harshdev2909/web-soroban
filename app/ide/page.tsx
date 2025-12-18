@@ -256,6 +256,27 @@ mod tests {
     loadInitialProject();
   }, [hasAccess]);
 
+  // Helper function to save local project to DB if needed
+  const ensureProjectSaved = async (currentProject: Project): Promise<Project> => {
+    // Check if project is local (starts with "local-")
+    if (currentProject._id.startsWith('local-')) {
+      try {
+        // Save project to database with isLocal flag so it won't show in project list
+        const savedProject = await projectApi.createProject(currentProject.name, currentProject.files, undefined, true);
+        // Update project state with saved project
+        setProject(savedProject);
+        toast.success("Project saved for compilation/deployment");
+        return savedProject;
+      } catch (error) {
+        console.error("Failed to save local project:", error);
+        toast.error("Failed to save project. Compilation may fail.");
+        // Return original project anyway
+        return currentProject;
+      }
+    }
+    return currentProject;
+  };
+
   const handleCompile = async () => {
     if (!project || !activeFile) return;
 
@@ -270,7 +291,10 @@ mod tests {
     }]);
 
     try {
-      const result = await compileApi.compile(project._id, project.files);
+      // Ensure project is saved to DB if it's a local project
+      const projectToCompile = await ensureProjectSaved(project);
+      
+      const result = await compileApi.compile(projectToCompile._id, projectToCompile.files);
       
       // Add initial compilation logs (ensure logs is an array)
       const logsArray = Array.isArray(result.logs) ? result.logs : [];
@@ -441,6 +465,9 @@ mod tests {
     setIsBottomPanelOpen(true);
 
     try {
+      // Ensure project is saved to DB if it's a local project
+      const projectToDeploy = await ensureProjectSaved(project);
+      
       // Step 1: Compile the project to get WASM
       setLogs([{
         type: "info",
@@ -449,7 +476,7 @@ mod tests {
       }]);
       
       toast.info("Compiling contract...");
-      const compileResult = await compileApi.compile(project._id, project.files);
+      const compileResult = await compileApi.compile(projectToDeploy._id, projectToDeploy.files);
       const compileLogsArray = Array.isArray(compileResult.logs) ? compileResult.logs : [];
       setLogs(prev => [...prev, ...compileLogsArray]);
       
@@ -512,7 +539,7 @@ mod tests {
       }]);
       
       toast.info("Deploying contract...");
-      const deployResult = await deployApi.deploy(project._id, finalCompileResult.wasmBase64, 'testnet');
+      const deployResult = await deployApi.deploy(projectToDeploy._id, finalCompileResult.wasmBase64, 'testnet');
       
       // Add initial deployment logs (ensure logs is an array)
       const deployLogsArray = Array.isArray(deployResult.logs) ? deployResult.logs : [];
@@ -588,13 +615,13 @@ mod tests {
                 
                 // Update project
                 try {
-                  const updatedProject = await projectApi.getProject(project._id);
+                  const updatedProject = await projectApi.getProject(projectToDeploy._id);
                   setProject(updatedProject);
                 } catch (fetchError) {
                   console.warn('Failed to fetch updated project:', fetchError);
-                  if (project) {
+                  if (projectToDeploy) {
                     setProject({
-                      ...project,
+                      ...projectToDeploy,
                       contractAddress: result.contractAddress,
                       lastDeployed: new Date().toISOString()
                     });
@@ -651,13 +678,13 @@ mod tests {
             
             // Update project
             try {
-              const updatedProject = await projectApi.getProject(project._id);
+              const updatedProject = await projectApi.getProject(projectToDeploy._id);
               setProject(updatedProject);
             } catch (fetchError) {
               console.warn('Failed to fetch updated project:', fetchError);
-              if (project) {
+              if (projectToDeploy) {
                 setProject({
-                  ...project,
+                  ...projectToDeploy,
                   contractAddress: finalDeployResult.contractAddress,
                   lastDeployed: new Date().toISOString()
                 });
@@ -688,13 +715,13 @@ mod tests {
           
           // Update project
           try {
-            const updatedProject = await projectApi.getProject(project._id);
+            const updatedProject = await projectApi.getProject(projectToDeploy._id);
             setProject(updatedProject);
           } catch (fetchError) {
             console.warn('Failed to fetch updated project:', fetchError);
-            if (project) {
+            if (projectToDeploy) {
               setProject({
-                ...project,
+                ...projectToDeploy,
                 contractAddress: finalDeployResult.contractAddress,
                 lastDeployed: new Date().toISOString()
               });
@@ -760,21 +787,9 @@ mod tests {
   };
 
   const handleTemplateSelect = async (template: Template) => {
-    try {
-      // Create a new project from the template
-      const newProject = await projectApi.createProject(template.name, undefined, template.id);
-      
-      // Set the new project as active
-      setProject(newProject);
-      if (newProject.files && newProject.files.length > 0) {
-        setActiveFile(newProject.files[0]);
-      }
-      
-      toast.success(`Project created from ${template.name} template`);
-    } catch (error) {
-      console.error('Failed to create project from template:', error);
-      toast.error(`Failed to create project from template: ${(error as Error).message}`);
-    }
+    // Template selection is now handled by ProjectSelector with name modal
+    // This function is kept for backward compatibility but project creation
+    // happens in ProjectSelector after user enters the project name
   };
 
   const handleDeleteFile = async (fileName: string) => {
