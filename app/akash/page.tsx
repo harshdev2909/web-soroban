@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { toast } from 'sonner'
 import { 
   Mail, 
@@ -21,10 +22,12 @@ import {
   Copy,
   RefreshCw,
   Download,
-  Loader2
+  Loader2,
+  Lock
 } from 'lucide-react'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://backend-ide-production.up.railway.app/api'
+const HARDCODED_PIN = '204099'
 
 interface Invite {
   _id: string
@@ -40,6 +43,9 @@ interface Invite {
 }
 
 export default function AdminDashboard() {
+  const [isPinVerified, setIsPinVerified] = useState(false)
+  const [pinInput, setPinInput] = useState('')
+  const [pinError, setPinError] = useState('')
   const [invites, setInvites] = useState<Invite[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSending, setIsSending] = useState(false)
@@ -58,6 +64,30 @@ export default function AdminDashboard() {
     unused: invites.filter(i => !i.used && i.sent).length,
   }
 
+  // Check PIN verification on mount
+  useEffect(() => {
+    const verified = sessionStorage.getItem('akash_pin_verified')
+    if (verified === 'true') {
+      setIsPinVerified(true)
+      loadInvites()
+    }
+  }, [])
+
+  // Handle PIN verification
+  const handlePinSubmit = () => {
+    if (pinInput === HARDCODED_PIN) {
+      setIsPinVerified(true)
+      sessionStorage.setItem('akash_pin_verified', 'true')
+      setPinError('')
+      setPinInput('')
+      loadInvites()
+      toast.success('Access granted')
+    } else {
+      setPinError('Incorrect PIN. Please try again.')
+      setPinInput('')
+    }
+  }
+
   // Load invites
   const loadInvites = async () => {
     try {
@@ -73,10 +103,6 @@ export default function AdminDashboard() {
       setIsLoading(false)
     }
   }
-
-  useEffect(() => {
-    loadInvites()
-  }, [])
 
   // Send invite to single email
   const handleSendInvite = async () => {
@@ -222,6 +248,63 @@ export default function AdminDashboard() {
     a.click()
     window.URL.revokeObjectURL(url)
     toast.success('Invites exported to CSV')
+  }
+
+  // Show PIN dialog if not verified
+  if (!isPinVerified) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900/20 to-slate-900 flex items-center justify-center p-8">
+        <Dialog open={true}>
+          <DialogContent className="bg-slate-800 border-slate-700 text-gray-100 sm:max-w-[425px]">
+            <DialogHeader>
+              <div className="flex items-center gap-2">
+                <Lock className="w-5 h-5 text-blue-400" />
+                <DialogTitle className="text-white">Access Restricted</DialogTitle>
+              </div>
+              <DialogDescription className="text-gray-400">
+                Please enter the PIN to access the admin dashboard
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="pin" className="text-gray-300">PIN</Label>
+                <Input
+                  id="pin"
+                  type="password"
+                  placeholder="Enter PIN"
+                  value={pinInput}
+                  onChange={(e) => {
+                    setPinInput(e.target.value)
+                    setPinError('')
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handlePinSubmit()
+                    }
+                  }}
+                  className="bg-slate-900 border-slate-600 text-white"
+                  autoFocus
+                />
+                {pinError && (
+                  <Alert variant="destructive" className="bg-red-900/20 border-red-500/50">
+                    <AlertDescription className="text-red-400">{pinError}</AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                onClick={handlePinSubmit}
+                disabled={!pinInput}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                Verify
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    )
   }
 
   return (
