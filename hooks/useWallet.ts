@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getAddress, getNetwork, isConnected, requestAccess } from '@stellar/freighter-api';
+import { getAddress, getNetwork, isConnected, requestAccess, signMessage as freighterSignMessage } from '@stellar/freighter-api';
 
 export interface WalletAccount {
   publicKey: string;
@@ -193,6 +193,25 @@ export function useWallet() {
     setError(null);
   }, []);
 
+  const signMessage = useCallback(async (message: string): Promise<string | null> => {
+    try {
+      if (!account || !account.publicKey) {
+        throw new Error('Wallet not connected');
+      }
+
+      const result = await freighterSignMessage(message, account.publicKey);
+      
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      return result.signature || null;
+    } catch (err) {
+      console.error('Failed to sign message:', err);
+      throw err;
+    }
+  }, [account]);
+
   // Check connection on mount and when window gains focus
   useEffect(() => {
     checkConnection();
@@ -223,6 +242,9 @@ export function useWallet() {
     error,
     connect,
     disconnect,
-    checkConnection
+    checkConnection,
+    signMessage,
+    isConnected: !!account?.isConnected,
+    publicKey: account?.publicKey || null
   };
 } 

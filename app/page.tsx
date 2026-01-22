@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import PlaygroundNavbar from '@/components/playground-navbar'
 import PlaygroundFooter from '@/components/playground-footer'
 import PlaygroundSubscription from '@/components/playground-subscription'
-import { InviteModal } from '@/components/invite-modal'
+import { LoginModal } from '@/components/login-modal'
+import { useAuth } from '@/contexts/AuthContext'
 import { Cloud, Bot, Rocket } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
@@ -13,8 +14,8 @@ export default function HomePage() {
   const featuresRef = useRef<HTMLDivElement>(null)
   const stepsRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
-  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
-  const [userEmail, setUserEmail] = useState<string>('')
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
+  const { isAuthenticated } = useAuth()
 
   useEffect(() => {
     const observerOptions = {
@@ -37,20 +38,17 @@ export default function HomePage() {
     return () => observer.disconnect()
   }, [])
 
-  const handleInviteSuccess = () => {
-    // No localStorage - just redirect to IDE after successful validation
-    setIsInviteModalOpen(false)
+  const handleLoginSuccess = () => {
+    setIsLoginModalOpen(false)
     router.push('/ide')
   }
 
   return (
     <main className="min-h-screen bg-black text-white overflow-x-hidden">
-      {/* Invite Modal */}
-      <InviteModal
-        open={isInviteModalOpen}
-        onOpenChange={setIsInviteModalOpen}
-        userEmail={userEmail}
-        onSuccess={handleInviteSuccess}
+      {/* Login Modal */}
+      <LoginModal
+        open={isLoginModalOpen}
+        onOpenChange={setIsLoginModalOpen}
       />
       
       <div className="animate-fade-in">
@@ -72,8 +70,11 @@ export default function HomePage() {
             <div className="relative animate-on-scroll opacity-0 translate-y-8 transition-all duration-1000 delay-500">
               <button
                 onClick={() => {
-                  // Always show invite modal - no localStorage dependency
-                  setIsInviteModalOpen(true)
+                  if (isAuthenticated) {
+                    router.push('/ide')
+                  } else {
+                    setIsLoginModalOpen(true)
+                  }
                 }}
                 className="relative mx-auto bg-gradient-to-r from-[#A3FF12] to-[#8FE600] hover:from-[#8FE600] hover:to-[#7BD300] rounded-xl w-64 h-20 shadow-[8px_0_16px_rgba(160,32,240,0.8)] z-10 transform translate-y-6 hover:scale-105 hover:shadow-[12px_0_24px_rgba(160,32,240,1)] transition-all duration-300 animate-pulse-glow group active:scale-95 flex items-center justify-center"
               >

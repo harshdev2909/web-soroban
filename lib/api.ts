@@ -98,7 +98,13 @@ export interface Template {
 export const projectApi = {
   // Get all projects
   async getProjects(): Promise<Project[]> {
-    const response = await fetch(`${API_BASE_URL}/projects`);
+    const token = authApi.getToken();
+    const response = await fetch(`${API_BASE_URL}/projects`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
     if (!response.ok) {
       throw new Error('Failed to fetch projects');
     }
@@ -107,7 +113,13 @@ export const projectApi = {
 
   // Get single project
   async getProject(id: string): Promise<Project> {
-    const response = await fetch(`${API_BASE_URL}/projects/${id}`);
+    const token = authApi.getToken();
+    const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
     if (!response.ok) {
       throw new Error('Failed to fetch project');
     }
@@ -116,9 +128,11 @@ export const projectApi = {
 
   // Create new project
   async createProject(name?: string, files?: ProjectFile[], template?: string, isLocal?: boolean): Promise<Project> {
+    const token = authApi.getToken();
     const response = await fetch(`${API_BASE_URL}/projects`, {
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ name, files, template, isLocal }),
@@ -131,9 +145,11 @@ export const projectApi = {
 
   // Update project
   async updateProject(id: string, data: { name?: string; files?: ProjectFile[] }): Promise<Project> {
+    const token = authApi.getToken();
     const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
       method: 'PUT',
       headers: {
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(data),
@@ -146,8 +162,13 @@ export const projectApi = {
 
   // Delete project
   async deleteProject(id: string): Promise<void> {
+    const token = authApi.getToken();
     const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
       method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
     });
     if (!response.ok) {
       throw new Error('Failed to delete project');
@@ -169,9 +190,11 @@ export const jobsApi = {
 // Compile API
 export const compileApi = {
   async compile(projectId: string, files: ProjectFile[]): Promise<CompileResponse> {
+    const token = authApi.getToken();
     const response = await fetch(`${API_BASE_URL}/compile`, {
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ projectId, files }),
@@ -255,15 +278,21 @@ export const templatesApi = {
 // Deploy API
 export const deployApi = {
   async deploy(projectId: string, wasmBase64: string, network?: string, walletInfo?: { publicKey: string; network: string }): Promise<DeployResponse> {
+    const token = authApi.getToken();
     const response = await fetch(`${API_BASE_URL}/deploy`, {
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ projectId, wasmBase64, network, walletInfo }),
     });
     if (!response.ok) {
-      throw new Error('Deployment failed');
+      const errorData = await response.json().catch(() => ({}));
+      if (response.status === 403 && errorData.upgradeRequired) {
+        throw new Error('DEPLOYMENT_LIMIT_REACHED');
+      }
+      throw new Error(errorData.error || 'Deployment failed');
     }
     const data = await response.json();
     // Ensure logs is always an array
@@ -402,7 +431,370 @@ export const deployApi = {
   },
 };
 
-// Invite API
+// Auth API
+export interface User {
+  _id: string;
+  email: string;
+  walletAddress?: string;
+  name?: string;
+  picture?: string;
+  authMethod: 'gmail' | 'wallet' | 'both';
+  subscription: {
+    plan: 'free' | 'plan2' | 'plan3';
+    status: 'active' | 'cancelled' | 'expired';
+    startDate: string;
+    endDate?: string;
+    autoRenew: boolean;
+  };
+  usage: {
+    deployments: {
+      count: number;
+      limit: number;
+      lastResetDate: string;
+    };
+    functionTests: {
+      count: number;
+      limit: number;
+      lastResetDate: string;
+    };
+  };
+}
+
+export interface AuthResponse {
+  success: boolean;
+  token?: string;
+  user?: User;
+  error?: string;
+  message?: string;
+}
+
+export interface WalletChallengeResponse {
+  success: boolean;
+  challenge: string;
+  timestamp: number;
+  expiresAt: number;
+}
+
+export const authApi = {
+  // Get current user
+  async getCurrentUser(): Promise<{ success: boolean; user: User }> {
+    const token = this.getToken();
+    const response = await fetch(`${API_BASE_URL}/auth/me`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!response.ok) {
+      throw new Error('Failed to get user');
+    }
+    return response.json();
+  },
+
+  // Google OAuth login
+  googleLogin() {
+    window.location.href = `${API_BASE_URL.replace('/api', '')}/api/auth/google`;
+  },
+
+  // Get wallet challenge
+  async getWalletChallenge(walletAddress: string): Promise<WalletChallengeResponse> {
+    const response = await fetch(`${API_BASE_URL}/auth/wallet/challenge`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ walletAddress }),
+    });
+    if (!response.ok) {
+      throw new Error('Failed to get wallet challenge');
+    }
+    return response.json();
+  },
+
+  // Verify wallet signature
+  async verifyWallet(walletAddress: string, signature: string, challenge: string, challengeTimestamp: number, email?: string): Promise<AuthResponse> {
+    const response = await fetch(`${API_BASE_URL}/auth/wallet/verify`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ walletAddress, signature, challenge, challengeTimestamp, email }),
+    });
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || 'Wallet verification failed');
+    }
+    return response.json();
+  },
+
+  // Logout
+  async logout(): Promise<void> {
+    const token = this.getToken();
+    await fetch(`${API_BASE_URL}/auth/logout`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    this.clearToken();
+  },
+
+  // Link wallet to account
+  async linkWallet(walletAddress: string, signature: string, challenge: string): Promise<AuthResponse> {
+    const token = this.getToken();
+    const response = await fetch(`${API_BASE_URL}/auth/link-wallet`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ walletAddress, signature, challenge }),
+    });
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || 'Failed to link wallet');
+    }
+    return response.json();
+  },
+
+  // Token management
+  getToken(): string | null {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem('auth_token') || new URLSearchParams(window.location.search).get('token');
+  },
+
+  setToken(token: string): void {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem('auth_token', token);
+  },
+
+  clearToken(): void {
+    if (typeof window === 'undefined') return;
+    localStorage.removeItem('auth_token');
+  },
+};
+
+// Subscription API
+export interface SubscriptionPlan {
+  name: string;
+  price: number;
+  currency?: string;
+  features: {
+    compilations: string | number;
+    deployments: string | number;
+    functionTests: string | number;
+  };
+}
+
+export interface SubscriptionResponse {
+  success: boolean;
+  subscription?: {
+    plan: string;
+    status: string;
+    startDate: string;
+    endDate?: string;
+    autoRenew: boolean;
+  };
+  usage?: any;
+  plans?: Record<string, SubscriptionPlan>;
+  payment?: {
+    address: string;
+    amount: number;
+    currency: string;
+    memo: string;
+    network: string;
+  };
+  error?: string;
+}
+
+export const subscriptionApi = {
+  // Get available plans
+  async getPlans(): Promise<SubscriptionResponse> {
+    const response = await fetch(`${API_BASE_URL}/subscriptions/plans`);
+    if (!response.ok) {
+      throw new Error('Failed to get plans');
+    }
+    return response.json();
+  },
+
+  // Get current subscription
+  async getCurrent(): Promise<SubscriptionResponse> {
+    const token = authApi.getToken();
+    const response = await fetch(`${API_BASE_URL}/subscriptions/current`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!response.ok) {
+      throw new Error('Failed to get subscription');
+    }
+    return response.json();
+  },
+
+  // Create subscription
+  async create(plan: 'plan2' | 'plan3'): Promise<SubscriptionResponse> {
+    const token = authApi.getToken();
+    const response = await fetch(`${API_BASE_URL}/subscriptions/create`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ plan }),
+    });
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || 'Failed to create subscription');
+    }
+    return response.json();
+  },
+
+  // Cancel subscription
+  async cancel(): Promise<SubscriptionResponse> {
+    const token = authApi.getToken();
+    const response = await fetch(`${API_BASE_URL}/subscriptions/cancel`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || 'Failed to cancel subscription');
+    }
+    return response.json();
+  },
+};
+
+// Payment API
+export interface PaymentResponse {
+  success: boolean;
+  payment?: {
+    txHash: string;
+    status: string;
+    amount: number;
+  };
+  subscription?: {
+    plan: string;
+    status: string;
+    endDate?: string;
+  };
+  error?: string;
+  message?: string;
+}
+
+export const paymentApi = {
+  // Verify payment
+  async verify(txHash: string, plan: 'plan2' | 'plan3'): Promise<PaymentResponse> {
+    const token = authApi.getToken();
+    const response = await fetch(`${API_BASE_URL}/payments/verify`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ txHash, plan }),
+    });
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || 'Payment verification failed');
+    }
+    return response.json();
+  },
+
+  // Get payment history
+  async getHistory(limit = 10): Promise<{ success: boolean; payments: any[] }> {
+    const token = authApi.getToken();
+    const response = await fetch(`${API_BASE_URL}/payments/history?limit=${limit}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!response.ok) {
+      throw new Error('Failed to get payment history');
+    }
+    return response.json();
+  },
+};
+
+// Usage API
+export interface UsageResponse {
+  success: boolean;
+  usage?: {
+    deployments: {
+      count: number;
+      limit: number;
+      remaining: number | string;
+      lastResetDate: string;
+    };
+    functionTests: {
+      count: number;
+      limit: number;
+      remaining: number | string;
+      lastResetDate: string;
+    };
+  };
+  statistics?: any;
+  logs?: any[];
+}
+
+export const usageApi = {
+  // Get usage statistics
+  async getUsage(): Promise<UsageResponse> {
+    const token = authApi.getToken();
+    const response = await fetch(`${API_BASE_URL}/usage`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!response.ok) {
+      throw new Error('Failed to get usage');
+    }
+    return response.json();
+  },
+};
+
+// Contract API
+export interface InvokeResponse {
+  success: boolean;
+  output?: any;
+  contractAddress?: string;
+  functionName?: string;
+  args?: any[];
+  usage?: {
+    count: number;
+    limit: number;
+    remaining: number | string;
+  };
+  error?: string;
+}
+
+export const contractApi = {
+  // Invoke contract function
+  async invoke(contractAddress: string, functionName: string, args: any[] = [], network = 'testnet'): Promise<InvokeResponse> {
+    const token = authApi.getToken();
+    const response = await fetch(`${API_BASE_URL}/contracts/${contractAddress}/invoke`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ functionName, args, network }),
+    });
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || 'Failed to invoke contract');
+    }
+    return response.json();
+  },
+};
+
+// Invite API (kept for backward compatibility, but deprecated)
 export interface InviteCheckResponse {
   success: boolean;
   hasInvite: boolean;
@@ -423,6 +815,8 @@ export interface InviteValidateResponse {
   error?: string;
 }
 
+// INVITE API - COMMENTED OUT - Replaced with premium gifting system
+/*
 export const inviteApi = {
   // Check if user has invite
   async checkInvite(email: string): Promise<InviteCheckResponse> {
@@ -464,5 +858,129 @@ export const inviteApi = {
       throw new Error(data.error || 'Failed to validate invite code');
     }
     return data;
+  },
+};
+*/
+
+// Premium Gifts API - New system for gifting premium subscriptions
+export interface PremiumGiftResponse {
+  success: boolean;
+  message: string;
+  user?: {
+    email: string;
+    subscription: {
+      plan: string;
+      status: string;
+      startDate: string;
+      endDate: string | null;
+    };
+  };
+  isNewUser?: boolean;
+  error?: string;
+}
+
+export interface PremiumGiftBulkResponse {
+  success: boolean;
+  message: string;
+  results: {
+    success: number;
+    failed: number;
+    skipped: number;
+  };
+  details: {
+    success: Array<{ email: string; isNewUser?: boolean }>;
+    failed: Array<{ email: string; error: string }>;
+    skipped: Array<{ email: string; reason: string }>;
+  };
+  error?: string;
+}
+
+export interface PremiumUser {
+  email: string;
+  name?: string;
+  picture?: string;
+  subscription: {
+    plan: string;
+    status: string;
+    startDate: string;
+    endDate: string | null;
+  };
+  createdAt: string;
+}
+
+export const premiumGiftsApi = {
+  // Gift premium to a single user
+  async giftPremium(email: string, durationDays: number = 30): Promise<PremiumGiftResponse> {
+    const token = localStorage.getItem('token') || document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+    
+    const response = await fetch(`${API_BASE_URL}/premium-gifts/gift`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      credentials: 'include',
+      body: JSON.stringify({ email, durationDays }),
+    });
+    
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || 'Failed to gift premium');
+    }
+    
+    return response.json();
+  },
+
+  // Gift premium to multiple users
+  async giftBulk(emails: string[], durationDays: number = 30): Promise<PremiumGiftBulkResponse> {
+    const token = localStorage.getItem('token') || document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+    
+    const response = await fetch(`${API_BASE_URL}/premium-gifts/gift-bulk`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      credentials: 'include',
+      body: JSON.stringify({ emails, durationDays }),
+    });
+    
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || 'Failed to gift premium in bulk');
+    }
+    
+    return response.json();
+  },
+
+  // List all premium users
+  async listPremiumUsers(limit: number = 100, skip: number = 0): Promise<{ success: boolean; users: PremiumUser[]; total: number }> {
+    const token = localStorage.getItem('token') || document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+    
+    const response = await fetch(`${API_BASE_URL}/premium-gifts/list?limit=${limit}&skip=${skip}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      credentials: 'include',
+    });
+    
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || 'Failed to list premium users');
+    }
+    
+    return response.json();
+  },
+};
+
+// Keep inviteApi for backward compatibility but return error
+export const inviteApi = {
+  async checkInvite(email: string): Promise<InviteCheckResponse> {
+    throw new Error('Invite system has been disabled. Please contact support for premium access.');
+  },
+  async validateInvite(email: string, inviteCode: string): Promise<InviteValidateResponse> {
+    throw new Error('Invite system has been disabled. Please contact support for premium access.');
   },
 }; 

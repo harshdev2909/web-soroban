@@ -1,20 +1,25 @@
-import React from 'react';
-import { useConnect } from '@/hooks/useConnect';
+import React, { useState } from 'react';
 import { Button } from './ui/button';
 import { Wallet } from 'lucide-react';
 
 interface ConnectButtonProps {
   label?: string;
+  onClick?: () => Promise<void> | void;
 }
 
-export function ConnectButton({ label = "Connect Wallet" }: ConnectButtonProps) {
-  const { isLoading, connect } = useConnect();
+export function ConnectButton({ label = "Connect Wallet", onClick }: ConnectButtonProps) {
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleConnect = async () => {
-    try {
-      await connect();
-    } catch (err) {
-      console.error('Wallet connection error:', err);
+    if (onClick) {
+      try {
+        setIsLoading(true);
+        await onClick();
+      } catch (err) {
+        console.error('Wallet connection error:', err);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 

@@ -248,8 +248,8 @@ export function ProjectSelector({ currentProject, onProjectSelect, onProjectCrea
     <div className="flex items-center space-x-2">
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogTrigger asChild>
-          <Button variant="outline" size="sm" className="border-gray-600 text-gray-300 hover:bg-gray-700">
-            <Folder className="w-4 h-4 mr-2" />
+          <Button variant="outline" size="sm" className="border-blue-500/50 text-blue-200 bg-blue-500/10 hover:bg-blue-500/20 hover:border-blue-400 font-semibold shadow-md shadow-blue-500/10">
+            <Folder className="w-4 h-4 mr-2 text-blue-300" />
             {currentProject?.name || "Select Project"}
           </Button>
         </DialogTrigger>

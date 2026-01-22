@@ -1,9 +1,9 @@
 "use client"
 
 import { useState, useEffect, useRef } from 'react'
-import { useAccount } from '@/hooks/useAccount'
-import { useConnect } from '@/hooks/useConnect'
-import { projectApi, compileApi, deployApi, jobsApi, Project, ProjectFile, Template } from '@/lib/api'
+import { useAuth } from '@/contexts/AuthContext'
+import { useWalletKit } from '@/contexts/WalletKitContext'
+import { projectApi, compileApi, deployApi, jobsApi, Project, ProjectFile, Template, usageApi, contractApi } from '@/lib/api'
 import { socketService } from '@/lib/socket'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -13,8 +13,11 @@ import { EditorPanel } from '@/components/editor-panel'
 import { RightPanel } from '@/components/right-panel'
 import { BottomPanel, LogEntry } from '@/components/bottom-panel'
 import { Navbar } from '@/components/navbar'
-import { InviteModal } from '@/components/invite-modal'
+import { LoginModal } from '@/components/login-modal'
+import { SubscriptionModal } from '@/components/subscription-modal'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Loader2, AlertCircle, Zap } from 'lucide-react'
 
 export default function IDEPage() {
   const [project, setProject] = useState<Project | null>(null)
@@ -24,13 +27,13 @@ export default function IDEPage() {
   const [isDeploying, setIsDeploying] = useState(false)
   const [logs, setLogs] = useState<LogEntry[]>([])
   const [isBottomPanelOpen, setIsBottomPanelOpen] = useState(false)
-  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
-  const [userEmail, setUserEmail] = useState<string>('')
-  const [hasAccess, setHasAccess] = useState(false)
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
+  const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false)
+  const [usage, setUsage] = useState<any>(null)
   const currentJobIdRef = useRef<string | null>(null)
 
-  const account = useAccount()
-  const { connect } = useConnect()
+  const { user, loading: authLoading, isAuthenticated, refreshUser } = useAuth()
+  const { address, connect } = useWalletKit()
 
   // Initialize WebSocket connection on mount
   useEffect(() => {
@@ -45,29 +48,96 @@ export default function IDEPage() {
     };
   }, [])
 
-  // Always require invite verification - no localStorage dependency
+  // Check authentication
   useEffect(() => {
-    // Always show invite modal - require verification every time
-    setHasAccess(false)
-    setIsInviteModalOpen(true)
-    setIsLoading(false)
-  }, [])
+    if (!authLoading) {
+      if (!isAuthenticated) {
+        setIsLoginModalOpen(true)
+        setIsLoading(false)
+      } else {
+        loadUsage()
+        setIsLoading(false)
+      }
+    }
+  }, [authLoading, isAuthenticated])
 
-  // Load initial project on component mount - ONLY if user has access
+  const loadUsage = async () => {
+    try {
+      const response = await usageApi.getUsage()
+      if (response.success && response.usage) {
+        setUsage(response.usage)
+      }
+    } catch (error) {
+      console.error('Failed to load usage:', error)
+    }
+  }
+
+  // Load initial project on component mount - ONLY if authenticated
   useEffect(() => {
-    if (!hasAccess) {
-      return // Don't load project if no access
+    if (!isAuthenticated) {
+      return // Don't load project if not authenticated
     }
     
     const loadInitialProject = async () => {
       try {
         const projects = await projectApi.getProjects();
+        
+        // Try to restore last project from localStorage
+        if (typeof window !== 'undefined' && projects.length > 0) {
+          const lastProjectId = localStorage.getItem('lastProjectId');
+          const lastActiveFileName = localStorage.getItem('lastActiveFileName');
+          
+          if (lastProjectId) {
+            // Find the saved project
+            const savedProject = projects.find(p => p._id === lastProjectId);
+            if (savedProject) {
+              setProject(savedProject);
+              
+              // Try to restore the active file
+              if (lastActiveFileName) {
+                const savedFile = savedProject.files.find(f => f.name === lastActiveFileName);
+                if (savedFile) {
+                  setActiveFile(savedFile);
+                } else {
+                  // File not found, use first file
+                  setActiveFile(savedProject.files[0]);
+                  localStorage.setItem('lastActiveFileName', savedProject.files[0]?.name || '');
+                }
+              } else {
+                setActiveFile(savedProject.files[0]);
+                localStorage.setItem('lastActiveFileName', savedProject.files[0]?.name || '');
+              }
+              
+              // Update localStorage with current project
+              localStorage.setItem('lastProjectId', savedProject._id);
+              return; // Successfully restored, exit early
+            }
+          }
+        }
+        
+        // Fallback: load first project or create new one
         if (projects.length > 0) {
-          setProject(projects[0]);
-          setActiveFile(projects[0].files[0]);
+          const firstProject = projects[0];
+          setProject(firstProject);
+          setActiveFile(firstProject.files[0]);
+          
+          // Save to localStorage
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('lastProjectId', firstProject._id);
+            localStorage.setItem('lastActiveFileName', firstProject.files[0]?.name || '');
+          }
         } else {
           // Create a default project if none exist
           const newProject = await projectApi.createProject("My Soroban Contract");
+          
+          setProject(newProject);
+          setActiveFile(newProject.files[0] || null);
+          
+          // Save to localStorage
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('lastProjectId', newProject._id);
+            localStorage.setItem('lastActiveFileName', newProject.files[0]?.name || '');
+          }
           
           // Add a default test file to the project
           const testFile: ProjectFile = {
@@ -244,6 +314,12 @@ mod tests {
           
           setProject(updatedProject);
           setActiveFile(updatedProject.files[0]);
+          
+          // Save to localStorage
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('lastProjectId', updatedProject._id);
+            localStorage.setItem('lastActiveFileName', updatedProject.files[0]?.name || '');
+          }
         }
       } catch (error) {
         console.error("Failed to load initial project:", error);
@@ -254,7 +330,7 @@ mod tests {
     };
 
     loadInitialProject();
-  }, [hasAccess]);
+  }, [isAuthenticated]);
 
   // Helper function to save local project to DB if needed
   const ensureProjectSaved = async (currentProject: Project): Promise<Project> => {
@@ -465,6 +541,14 @@ mod tests {
     setIsBottomPanelOpen(true);
 
     try {
+      // Check deployment limit before proceeding
+      if (usage && typeof usage.deployments.remaining === 'number' && usage.deployments.remaining <= 0) {
+        toast.error('Deployment limit reached. Please upgrade your plan.')
+        setIsSubscriptionModalOpen(true)
+        setIsDeploying(false)
+        return
+      }
+
       // Ensure project is saved to DB if it's a local project
       const projectToDeploy = await ensureProjectSaved(project);
       
@@ -717,14 +801,31 @@ mod tests {
           try {
             const updatedProject = await projectApi.getProject(projectToDeploy._id);
             setProject(updatedProject);
+            
+            // Save to localStorage
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('lastProjectId', updatedProject._id);
+              if (activeFile) {
+                localStorage.setItem('lastActiveFileName', activeFile.name);
+              }
+            }
           } catch (fetchError) {
             console.warn('Failed to fetch updated project:', fetchError);
             if (projectToDeploy) {
-              setProject({
+              const updatedProject = {
                 ...projectToDeploy,
                 contractAddress: finalDeployResult.contractAddress,
                 lastDeployed: new Date().toISOString()
-              });
+              };
+              setProject(updatedProject);
+              
+              // Save to localStorage
+              if (typeof window !== 'undefined') {
+                localStorage.setItem('lastProjectId', updatedProject._id);
+                if (activeFile) {
+                  localStorage.setItem('lastActiveFileName', activeFile.name);
+                }
+              }
             }
           }
         } else {
@@ -737,21 +838,38 @@ mod tests {
           toast.error(`Deployment failed: ${errorMessage}`);
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Deployment error:", error);
-      setLogs(prev => [...prev, {
-        type: "error",
-        message: `Deployment failed: ${(error as Error).message}`,
-        timestamp: new Date().toISOString()
-      }]);
-      toast.error("Deployment failed");
+      
+      // Check if it's a deployment limit error
+      if (error.message === 'DEPLOYMENT_LIMIT_REACHED' || error.message?.includes('limit')) {
+        toast.error('Deployment limit reached. Please upgrade your plan.')
+        setIsSubscriptionModalOpen(true)
+      } else {
+        setLogs(prev => [...prev, {
+          type: "error",
+          message: `Deployment failed: ${error.message}`,
+          timestamp: new Date().toISOString()
+        }]);
+        toast.error("Deployment failed");
+      }
     } finally {
       setIsDeploying(false);
+      // Refresh usage after deployment attempt
+      if (isAuthenticated) {
+        loadUsage()
+      }
     }
   };
 
   const handleFileSelect = (file: ProjectFile) => {
     setActiveFile(file);
+    
+    // Save active file to localStorage for persistence
+    if (typeof window !== 'undefined' && project) {
+      localStorage.setItem('lastActiveFileName', file.name);
+      localStorage.setItem('lastProjectId', project._id);
+    }
   };
 
   const handleFileContentChange = async (content: string) => {
@@ -775,6 +893,12 @@ mod tests {
   const handleProjectSelect = (selectedProject: Project) => {
     setProject(selectedProject);
     setActiveFile(selectedProject.files[0]);
+    
+    // Save to localStorage for persistence
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('lastProjectId', selectedProject._id);
+      localStorage.setItem('lastActiveFileName', selectedProject.files[0]?.name || '');
+    }
   };
 
   const handleClearLogs = () => {
@@ -784,6 +908,12 @@ mod tests {
   const handleProjectCreate = (newProject: Project) => {
     setProject(newProject);
     setActiveFile(newProject.files[0]);
+    
+    // Save to localStorage for persistence
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('lastProjectId', newProject._id);
+      localStorage.setItem('lastActiveFileName', newProject.files[0]?.name || '');
+    }
   };
 
   const handleTemplateSelect = async (template: Template) => {
@@ -802,7 +932,19 @@ mod tests {
       
       // If the deleted file was active, switch to the first remaining file
       if (activeFile?.name === fileName) {
-        setActiveFile(updatedFiles[0]);
+        const newActiveFile = updatedFiles[0];
+        setActiveFile(newActiveFile);
+        
+        // Save to localStorage
+        if (typeof window !== 'undefined' && newActiveFile) {
+          localStorage.setItem('lastActiveFileName', newActiveFile.name);
+          localStorage.setItem('lastProjectId', updatedProject._id);
+        }
+      } else {
+        // Save project ID even if active file didn't change
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('lastProjectId', updatedProject._id);
+        }
       }
       
       toast.success(`File "${fileName}" deleted successfully!`);
@@ -989,10 +1131,18 @@ impl From<Error> for soroban_sdk::Error {
 
     setProject(prev => {
       if (!prev) return null;
-      return {
+      const updatedProject = {
         ...prev,
         files: [...prev.files, newFile]
       };
+      
+      // Save to localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('lastProjectId', updatedProject._id);
+        localStorage.setItem('lastActiveFileName', newFile.name);
+      }
+      
+      return updatedProject;
     });
 
     setActiveFile(newFile);
@@ -1018,51 +1168,18 @@ impl From<Error> for soroban_sdk::Error {
     console.log("Right panel close requested");
   };
 
-  const handleInviteSuccess = () => {
-    // Grant access after successful verification - no localStorage
-    setHasAccess(true)
-    setIsInviteModalOpen(false)
-    setIsLoading(true) // Start loading IDE now that access is granted
-    toast.success('Welcome! You now have access to the IDE.')
-    
-    // Load project after access is granted
-    const loadInitialProject = async () => {
-      try {
-        const projects = await projectApi.getProjects();
-        if (projects.length > 0) {
-          setProject(projects[0]);
-          setActiveFile(projects[0].files[0]);
-        } else {
-          // Create a default project if none exist
-          const newProject = await projectApi.createProject("My Soroban Contract");
-          setProject(newProject);
-          setActiveFile(newProject.files[0]);
-        }
-      } catch (error) {
-        console.error("Failed to load initial project:", error);
-        toast.error("Failed to load project");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    loadInitialProject();
-  };
-
-  // Show invite modal if no access - BLOCK IDE ACCESS
-  if (!hasAccess) {
+  // Show login modal if not authenticated
+  if (!authLoading && !isAuthenticated) {
     return (
       <div className="h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900/20 to-slate-900">
         <div className="text-center">
-          <InviteModal
-            open={isInviteModalOpen}
-            onOpenChange={setIsInviteModalOpen}
-            userEmail={userEmail}
-            onSuccess={handleInviteSuccess}
+          <LoginModal
+            open={isLoginModalOpen}
+            onOpenChange={setIsLoginModalOpen}
           />
           <div className="mb-8">
-            <h1 className="text-4xl font-bold text-white mb-4">Access Required</h1>
-            <p className="text-gray-400">Please enter your invite code to access the IDE</p>
+            <h1 className="text-4xl font-bold text-white mb-4">Authentication Required</h1>
+            <p className="text-gray-400">Please sign in to access the IDE</p>
           </div>
         </div>
       </div>
@@ -1093,9 +1210,11 @@ impl From<Error> for soroban_sdk::Error {
   return (
     <div className="h-screen flex flex-col">
       <Navbar 
-        walletAddress={account?.address || null}
+        walletAddress={address || null}
         onConnectWallet={connect}
-        onInviteClick={() => setIsInviteModalOpen(true)}
+        user={user}
+        onLoginClick={() => setIsLoginModalOpen(true)}
+        onSubscriptionClick={() => setIsSubscriptionModalOpen(true)}
         projectSelector={
           <ProjectSelector
             currentProject={project}
@@ -1104,6 +1223,50 @@ impl From<Error> for soroban_sdk::Error {
             onTemplateSelect={handleTemplateSelect}
           />
         }
+      />
+      
+      {/* Usage Limit Warnings */}
+      {usage && (
+        <div className="px-4 py-2 bg-gray-900 border-b border-gray-800">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4 text-sm">
+              <span className="text-gray-400">
+                Deployments: {usage.deployments.count}/{usage.deployments.limit === -1 ? '∞' : usage.deployments.limit}
+              </span>
+              <span className="text-gray-400">
+                Function Tests: {usage.functionTests.count}/{usage.functionTests.limit === -1 ? '∞' : usage.functionTests.limit}
+              </span>
+            </div>
+            {(typeof usage.deployments.remaining === 'number' && usage.deployments.remaining <= 2) ||
+             (typeof usage.functionTests.remaining === 'number' && usage.functionTests.remaining <= 1) ? (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setIsSubscriptionModalOpen(true)}
+                className="text-xs"
+              >
+                <Zap className="w-3 h-3 mr-1" />
+                Upgrade Plan
+              </Button>
+            ) : null}
+          </div>
+        </div>
+      )}
+      
+      {/* Modals */}
+      <LoginModal
+        open={isLoginModalOpen}
+        onOpenChange={setIsLoginModalOpen}
+      />
+      <SubscriptionModal
+        open={isSubscriptionModalOpen}
+        onOpenChange={(open) => {
+          setIsSubscriptionModalOpen(open)
+          if (!open) {
+            loadUsage()
+            refreshUser()
+          }
+        }}
       />
       
       <div className="flex-1 flex">
