@@ -202,7 +202,7 @@ export default function AnalyticsPage() {
                 Page views and visitor stats are being collected for this project.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3 text-sm text-muted-foreground">
+            {/* <CardContent className="space-y-3 text-sm text-muted-foreground">
               <p>
                 Vercel Analytics is enabled via the{" "}
                 <code className="rounded bg-muted px-1.5 py-0.5 text-xs">
@@ -215,7 +215,7 @@ export default function AnalyticsPage() {
                 Use the button above to open the full Vercel dashboard with detailed
                 breakdowns by page, country, device, and more.
               </p>
-            </CardContent>
+            </CardContent> */}
           </Card>
         </div>
 
