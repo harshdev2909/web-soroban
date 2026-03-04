@@ -748,6 +748,29 @@ export interface HealthResponse {
   mongodb: string;
 }
 
+export interface UsageSummaryDay {
+  date: string;
+  compile: number;
+  deploy: number;
+  function_test: number;
+}
+
+export interface UsageSummaryResponse {
+  success: boolean;
+  summary: {
+    totalEvents: number;
+    uniqueUsers: number;
+    totals: {
+      compile: number;
+      deploy: number;
+      function_test: number;
+    };
+    periodStart: string;
+    periodEnd: string;
+  };
+  daily: UsageSummaryDay[];
+}
+
 export const usageApi = {
   // Get usage statistics
   async getUsage(): Promise<UsageResponse> {
@@ -760,6 +783,22 @@ export const usageApi = {
     });
     if (!response.ok) {
       throw new Error('Failed to get usage');
+    }
+    return response.json();
+  },
+};
+
+export const analyticsApi = {
+  // Project-wide usage summary (all users)
+  async getUsageSummary(): Promise<UsageSummaryResponse> {
+    const response = await fetch(`${API_BASE_URL}/usage/summary`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-store',
+    });
+    if (!response.ok) {
+      throw new Error('Failed to get usage summary');
     }
     return response.json();
   },

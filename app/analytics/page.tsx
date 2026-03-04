@@ -1,8 +1,7 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
-import { useAuth } from "@/contexts/AuthContext"
-import { usageApi, systemApi, UsageResponse, HealthResponse } from "@/lib/api"
+import { useEffect, useState } from "react"
+import { analyticsApi, systemApi, UsageSummaryResponse, HealthResponse } from "@/lib/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -26,31 +25,23 @@ interface DailyUsagePoint {
 }
 
 export default function AnalyticsPage() {
-  const { isAuthenticated, loading: authLoading } = useAuth()
-  const [usage, setUsage] = useState<UsageResponse | null>(null)
+  const [summary, setSummary] = useState<UsageSummaryResponse | null>(null)
   const [health, setHealth] = useState<HealthResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (authLoading) return
-
-    if (!isAuthenticated) {
-      setLoading(false)
-      return
-    }
-
     const loadData = async () => {
       try {
         setLoading(true)
         setError(null)
 
         const [usageResponse, healthResponse] = await Promise.all([
-          usageApi.getUsage(),
+          analyticsApi.getUsageSummary(),
           systemApi.getHealth(),
         ])
 
-        setUsage(usageResponse)
+        setSummary(usageResponse)
         setHealth(healthResponse)
       } catch (err: any) {
         console.error("Failed to load analytics:", err)
@@ -61,54 +52,23 @@ export default function AnalyticsPage() {
     }
 
     void loadData()
-  }, [authLoading, isAuthenticated])
+  }, [])
 
-  const dailyUsage: DailyUsagePoint[] = useMemo(() => {
-    if (!usage?.logs || !Array.isArray(usage.logs)) return []
+  const dailyUsage: DailyUsagePoint[] =
+    summary?.daily?.map((d) => ({
+      date: d.date,
+      compile: d.compile,
+      deploy: d.deploy,
+      function_test: d.function_test,
+    })) ?? []
 
-    const map = new Map<string, DailyUsagePoint>()
-
-    for (const log of usage.logs as any[]) {
-      if (!log || !log.createdAt || !log.action) continue
-      const date = new Date(log.createdAt).toISOString().slice(0, 10)
-
-      if (!map.has(date)) {
-        map.set(date, {
-          date,
-          compile: 0,
-          deploy: 0,
-          function_test: 0,
-        })
-      }
-
-      const entry = map.get(date)!
-      if (log.action === "compile") entry.compile += 1
-      if (log.action === "deploy") entry.deploy += 1
-      if (log.action === "function_test") entry.function_test += 1
-    }
-
-    return Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date))
-  }, [usage])
-
-  if (authLoading || loading) {
+  if (loading) {
     return (
       <div className="flex h-[calc(100vh-80px)] items-center justify-center">
         <div className="flex items-center gap-3 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />
           <span>Loading analytics...</span>
         </div>
-      </div>
-    )
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="flex h-[calc(100vh-80px)] items-center justify-center">
-        <Alert className="max-w-md">
-          <AlertDescription>
-            You need to be signed in to view your analytics. Open the IDE to sign in, then return to this page.
-          </AlertDescription>
-        </Alert>
       </div>
     )
   }
@@ -150,42 +110,44 @@ export default function AnalyticsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <BarChart3 className="h-4 w-4 text-blue-500" />
-                Frontend usage
+                Project usage
               </CardTitle>
-              <CardDescription>Your usage quotas and recent activity.</CardDescription>
+              <CardDescription>Aggregate activity across all users in the last 30 days.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-3 gap-4 text-sm">
+                <div>
+                  <div className="text-xs font-medium uppercase text-muted-foreground">
+                    Total events
+                  </div>
+                  <div className="mt-1 text-lg font-semibold">
+                    {summary?.summary?.totalEvents ?? 0}
+                  </div>
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    Unique users: {summary?.summary?.uniqueUsers ?? 0}
+                  </div>
+                </div>
                 <div>
                   <div className="text-xs font-medium uppercase text-muted-foreground">
                     Deployments
                   </div>
                   <div className="mt-1 text-lg font-semibold">
-                    {usage?.usage?.deployments?.count ?? 0}
-                    {usage?.usage?.deployments?.limit &&
-                    usage.usage.deployments.limit !== -1
-                      ? ` / ${usage.usage.deployments.limit}`
-                      : " / ∞"}
+                    {summary?.summary?.totals?.deploy ?? 0}
                   </div>
                   <div className="mt-1 text-xs text-muted-foreground">
-                    Remaining:{" "}
-                    {usage?.usage?.deployments?.remaining ?? "unlimited"}
+                    In the last 30 days
                   </div>
                 </div>
                 <div>
                   <div className="text-xs font-medium uppercase text-muted-foreground">
-                    Function tests
+                    Compilations
                   </div>
                   <div className="mt-1 text-lg font-semibold">
-                    {usage?.usage?.functionTests?.count ?? 0}
-                    {usage?.usage?.functionTests?.limit &&
-                    usage.usage.functionTests.limit !== -1
-                      ? ` / ${usage.usage.functionTests.limit}`
-                      : " / ∞"}
+                    {summary?.summary?.totals?.compile ?? 0}
                   </div>
                   <div className="mt-1 text-xs text-muted-foreground">
-                    Remaining:{" "}
-                    {usage?.usage?.functionTests?.remaining ?? "unlimited"}
+                    Function tests:{" "}
+                    {summary?.summary?.totals?.function_test ?? 0}
                   </div>
                 </div>
               </div>
