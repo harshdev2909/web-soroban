@@ -742,6 +742,12 @@ export interface UsageResponse {
   logs?: any[];
 }
 
+export interface HealthResponse {
+  status: string;
+  timestamp: string;
+  mongodb: string;
+}
+
 export const usageApi = {
   // Get usage statistics
   async getUsage(): Promise<UsageResponse> {
@@ -754,6 +760,21 @@ export const usageApi = {
     });
     if (!response.ok) {
       throw new Error('Failed to get usage');
+    }
+    return response.json();
+  },
+};
+
+export const systemApi = {
+  async getHealth(): Promise<HealthResponse> {
+    const response = await fetch(`${API_BASE_URL}/health`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-store',
+    });
+    if (!response.ok) {
+      throw new Error('Failed to get health status');
     }
     return response.json();
   },

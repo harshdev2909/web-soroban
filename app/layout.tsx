@@ -3,6 +3,7 @@ import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { WalletKitProvider } from '@/contexts/WalletKitContext'
+import { Analytics } from '@vercel/analytics/react'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -55,6 +56,7 @@ html {
         <WalletKitProvider>
           <AuthProvider>{children}</AuthProvider>
         </WalletKitProvider>
+        <Analytics />
       </body>
     </html>
   )
