@@ -83,7 +83,7 @@ export default function AnalyticsPage() {
               Overview of your IDE usage, backend health, and Vercel page analytics.
             </p>
           </div>
-          <Button
+          {/* <Button
             variant="outline"
             size="sm"
             asChild
@@ -96,7 +96,7 @@ export default function AnalyticsPage() {
               <Activity className="mr-2 h-4 w-4" />
               Open Vercel Analytics
             </a>
-          </Button>
+          </Button> */}
         </div>
 
         {error && (
@@ -192,8 +192,8 @@ export default function AnalyticsPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
+         
+            {/* <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <Activity className="h-4 w-4 text-violet-500" />
                 Vercel analytics
@@ -201,7 +201,7 @@ export default function AnalyticsPage() {
               <CardDescription>
                 Page views and visitor stats are being collected for this project.
               </CardDescription>
-            </CardHeader>
+            </CardHeader> */}
             {/* <CardContent className="space-y-3 text-sm text-muted-foreground">
               <p>
                 Vercel Analytics is enabled via the{" "}
@@ -216,7 +216,7 @@ export default function AnalyticsPage() {
                 breakdowns by page, country, device, and more.
               </p>
             </CardContent> */}
-          </Card>
+          
         </div>
 
         <Card className="mt-4">
