@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { indexerApi, getApiKey, setApiKey } from "@/lib/devApi";
 import type { IndexedTransaction } from "@/lib/devApi";
 
-export default function ExplorerPage() {
+function ExplorerPageContent() {
   const searchParams = useSearchParams();
   const [hash, setHash] = useState("");
   const [tx, setTx] = useState<IndexedTransaction | null>(null);
@@ -198,5 +198,32 @@ export default function ExplorerPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+function ExplorerFallback() {
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+      <header className="border-b bg-card/50 backdrop-blur">
+        <div className="container flex h-14 items-center px-4">
+          <Link href="/dashboard/api-keys" className="flex items-center gap-2 font-semibold mr-8 text-muted-foreground hover:text-foreground">
+            ← Developer Tools
+          </Link>
+        </div>
+      </header>
+      <main className="container py-8 px-4 max-w-4xl">
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </main>
+    </div>
+  );
+}
+
+export default function ExplorerPage() {
+  return (
+    <Suspense fallback={<ExplorerFallback />}>
+      <ExplorerPageContent />
+    </Suspense>
   );
 }
