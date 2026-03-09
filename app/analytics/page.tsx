@@ -195,7 +195,7 @@ export default function AnalyticsPage() {
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">MongoDB</span>
+                <span className="text-muted-foreground">Database</span>
                 <span className="text-xs font-medium">
                   {health?.mongodb ?? "unknown"}
                 </span>
