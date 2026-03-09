@@ -11,7 +11,7 @@ import {
 } from "@/lib/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, BarChart3, Server, Receipt, ListTodo, ExternalLink } from "lucide-react"
+import { Loader2, BarChart3, Server, Receipt, ListTodo, ExternalLink, Copy, Check } from "lucide-react"
 import {
   Bar,
   BarChart,
@@ -37,6 +37,13 @@ export default function AnalyticsPage() {
   const [activityLogs, setActivityLogs] = useState<ActivityLogEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+
+  const copyContractAddress = (address: string, id: string) => {
+    void navigator.clipboard.writeText(address)
+    setCopiedId(id)
+    setTimeout(() => setCopiedId(null), 2000)
+  }
 
   useEffect(() => {
     const loadData = async () => {
@@ -336,46 +343,74 @@ export default function AnalyticsPage() {
                 {activityLogs.map((log, idx) => (
                   <div
                     key={log._id ?? idx}
-                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-muted/30 px-3 py-2 text-sm"
+                    className="flex flex-col gap-2 rounded-lg border bg-muted/30 px-3 py-2 text-sm"
                   >
-                    <div className="flex flex-wrap items-center gap-2 min-w-0">
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium uppercase shrink-0 ${
-                          log.action === "deploy"
-                            ? "bg-emerald-500/10 text-emerald-500"
-                            : log.action === "compile"
-                              ? "bg-sky-500/10 text-sky-500"
-                              : "bg-violet-500/10 text-violet-500"
-                        }`}
-                      >
-                        {log.action.replace("_", " ")}
+                    <div className="flex flex-wrap items-center justify-between gap-2 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 min-w-0">
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-xs font-medium uppercase shrink-0 ${
+                            log.action === "deploy"
+                              ? "bg-emerald-500/10 text-emerald-500"
+                              : log.action === "compile"
+                                ? "bg-sky-500/10 text-sky-500"
+                                : "bg-violet-500/10 text-violet-500"
+                          }`}
+                        >
+                          {log.action.replace("_", " ")}
+                        </span>
+                        {log.success ? (
+                          <span className="text-emerald-500 text-xs shrink-0">Success</span>
+                        ) : (
+                          <span className="text-red-500 text-xs shrink-0">Failed</span>
+                        )}
+                        {log.user?.email && (
+                          <span className="text-xs text-muted-foreground truncate max-w-[140px]">
+                            {log.user.email}
+                          </span>
+                        )}
+                        {log.functionName && (
+                          <span className="text-xs text-muted-foreground">
+                            {log.functionName}()
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        {log.createdAt
+                          ? new Date(log.createdAt).toLocaleString()
+                          : "—"}
                       </span>
-                      {log.success ? (
-                        <span className="text-emerald-500 text-xs shrink-0">Success</span>
-                      ) : (
-                        <span className="text-red-500 text-xs shrink-0">Failed</span>
-                      )}
-                      {log.user?.email && (
-                        <span className="text-xs text-muted-foreground truncate max-w-[140px]">
-                          {log.user.email}
-                        </span>
-                      )}
-                      {log.contractAddress && (
-                        <span className="text-xs text-muted-foreground font-mono truncate max-w-[120px]">
-                          {log.contractAddress.slice(0, 8)}…
-                        </span>
-                      )}
-                      {log.functionName && (
-                        <span className="text-xs text-muted-foreground">
-                          {log.functionName}()
-                        </span>
-                      )}
                     </div>
-                    <span className="text-xs text-muted-foreground shrink-0">
-                      {log.createdAt
-                        ? new Date(log.createdAt).toLocaleString()
-                        : "—"}
-                    </span>
+                    {log.contractAddress && (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-medium text-muted-foreground shrink-0">
+                          Contract:
+                        </span>
+                        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded break-all min-w-0">
+                          {log.contractAddress}
+                        </code>
+                        <button
+                          type="button"
+                          onClick={() => copyContractAddress(log.contractAddress!, log._id)}
+                          className="shrink-0 p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+                          title="Copy address"
+                        >
+                          {copiedId === log._id ? (
+                            <Check className="h-3.5 w-3.5 text-emerald-500" />
+                          ) : (
+                            <Copy className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                        <a
+                          href={`https://stellar.expert/explorer/testnet/contract/${log.contractAddress}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="shrink-0 p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+                          title="View on Stellar Expert"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </a>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
