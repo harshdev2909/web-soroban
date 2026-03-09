@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
@@ -20,7 +21,8 @@ import {
   Search,
   Menu,
   X,
-  Mail
+  Mail,
+  Wrench
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { WalletData } from './wallet-data';
@@ -96,6 +98,18 @@ export function Navbar({ walletAddress, onConnectWallet, projectSelector, onInvi
           <div className="w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse shadow-sm shadow-green-400"></div>
           <span className="text-sm text-green-300 font-semibold">Testnet</span>
         </div>
+
+        {/* Developer Tools */}
+        <Link href="/dashboard/api-keys">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-slate-300 hover:text-white hover:bg-slate-700/70 border border-slate-600/30 rounded-lg px-2"
+            title="Developer Tools"
+          >
+            <Wrench className="h-4 w-4" />
+          </Button>
+        </Link>
 
         {/* User Info / Login */}
         {user ? (

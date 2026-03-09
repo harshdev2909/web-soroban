@@ -706,7 +706,7 @@ export const paymentApi = {
   },
 
   // Get payment history
-  async getHistory(limit = 10): Promise<{ success: boolean; payments: any[] }> {
+  async getHistory(limit = 10): Promise<{ success: boolean; payments: PaymentHistoryItem[] }> {
     const token = authApi.getToken();
     const response = await fetch(`${API_BASE_URL}/payments/history?limit=${limit}`, {
       headers: {
@@ -720,6 +720,32 @@ export const paymentApi = {
     return response.json();
   },
 };
+
+export interface PaymentHistoryItem {
+  _id: string;
+  plan: string;
+  amount: number;
+  currency: string;
+  txHash: string;
+  network: string;
+  status: string;
+  confirmedAt?: string | null;
+  createdAt: string;
+  fromAddress?: string;
+  toAddress?: string;
+}
+
+export interface UsageLogEntry {
+  _id?: string;
+  action: 'compile' | 'deploy' | 'function_test';
+  projectId?: string | null;
+  contractAddress?: string | null;
+  functionName?: string | null;
+  success: boolean;
+  error?: string | null;
+  metadata?: Record<string, unknown>;
+  createdAt: string;
+}
 
 // Usage API
 export interface UsageResponse {
@@ -738,8 +764,8 @@ export interface UsageResponse {
       lastResetDate: string;
     };
   };
-  statistics?: any;
-  logs?: any[];
+  statistics?: unknown;
+  logs?: UsageLogEntry[];
 }
 
 export interface HealthResponse {
@@ -788,6 +814,22 @@ export const usageApi = {
   },
 };
 
+export interface ActivityLogEntry {
+  _id: string;
+  action: 'compile' | 'deploy' | 'function_test';
+  projectId?: string | null;
+  contractAddress?: string | null;
+  functionName?: string | null;
+  success: boolean;
+  error?: string | null;
+  createdAt: string;
+  user?: { email: string; name: string | null } | null;
+}
+
+export interface PlatformPaymentItem extends PaymentHistoryItem {
+  user?: { email: string; name: string | null } | null;
+}
+
 export const analyticsApi = {
   // Project-wide usage summary (all users)
   async getUsageSummary(): Promise<UsageSummaryResponse> {
@@ -799,6 +841,30 @@ export const analyticsApi = {
     });
     if (!response.ok) {
       throw new Error('Failed to get usage summary');
+    }
+    return response.json();
+  },
+
+  // Platform-wide activity logs (all users)
+  async getActivityLogs(limit = 50): Promise<{ success: boolean; logs: ActivityLogEntry[] }> {
+    const response = await fetch(`${API_BASE_URL}/usage/activity?limit=${limit}`, {
+      headers: { 'Content-Type': 'application/json' },
+      cache: 'no-store',
+    });
+    if (!response.ok) {
+      throw new Error('Failed to get activity logs');
+    }
+    return response.json();
+  },
+
+  // Platform-wide transaction history (all users)
+  async getAllTransactions(limit = 50): Promise<{ success: boolean; payments: PlatformPaymentItem[] }> {
+    const response = await fetch(`${API_BASE_URL}/payments/all?limit=${limit}`, {
+      headers: { 'Content-Type': 'application/json' },
+      cache: 'no-store',
+    });
+    if (!response.ok) {
+      throw new Error('Failed to get transaction history');
     }
     return response.json();
   },
