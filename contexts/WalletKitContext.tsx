@@ -62,32 +62,8 @@ export function WalletKitProvider({ children }: { children: ReactNode }) {
         setKit(walletKit)
         setIsInitialized(true)
 
-        // Try to get current address if wallet is already connected
-        try {
-          const currentAddress = await walletKit.getAddress()
-          if (currentAddress?.address) {
-            setAddress(currentAddress.address)
-            
-            // Try to detect which wallet is connected
-            try {
-              // Check if Freighter is available
-              if (typeof window !== 'undefined' && (window as any).freighterApi) {
-                // Try to get wallet info from kit
-                const wallets = await walletKit.getSupportedWallets()
-                const freighterWallet = wallets.find((w: ISupportedWallet) => w.id === FREIGHTER_ID)
-                if (freighterWallet) {
-                  setSelectedWallet(freighterWallet)
-                }
-              }
-            } catch (e) {
-              // Ignore wallet detection errors
-              console.log('Could not detect wallet type:', e)
-            }
-          }
-        } catch (error) {
-          // Wallet not connected, that's fine
-          console.log('No wallet connected yet')
-        }
+        // Do NOT call getAddress() here - it triggers the wallet extension popup
+        // on every page load. User must click "Connect Wallet" to connect.
       } catch (error) {
         console.error('Failed to initialize wallet kit:', error)
         setIsInitialized(true) // Mark as initialized even if failed
