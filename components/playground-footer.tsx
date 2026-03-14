@@ -86,7 +86,7 @@ const PlaygroundFooter = () => {
         <div className="border-t border-white/10 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-[#99a1af] transition-colors duration-300 hover:text-gray-300">
-              © 2025 WebSoroban. All rights reserved.
+              © 2026 WebSoroban. All rights reserved.
             </p>
             <div className="flex items-center gap-4 text-xs text-[#99a1af]">
               <span className="transition-colors duration-300 hover:text-purple-300 cursor-pointer">

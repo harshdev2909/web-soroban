@@ -1,10 +1,32 @@
 'use client'
 
 import { useState } from 'react'
-import { Menu, X } from 'lucide-react'
+import { Menu, X, Wallet, Loader2 } from 'lucide-react'
+import { useWalletKit } from '@/contexts/WalletKitContext'
+import { toast } from 'sonner'
 
-export default function PlaygroundNavbar() {
+interface PlaygroundNavbarProps {
+  onSignInClick?: () => void
+}
+
+export default function PlaygroundNavbar({ onSignInClick }: PlaygroundNavbarProps = {}) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isConnecting, setIsConnecting] = useState(false)
+  const { address, connect, disconnect, isInitialized } = useWalletKit()
+
+  const handleConnectWallet = async () => {
+    if (!isInitialized) return
+    try {
+      setIsConnecting(true)
+      await connect()
+      toast.success('Wallet connected')
+    } catch (err) {
+      console.error('Connect wallet error:', err)
+      toast.error(err instanceof Error ? err.message : 'Failed to connect wallet')
+    } finally {
+      setIsConnecting(false)
+    }
+  }
 
   return (
     <nav className="mx-auto max-w-4xl mt-3 md:mt-6 mb-3 md:mb-6 px-4">
@@ -46,8 +68,17 @@ export default function PlaygroundNavbar() {
               Examples
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-purple-400 to-purple-600 transition-all duration-300 group-hover:w-full"></span>
             </a>
-            <button className="inline-flex items-center justify-center whitespace-nowrap rounded-lg text-xs font-medium transition-all duration-300 h-8 px-3 py-1.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 border border-purple-400/30 shadow-lg hover:shadow-purple-500/50 backdrop-blur-sm transform hover:scale-105 hover:-translate-y-0.5">
-              Connect Wallet
+            <button
+              onClick={handleConnectWallet}
+              disabled={isConnecting || !isInitialized}
+              className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-lg text-xs font-medium transition-all duration-300 h-8 px-3 py-1.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 border border-purple-400/30 shadow-lg hover:shadow-purple-500/50 backdrop-blur-sm transform hover:scale-105 hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              {isConnecting ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : address ? (
+                <Wallet className="w-3.5 h-3.5" />
+              ) : null}
+              {isConnecting ? 'Connecting...' : address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Connect Wallet'}
             </button>
           </div>
 
@@ -112,8 +143,22 @@ export default function PlaygroundNavbar() {
               <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 to-purple-500/20 rounded-md transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
             </a>
             <button
-              className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all duration-300 h-8 px-3 py-1.5 bg-gradient-to-r from-purple-500/20 to-purple-600/20 text-purple-300 hover:from-purple-500/30 hover:to-purple-600/30 hover:text-white border border-purple-400/30 rounded-lg w-fit mt-2 backdrop-blur-sm transform hover:scale-105 hover:-translate-y-0.5"
-              onClick={() => setIsMenuOpen(false)}
+              onClick={async () => {
+                await handleConnectWallet()
+                setIsMenuOpen(false)
+              }}
+              disabled={isConnecting || !isInitialized}
+              className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap text-sm font-medium transition-all duration-300 h-8 px-3 py-1.5 bg-gradient-to-r from-purple-500/20 to-purple-600/20 text-purple-300 hover:from-purple-500/30 hover:to-purple-600/30 hover:text-white border border-purple-400/30 rounded-lg w-fit mt-2 backdrop-blur-sm transform hover:scale-105 hover:-translate-y-0.5 disabled:opacity-70"
+            >
+              {isConnecting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+              {isConnecting ? 'Connecting...' : address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Connect Wallet'}
+            </button>
+            <button
+              className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all duration-300 h-8 px-3 py-1.5 text-gray-300 hover:text-white border border-white/20 rounded-lg w-fit mt-2 backdrop-blur-sm"
+              onClick={() => {
+                setIsMenuOpen(false)
+                onSignInClick?.()
+              }}
             >
               Sign In
             </button>

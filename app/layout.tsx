@@ -3,6 +3,7 @@ import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { WalletKitProvider } from '@/contexts/WalletKitContext'
+import { Toaster } from 'sonner'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
@@ -56,6 +57,7 @@ html {
         <WalletKitProvider>
           <AuthProvider>{children}</AuthProvider>
         </WalletKitProvider>
+        <Toaster richColors position="top-center" />
         <Analytics />
       </body>
     </html>

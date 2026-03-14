@@ -52,7 +52,7 @@ export default function HomePage() {
       />
       
       <div className="animate-fade-in">
-        <PlaygroundNavbar />
+        <PlaygroundNavbar onSignInClick={() => setIsLoginModalOpen(true)} />
       </div>
 
       {/* Hero Section */}
