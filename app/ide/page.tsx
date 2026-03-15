@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { useWalletKit } from '@/contexts/WalletKitContext'
@@ -20,7 +20,18 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/componen
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2, AlertCircle, Zap } from 'lucide-react'
 
-export default function IDEPage() {
+function IDEPageFallback() {
+  return (
+    <div className="h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <div className="text-center">
+        <Loader2 className="w-12 h-12 animate-spin text-blue-400 mx-auto mb-4" />
+        <p className="text-slate-400">Loading IDE...</p>
+      </div>
+    </div>
+  )
+}
+
+function IDEPageContent() {
   const [project, setProject] = useState<Project | null>(null)
   const [activeFile, setActiveFile] = useState<ProjectFile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -1351,4 +1362,12 @@ impl From<Error> for soroban_sdk::Error {
       </div>
     </div>
   );
+}
+
+export default function IDEPage() {
+  return (
+    <Suspense fallback={<IDEPageFallback />}>
+      <IDEPageContent />
+    </Suspense>
+  )
 } 
