@@ -62,6 +62,13 @@ export default function PlaygroundNavbar({ onSignInClick }: PlaygroundNavbarProp
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-purple-400 to-purple-600 transition-all duration-300 group-hover:w-full"></span>
             </a>
             <a
+              href="/marketplace"
+              className="text-xs text-gray-300 hover:text-purple-300 transition-all duration-300 relative group"
+            >
+              Templates
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-purple-400 to-purple-600 transition-all duration-300 group-hover:w-full"></span>
+            </a>
+            <a
               href="/examples"
               className="text-xs text-gray-300 hover:text-purple-300 transition-all duration-300 relative group"
             >
@@ -132,6 +139,14 @@ export default function PlaygroundNavbar({ onSignInClick }: PlaygroundNavbarProp
               onClick={() => setIsMenuOpen(false)}
             >
               <span className="relative z-10">Learn</span>
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 to-purple-500/20 rounded-md transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
+            </a>
+            <a
+              href="/marketplace"
+              className="text-sm text-gray-300 hover:text-purple-300 transition-all duration-300 py-1.5 hover:bg-purple-500/10 rounded-md px-2 transform hover:translate-x-2 relative group"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <span className="relative z-10">Templates</span>
               <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 to-purple-500/20 rounded-md transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
             </a>
             <a

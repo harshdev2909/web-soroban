@@ -229,7 +229,9 @@ export default function DocumentationPage() {
                   </li>
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span>Smart contract templates</span>
+                    <span>
+                      Smart contract templates — browse the <a href="/marketplace" className="text-blue-600 hover:underline">Template Library</a> (public docs & marketplace)
+                    </span>
                   </li>
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-4 h-4 text-green-500" />
@@ -481,16 +483,23 @@ Request Body:
                 <p className="text-slate-600">Complete guide to Web Soroban IDE</p>
               </div>
             </div>
-            <Button 
-              onClick={() => {
-                // Always redirect to home where invite modal will appear
-                window.location.href = '/'
-              }}
-              className="bg-gradient-to-r from-blue-600 to-slate-700 hover:from-blue-700 hover:to-slate-800 text-white"
-            >
-              <Play className="w-4 h-4 mr-2" />
-              Launch IDE
-            </Button>
+            <div className="flex items-center gap-2">
+              <a href="/marketplace">
+                <Button variant="outline" size="sm">
+                  Template Library
+                </Button>
+              </a>
+              <Button 
+                onClick={() => {
+                  window.location.href = '/'
+                }}
+                className="bg-gradient-to-r from-blue-600 to-slate-700 hover:from-blue-700 hover:to-slate-800 text-white"
+                size="sm"
+              >
+                <Play className="w-4 h-4 mr-2" />
+                Launch IDE
+              </Button>
+            </div>
           </div>
         </div>
       </div>

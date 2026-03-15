@@ -1,13 +1,14 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Plus, FileText, Code, Coins } from "lucide-react"
-import { templatesApi, Template } from "@/lib/api"
+import { Plus, FileText, Code, Coins, Lock, ExternalLink } from "lucide-react"
+import { templatesApi, Template, TemplateDoc } from "@/lib/api"
+import { TemplatePurchaseModal } from "@/components/template-purchase-modal"
 
 interface TemplateSelectorProps {
   onTemplateSelect: (template: Template) => void
@@ -18,10 +19,8 @@ export function TemplateSelector({ onTemplateSelect, onClose }: TemplateSelector
   const [templates, setTemplates] = useState<Template[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-
-  useEffect(() => {
-    loadTemplates()
-  }, [])
+  const [purchaseModalOpen, setPurchaseModalOpen] = useState(false)
+  const [purchaseTemplate, setPurchaseTemplate] = useState<TemplateDoc | null>(null)
 
   const loadTemplates = async () => {
     setIsLoading(true)
@@ -35,10 +34,27 @@ export function TemplateSelector({ onTemplateSelect, onClose }: TemplateSelector
     }
   }
 
+  useEffect(() => {
+    if (isDialogOpen) loadTemplates()
+  }, [isDialogOpen])
+
   const handleTemplateSelect = (template: Template) => {
+    if (template.price !== undefined && template.price > 0 && !template.hasAccess) {
+      templatesApi.getTemplateDoc(template.id).then((res) => {
+        if (res.success && res.template) {
+          setPurchaseTemplate(res.template)
+          setPurchaseModalOpen(true)
+        }
+      }).catch(console.error)
+      return
+    }
     onTemplateSelect(template)
     setIsDialogOpen(false)
     onClose()
+  }
+
+  const handlePurchaseSuccess = () => {
+    loadTemplates()
   }
 
   const getTemplateIcon = (category: string) => {
@@ -100,42 +116,79 @@ export function TemplateSelector({ onTemplateSelect, onClose }: TemplateSelector
           {isLoading ? (
             <div className="text-center text-gray-400">Loading templates...</div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {templates.map((template) => (
-                <Card
-                  key={template.id}
-                  className="bg-gray-700 border-gray-600 hover:border-gray-500 cursor-pointer transition-colors"
-                  onClick={() => handleTemplateSelect(template)}
-                >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        {getTemplateIcon(template.category)}
-                        <CardTitle className="text-sm text-gray-200">{template.name}</CardTitle>
-                      </div>
-                      <Badge className={getCategoryColor(template.category)}>
-                        {template.category}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <CardDescription className="text-gray-400 text-sm mb-3">
-                      {template.description}
-                    </CardDescription>
-                    <div className="flex flex-wrap gap-1">
-                      {template.files.map((file) => (
-                        <Badge key={file} variant="secondary" className="text-xs bg-gray-600 text-gray-300">
-                          {file}
-                        </Badge>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {templates.map((template) => {
+                  const locked = template.price !== undefined && template.price > 0 && !template.hasAccess
+                  return (
+                    <Card
+                      key={template.id}
+                      className={`bg-gray-700 border-gray-600 transition-colors ${locked ? 'opacity-90' : 'hover:border-gray-500 cursor-pointer'}`}
+                      onClick={() => !locked && handleTemplateSelect(template)}
+                    >
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            {getTemplateIcon(template.category)}
+                            <CardTitle className="text-sm text-gray-200">{template.name}</CardTitle>
+                            {locked && <Lock className="w-4 h-4 text-amber-500" />}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {template.price !== undefined && template.price > 0 && (
+                              <Badge variant="secondary" className="text-xs bg-gray-600 text-gray-300">
+                                {template.price} XLM
+                              </Badge>
+                            )}
+                            <Badge className={getCategoryColor(template.category)}>
+                              {template.category}
+                            </Badge>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <CardDescription className="text-gray-400 text-sm mb-3">
+                          {template.description}
+                        </CardDescription>
+                        <div className="flex flex-wrap gap-1">
+                          {template.files.map((file) => (
+                            <Badge key={file} variant="secondary" className="text-xs bg-gray-600 text-gray-300">
+                              {file}
+                            </Badge>
+                          ))}
+                        </div>
+                        {locked && (
+                          <Button
+                            size="sm"
+                            className="mt-3 w-full"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleTemplateSelect(template)
+                            }}
+                          >
+                            Purchase to use
+                          </Button>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+              </div>
+              <div className="pt-2 border-t border-gray-600">
+                <Link href="/marketplace" target="_blank" className="text-xs text-gray-400 hover:text-gray-300 inline-flex items-center gap-1">
+                  <ExternalLink className="w-3 h-3" />
+                  Browse template docs & marketplace
+                </Link>
+              </div>
+            </>
           )}
         </div>
       </DialogContent>
+      <TemplatePurchaseModal
+        open={purchaseModalOpen}
+        onOpenChange={setPurchaseModalOpen}
+        template={purchaseTemplate}
+        onSuccess={handlePurchaseSuccess}
+      />
     </Dialog>
   )
 } 

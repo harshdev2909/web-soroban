@@ -22,7 +22,8 @@ import {
   Menu,
   X,
   Mail,
-  Wrench
+  Wrench,
+  FileCode
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { WalletData } from './wallet-data';
@@ -98,6 +99,19 @@ export function Navbar({ walletAddress, onConnectWallet, projectSelector, onInvi
           <div className="w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse shadow-sm shadow-green-400"></div>
           <span className="text-sm text-green-300 font-semibold">Testnet</span>
         </div>
+
+        {/* Templates */}
+        <Link href="/marketplace">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-slate-300 hover:text-white hover:bg-slate-700/70 border border-slate-600/30 rounded-lg px-2 md:px-3"
+            title="Template Library"
+          >
+            <FileCode className="h-4 w-4 md:mr-1.5" />
+            <span className="hidden md:inline text-sm font-medium">Templates</span>
+          </Button>
+        </Link>
 
         {/* Developer Tools */}
         <Link href="/dashboard/api-keys">
@@ -281,6 +295,12 @@ export function Navbar({ walletAddress, onConnectWallet, projectSelector, onInvi
 
             {/* Mobile Menu Items */}
             <div className="space-y-2">
+              <Link href="/marketplace" onClick={() => setIsMenuOpen(false)}>
+                <Button variant="ghost" className="w-full justify-start text-slate-200 hover:bg-slate-700">
+                  <FileCode className="w-4 h-4 mr-2" />
+                  Templates
+                </Button>
+              </Link>
               <Button variant="ghost" className="w-full justify-start text-slate-200 hover:bg-slate-700">
                 <HelpCircle className="w-4 h-4 mr-2" />
                 Documentation

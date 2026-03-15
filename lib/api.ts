@@ -92,6 +92,46 @@ export interface Template {
   description: string;
   category: string;
   files: string[];
+  price?: number;
+  hasAccess?: boolean;
+}
+
+export interface TemplateDoc {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  files: string[];
+  price: number;
+  documentation: {
+    summary: string;
+    usage: string;
+    functions: Array<{ name: string; params: string[]; returns: string; description: string }>;
+    readMore: string;
+  };
+}
+
+export interface TemplatePurchaseResponse {
+  success: boolean;
+  purchaseId?: string;
+  template?: { id: string; name: string; price: number; currency: string };
+  payment?: {
+    address: string;
+    amount: number;
+    currency: string;
+    memo: string;
+    network: string;
+  };
+  message?: string;
+  error?: string;
+}
+
+export interface TemplateVerifyResponse {
+  success: boolean;
+  message?: string;
+  templateId?: string;
+  purchasedTemplates?: string[];
+  error?: string;
 }
 
 // Project APIs
@@ -267,10 +307,72 @@ export const compileApi = {
 // Templates API
 export const templatesApi = {
   async getTemplates(): Promise<Template[]> {
-    const response = await fetch(`${API_BASE_URL}/templates`);
+    const token = authApi.getToken();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const response = await fetch(`${API_BASE_URL}/templates`, { headers });
     if (!response.ok) {
       throw new Error('Failed to fetch templates');
     }
+    return response.json();
+  },
+
+  /** Public: list all marketplace templates with docs (no auth) */
+  async getMarketplace(): Promise<{ success: boolean; templates: TemplateDoc[] }> {
+    const response = await fetch(`${API_BASE_URL}/templates/marketplace`);
+    if (!response.ok) throw new Error('Failed to fetch marketplace');
+    return response.json();
+  },
+
+  /** Public: single template doc by id */
+  async getTemplateDoc(id: string): Promise<{ success: boolean; template: TemplateDoc }> {
+    const response = await fetch(`${API_BASE_URL}/templates/marketplace/${id}`);
+    if (!response.ok) throw new Error('Template not found');
+    return response.json();
+  },
+
+  /** Create template purchase intent (same payment gateway as plans) */
+  async createPurchase(templateId: string): Promise<TemplatePurchaseResponse> {
+    const token = authApi.getToken();
+    const response = await fetch(`${API_BASE_URL}/templates/purchase`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ templateId }),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      const err = new Error(data.error || data.message || 'Failed to create purchase') as Error & { status?: number };
+      err.status = response.status;
+      throw err;
+    }
+    return data;
+  },
+
+  /** Verify template payment after sending XLM */
+  async verifyTemplatePayment(txHash: string, purchaseId: string): Promise<TemplateVerifyResponse> {
+    const token = authApi.getToken();
+    const response = await fetch(`${API_BASE_URL}/payments/verify-template`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ txHash, purchaseId }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Verification failed');
+    return data;
+  },
+
+  async getMyPurchases(): Promise<{ success: boolean; templateIds: string[] }> {
+    const token = authApi.getToken();
+    const response = await fetch(`${API_BASE_URL}/templates/my-purchases`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    if (!response.ok) throw new Error('Failed to fetch purchases');
     return response.json();
   },
 };
@@ -458,6 +560,7 @@ export interface User {
       lastResetDate: string;
     };
   };
+  purchasedTemplates?: string[];
 }
 
 export interface AuthResponse {
