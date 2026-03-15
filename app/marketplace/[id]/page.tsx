@@ -82,7 +82,7 @@ export default function TemplateDocPage() {
                   <Button size="sm">Sign in to purchase</Button>
                 </Link>
               )}
-              <Link href="/">
+              <Link href={`/ide?template=${encodeURIComponent(template.id)}`}>
                 <Button size="sm" variant="outline">Open IDE</Button>
               </Link>
             </div>

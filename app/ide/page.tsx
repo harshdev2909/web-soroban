@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { useWalletKit } from '@/contexts/WalletKitContext'
 import { projectApi, compileApi, deployApi, jobsApi, Project, ProjectFile, Template, usageApi, contractApi } from '@/lib/api'
@@ -34,6 +35,8 @@ export default function IDEPage() {
 
   const { user, loading: authLoading, isAuthenticated, refreshUser } = useAuth()
   const { address, connect } = useWalletKit()
+  const searchParams = useSearchParams()
+  const router = useRouter()
 
   // Initialize WebSocket connection on mount
   useEffect(() => {
@@ -80,6 +83,30 @@ export default function IDEPage() {
     
     const loadInitialProject = async () => {
       try {
+        // If opened from marketplace with ?template=id, create a new project from that template
+        const templateId = searchParams.get('template');
+        if (templateId && typeof window !== 'undefined') {
+          try {
+            const projectName = templateId
+              .split('-')
+              .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+              .join(' ');
+            const newProject = await projectApi.createProject(projectName, undefined, templateId);
+            setProject(newProject);
+            setActiveFile(newProject.files?.[0] || null);
+            if (newProject.files?.[0]) {
+              localStorage.setItem('lastProjectId', newProject._id);
+              localStorage.setItem('lastActiveFileName', newProject.files[0].name);
+            }
+            router.replace('/ide', { scroll: false });
+            toast.success(`Opened "${projectName}" from template`);
+            return;
+          } catch (err) {
+            console.warn('Failed to create project from template:', err);
+            toast.error('Could not open template. Opening IDE with existing projects.');
+          }
+        }
+
         const projects = await projectApi.getProjects();
         
         // Try to restore last project from localStorage
