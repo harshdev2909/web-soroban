@@ -540,7 +540,7 @@ export interface User {
   walletAddress?: string;
   name?: string;
   picture?: string;
-  authMethod: 'gmail' | 'wallet' | 'both';
+  authMethod: 'gmail' | 'github' | 'discord' | 'wallet' | 'both';
   subscription: {
     plan: 'free' | 'plan2' | 'plan3';
     status: 'active' | 'cancelled' | 'expired';
@@ -597,6 +597,14 @@ export const authApi = {
   // Google OAuth login
   googleLogin() {
     window.location.href = `${API_BASE_URL.replace('/api', '')}/api/auth/google`;
+  },
+
+  githubLogin() {
+    window.location.href = `${API_BASE_URL.replace('/api', '')}/api/auth/github`;
+  },
+
+  discordLogin() {
+    window.location.href = `${API_BASE_URL.replace('/api', '')}/api/auth/discord`;
   },
 
   // Get wallet challenge
