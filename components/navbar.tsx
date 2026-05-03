@@ -5,25 +5,27 @@ import Link from 'next/link';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { 
-  Wallet, 
-  LogOut, 
-  Code2, 
-  Zap, 
-  Star, 
-  Settings, 
-  HelpCircle, 
-  Github, 
-  ExternalLink, 
-  Globe, 
-  Activity, 
+import {
+  Wallet,
+  LogOut,
+  Code2,
+  Zap,
+  Star,
+  Settings,
+  HelpCircle,
+  Github,
+  ExternalLink,
+  Globe,
+  Activity,
   Bell,
   Search,
   Menu,
   X,
   Mail,
   Wrench,
-  FileCode
+  FileCode,
+  PlayCircle,
+  Sparkles
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { WalletData } from './wallet-data';
@@ -40,41 +42,52 @@ interface NavbarProps {
   user?: User | null;
   onLoginClick?: () => void;
   onSubscriptionClick?: () => void;
+  onHowItWorksClick?: () => void;
 }
 
-export function Navbar({ walletAddress, onConnectWallet, projectSelector, onInviteClick, user, onLoginClick, onSubscriptionClick }: NavbarProps) {
+export function Navbar({ walletAddress, onConnectWallet, projectSelector, onInviteClick, user, onLoginClick, onSubscriptionClick, onHowItWorksClick }: NavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const { logout } = useAuth();
   const { address, disconnect } = useWalletKit();
 
   return (
-    <div className="h-16 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-b-2 border-slate-700/70 flex items-center justify-between px-6 backdrop-blur-md shadow-xl">
+    <div className="relative h-16 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-b border-slate-700/70 flex items-center justify-between px-6 backdrop-blur-md shadow-xl">
+      {/* Subtle brand-color top accent line */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#A3FF12]/40 to-transparent" />
+
       {/* Left Section - Logo and Project Selector */}
-      <div className="flex items-center space-x-8">
+      <div className="flex items-center space-x-6">
         {/* Logo */}
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
-            <Code2 className="w-6 h-6 text-white" />
+        <Link href="/" className="group flex items-center space-x-3">
+          <div className="relative flex items-center justify-center">
+            <div className="absolute inset-0 rounded-xl bg-[#A3FF12]/20 blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <img
+              src="/websoroban_logo.png"
+              alt="WebSoroban"
+              className="relative w-10 h-10 object-contain drop-shadow-[0_0_10px_rgba(163,255,18,0.35)] transition-transform duration-300 group-hover:scale-110"
+            />
           </div>
-          <div className="flex flex-col">
-            <span className="text-xl font-bold bg-gradient-to-r from-blue-400 via-blue-300 to-slate-200 bg-clip-text text-transparent tracking-tight drop-shadow-sm">
-              Web Soroban
+          <div className="flex flex-col leading-tight">
+            <span className="text-lg font-bold bg-gradient-to-r from-[#A3FF12] via-blue-300 to-[#FF4CF0] bg-clip-text text-transparent tracking-tight">
+              WebSoroban
             </span>
-            <div className="flex items-center space-x-1">
-              <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
-              <span className="text-xs text-slate-300 font-semibold">Stellar IDE</span>
+            <div className="flex items-center space-x-1.5">
+              <Star className="w-3 h-3 text-[#F9F871] fill-[#F9F871]" />
+              <span className="text-[10px] uppercase tracking-[0.18em] text-slate-400 font-semibold">
+                Stellar · Soroban IDE
+              </span>
             </div>
           </div>
-        </div>
+        </Link>
 
         {/* Divider */}
-        <div className="w-px h-8 bg-slate-600/70"></div>
+        <div className="w-px h-8 bg-gradient-to-b from-transparent via-slate-600/70 to-transparent"></div>
 
         {/* Project Selector */}
         {projectSelector && (
-          <div className="flex items-center space-x-2 px-2 py-1 bg-slate-800/50 rounded-lg border border-slate-600/50">
-            <Zap className="w-4 h-4 text-yellow-400" />
+          <div className="flex items-center space-x-2 px-2 py-1 bg-slate-800/50 rounded-lg border border-slate-600/50 hover:border-[#A3FF12]/40 transition-colors duration-300">
+            <Zap className="w-4 h-4 text-[#F9F871]" />
             {projectSelector}
           </div>
         )}
@@ -95,17 +108,38 @@ export function Navbar({ walletAddress, onConnectWallet, projectSelector, onInvi
       {/* Right Section - Actions and Wallet */}
       <div className="flex items-center space-x-3">
         {/* Network Status */}
-        <div className="hidden md:flex items-center space-x-2 px-3 py-1.5 bg-green-500/20 rounded-lg border border-green-400/50 shadow-lg shadow-green-500/10">
-          <div className="w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse shadow-sm shadow-green-400"></div>
+        <div className="hidden md:flex items-center space-x-2 px-3 py-1.5 bg-green-500/15 rounded-lg border border-green-400/40 shadow-lg shadow-green-500/10">
+          <div className="relative">
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+            <div className="absolute inset-0 w-2 h-2 bg-green-400 rounded-full animate-ping opacity-75"></div>
+          </div>
           <span className="text-sm text-green-300 font-semibold">Testnet</span>
         </div>
+
+        {/* How It Works */}
+        {onHowItWorksClick && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onHowItWorksClick}
+            className="group relative text-slate-300 hover:text-[#A3FF12] hover:bg-[#A3FF12]/10 border border-[#A3FF12]/30 hover:border-[#A3FF12]/60 rounded-lg px-2 md:px-3 transition-all duration-300"
+            title="Watch how WebSoroban works"
+          >
+            <PlayCircle className="h-4 w-4 md:mr-1.5 group-hover:scale-110 transition-transform duration-300" />
+            <span className="hidden md:inline text-sm font-medium">How it works</span>
+            <span className="absolute -top-1 -right-1 hidden md:flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#A3FF12] opacity-60"></span>
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#A3FF12]"></span>
+            </span>
+          </Button>
+        )}
 
         {/* Templates */}
         <Link href="/marketplace">
           <Button
             variant="ghost"
             size="sm"
-            className="text-slate-300 hover:text-white hover:bg-slate-700/70 border border-slate-600/30 rounded-lg px-2 md:px-3"
+            className="text-slate-300 hover:text-white hover:bg-slate-700/70 border border-slate-600/30 hover:border-[#FF4CF0]/40 rounded-lg px-2 md:px-3 transition-all duration-300"
             title="Template Library"
           >
             <FileCode className="h-4 w-4 md:mr-1.5" />
@@ -295,6 +329,19 @@ export function Navbar({ walletAddress, onConnectWallet, projectSelector, onInvi
 
             {/* Mobile Menu Items */}
             <div className="space-y-2">
+              {onHowItWorksClick && (
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    onHowItWorksClick();
+                  }}
+                  className="w-full justify-start text-[#A3FF12] hover:bg-[#A3FF12]/10 border border-[#A3FF12]/30"
+                >
+                  <PlayCircle className="w-4 h-4 mr-2" />
+                  How it works
+                </Button>
+              )}
               <Link href="/marketplace" onClick={() => setIsMenuOpen(false)}>
                 <Button variant="ghost" className="w-full justify-start text-slate-200 hover:bg-slate-700">
                   <FileCode className="w-4 h-4 mr-2" />

@@ -16,16 +16,22 @@ import { BottomPanel, LogEntry } from '@/components/bottom-panel'
 import { Navbar } from '@/components/navbar'
 import { LoginModal } from '@/components/login-modal'
 import { SubscriptionModal } from '@/components/subscription-modal'
+import { HowItWorksModal } from '@/components/how-it-works-modal'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2, AlertCircle, Zap } from 'lucide-react'
 
 function IDEPageFallback() {
   return (
-    <div className="h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      <div className="text-center">
-        <Loader2 className="w-12 h-12 animate-spin text-blue-400 mx-auto mb-4" />
-        <p className="text-slate-400">Loading IDE...</p>
+    <div className="relative h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 overflow-hidden">
+      <div className="pointer-events-none absolute -top-32 -left-32 h-96 w-96 rounded-full bg-[#A3FF12]/5 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-[#FF4CF0]/5 blur-3xl" />
+      <div className="relative text-center">
+        <div className="relative inline-flex items-center justify-center mb-4">
+          <div className="absolute inset-0 rounded-full bg-[#A3FF12]/20 blur-xl animate-pulse" />
+          <Loader2 className="relative w-10 h-10 animate-spin text-[#A3FF12]" />
+        </div>
+        <p className="text-slate-400 font-mono text-sm tracking-wider">Loading IDE…</p>
       </div>
     </div>
   )
@@ -41,6 +47,7 @@ function IDEPageContent() {
   const [isBottomPanelOpen, setIsBottomPanelOpen] = useState(false)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false)
+  const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(false)
   const [usage, setUsage] = useState<any>(null)
   const currentJobIdRef = useRef<string | null>(null)
 
@@ -74,6 +81,18 @@ function IDEPageContent() {
       }
     }
   }, [authLoading, isAuthenticated])
+
+  // Auto-open the "How It Works" modal once per browser, after auth
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (!isAuthenticated) return
+    const seen = window.localStorage.getItem('howItWorksSeen')
+    if (!seen) {
+      const t = window.setTimeout(() => setIsHowItWorksOpen(true), 600)
+      window.localStorage.setItem('howItWorksSeen', '1')
+      return () => window.clearTimeout(t)
+    }
+  }, [isAuthenticated])
 
   const loadUsage = async () => {
     try {
@@ -450,7 +469,7 @@ mod tests {
               if (status === 'completed') {
                 setLogs(prev => [...prev, {
                   type: "success",
-                  message: "✅ Compilation successful! WASM file generated.",
+                  message: "Compilation successful! WASM file generated.",
                   timestamp: new Date().toISOString()
                 }]);
                 
@@ -467,7 +486,7 @@ mod tests {
               } else {
                 setLogs(prev => [...prev, {
                   type: "error",
-                  message: `❌ Compilation failed: ${result.error || 'Unknown error'}`,
+                  message: `Compilation failed: ${result.error || 'Unknown error'}`,
                   timestamp: new Date().toISOString()
                 }]);
                 toast.error("Compilation failed");
@@ -506,7 +525,7 @@ mod tests {
           if (!logs.some(log => log.message.includes('Compilation successful'))) {
             setLogs(prev => [...prev, {
               type: "success",
-              message: "✅ Compilation successful! WASM file generated.",
+              message: "Compilation successful! WASM file generated.",
               timestamp: new Date().toISOString()
             }]);
             
@@ -525,7 +544,7 @@ mod tests {
           if (!logs.some(log => log.message.includes('Compilation failed'))) {
             setLogs(prev => [...prev, {
               type: "error",
-              message: `❌ Compilation failed: ${finalResult.error || 'Unknown error'}`,
+              message: `Compilation failed: ${finalResult.error || 'Unknown error'}`,
               timestamp: new Date().toISOString()
             }]);
             toast.error("Compilation failed");
@@ -536,7 +555,7 @@ mod tests {
         if (result.success) {
           setLogs(prev => [...prev, {
             type: "success",
-            message: "✅ Compilation successful! WASM file generated.",
+            message: "Compilation successful! WASM file generated.",
             timestamp: new Date().toISOString()
           }]);
           
@@ -553,7 +572,7 @@ mod tests {
         } else {
           setLogs(prev => [...prev, {
             type: "error",
-            message: "❌ Compilation failed",
+            message: "Compilation failed",
             timestamp: new Date().toISOString()
           }]);
           toast.error("Compilation failed");
@@ -563,7 +582,7 @@ mod tests {
       console.error("Compilation error:", error);
       setLogs(prev => [...prev, {
         type: "error",
-        message: `❌ Compilation failed: ${(error as Error).message}`,
+        message: `Compilation failed: ${(error as Error).message}`,
         timestamp: new Date().toISOString()
       }]);
       toast.error("Compilation failed");
@@ -593,7 +612,7 @@ mod tests {
       // Step 1: Compile the project to get WASM
       setLogs([{
         type: "info",
-        message: "🚀 Starting deployment process...",
+        message: "Starting deployment process...",
         timestamp: new Date().toISOString()
       }]);
       
@@ -639,7 +658,7 @@ mod tests {
         const errorMessage = finalCompileResult.error || "Compilation failed";
         setLogs(prev => [...prev, {
           type: "error",
-          message: `❌ Compilation failed: ${errorMessage}`,
+          message: `Compilation failed: ${errorMessage}`,
           timestamp: new Date().toISOString()
         }]);
         toast.error("Compilation failed, cannot deploy");
@@ -649,14 +668,14 @@ mod tests {
 
       setLogs(prev => [...prev, {
         type: "success",
-        message: "✅ Compilation successful! WASM generated.",
+        message: "Compilation successful! WASM generated.",
         timestamp: new Date().toISOString()
       }]);
 
       // Step 2: Deploy directly using the simplified service
       setLogs(prev => [...prev, {
         type: "info",
-        message: "🌐 Deploying to Stellar testnet...",
+        message: "Deploying to Stellar testnet...",
         timestamp: new Date().toISOString()
       }]);
       
@@ -710,7 +729,7 @@ mod tests {
                 if (result.network) {
                   setLogs(prev => [...prev, {
                     type: "info",
-                    message: `🌐 Network: ${result.network}`,
+                    message: `Network: ${result.network}`,
                     timestamp: new Date().toISOString()
                   }]);
                 }
@@ -753,7 +772,7 @@ mod tests {
                 const errorMessage = result.error || 'Deployment failed';
                 setLogs(prev => [...prev, {
                   type: "error",
-                  message: `❌ Deployment failed: ${errorMessage}`,
+                  message: `Deployment failed: ${errorMessage}`,
                   timestamp: new Date().toISOString()
                 }]);
                 toast.error(`Deployment failed: ${errorMessage}`);
@@ -818,7 +837,7 @@ mod tests {
             const errorMessage = finalDeployResult.error || "Deployment failed";
             setLogs(prev => [...prev, {
               type: "error",
-              message: `❌ Deployment failed: ${errorMessage}`,
+              message: `Deployment failed: ${errorMessage}`,
               timestamp: new Date().toISOString()
             }]);
             toast.error(`Deployment failed: ${errorMessage}`);
@@ -1209,15 +1228,32 @@ impl From<Error> for soroban_sdk::Error {
   // Show login modal if not authenticated
   if (!authLoading && !isAuthenticated) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900/20 to-slate-900">
-        <div className="text-center">
+      <div className="relative h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 overflow-hidden">
+        <div className="pointer-events-none absolute -top-32 -left-32 h-96 w-96 rounded-full bg-[#A3FF12]/5 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-[#FF4CF0]/5 blur-3xl" />
+        <div className="relative text-center max-w-md px-6">
           <LoginModal
             open={isLoginModalOpen}
             onOpenChange={setIsLoginModalOpen}
           />
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-white mb-4">Authentication Required</h1>
-            <p className="text-gray-400">Please sign in to access the IDE</p>
+          <img
+            src="/websoroban_logo.png"
+            alt="WebSoroban"
+            className="mx-auto w-16 h-16 mb-6 drop-shadow-[0_0_20px_rgba(163,255,18,0.4)]"
+          />
+          <h1 className="text-3xl font-bold text-white mb-3 tracking-tight">
+            Sign in to{' '}
+            <span className="bg-gradient-to-r from-[#A3FF12] via-[#FF4CF0] to-[#F9F871] bg-clip-text text-transparent">
+              WebSoroban
+            </span>
+          </h1>
+          <p className="text-slate-400 text-sm">
+            Authentication required to access the IDE.
+          </p>
+          <div className="mt-6 flex items-center justify-center gap-2 text-[10px] uppercase tracking-[0.25em] font-mono text-slate-500">
+            <span className="h-1 w-1 rounded-full bg-[#A3FF12] animate-pulse" />
+            Secure · End-to-end
+            <span className="h-1 w-1 rounded-full bg-[#A3FF12] animate-pulse" />
           </div>
         </div>
       </div>
@@ -1226,10 +1262,14 @@ impl From<Error> for soroban_sdk::Error {
 
   if (isLoading) {
     return (
-      <div className="h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
-          <p className="mt-4 text-gray-600">Loading IDE...</p>
+      <div className="relative h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 overflow-hidden">
+        <div className="pointer-events-none absolute -top-32 -left-32 h-96 w-96 rounded-full bg-[#A3FF12]/5 blur-3xl" />
+        <div className="relative text-center">
+          <div className="relative inline-flex items-center justify-center mb-4">
+            <div className="absolute inset-0 rounded-full bg-[#A3FF12]/20 blur-xl animate-pulse" />
+            <Loader2 className="relative w-10 h-10 animate-spin text-[#A3FF12]" />
+          </div>
+          <p className="text-slate-400 font-mono text-sm tracking-wider">Loading IDE…</p>
         </div>
       </div>
     );
@@ -1246,13 +1286,19 @@ impl From<Error> for soroban_sdk::Error {
   }
 
   return (
-    <div className="h-screen flex flex-col">
-      <Navbar 
+    <div className="relative h-screen flex flex-col bg-slate-950 overflow-hidden">
+      {/* Ambient brand backdrop */}
+      <div className="pointer-events-none fixed inset-0 -z-10">
+        <div className="absolute -top-40 -left-40 h-[28rem] w-[28rem] rounded-full bg-[#A3FF12]/[0.03] blur-3xl" />
+        <div className="absolute -bottom-40 -right-40 h-[28rem] w-[28rem] rounded-full bg-[#FF4CF0]/[0.03] blur-3xl" />
+      </div>
+      <Navbar
         walletAddress={address || null}
         onConnectWallet={connect}
         user={user}
         onLoginClick={() => setIsLoginModalOpen(true)}
         onSubscriptionClick={() => setIsSubscriptionModalOpen(true)}
+        onHowItWorksClick={() => setIsHowItWorksOpen(true)}
         projectSelector={
           <ProjectSelector
             currentProject={project}
@@ -1265,14 +1311,29 @@ impl From<Error> for soroban_sdk::Error {
       
       {/* Usage Limit Warnings */}
       {usage && (
-        <div className="px-4 py-2 bg-gray-900 border-b border-gray-800">
+        <div className="px-4 py-2 bg-slate-900/80 border-b border-slate-800/80 backdrop-blur-sm">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4 text-sm">
-              <span className="text-gray-400">
-                Deployments: {usage.deployments.count}/{usage.deployments.limit === -1 ? '∞' : usage.deployments.limit}
+            <div className="flex items-center gap-4 text-xs font-mono">
+              <span className="flex items-center gap-2 text-slate-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#A3FF12] shadow-[0_0_6px_#A3FF12]" />
+                Deploys
+                <span className="text-slate-200">
+                  {usage.deployments.count}
+                  <span className="text-slate-500">
+                    /{usage.deployments.limit === -1 ? '∞' : usage.deployments.limit}
+                  </span>
+                </span>
               </span>
-              <span className="text-gray-400">
-                Function Tests: {usage.functionTests.count}/{usage.functionTests.limit === -1 ? '∞' : usage.functionTests.limit}
+              <span className="h-3 w-px bg-slate-700" />
+              <span className="flex items-center gap-2 text-slate-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#FF4CF0] shadow-[0_0_6px_#FF4CF0]" />
+                Tests
+                <span className="text-slate-200">
+                  {usage.functionTests.count}
+                  <span className="text-slate-500">
+                    /{usage.functionTests.limit === -1 ? '∞' : usage.functionTests.limit}
+                  </span>
+                </span>
               </span>
             </div>
             {(typeof usage.deployments.remaining === 'number' && usage.deployments.remaining <= 2) ||
@@ -1281,7 +1342,7 @@ impl From<Error> for soroban_sdk::Error {
                 size="sm"
                 variant="outline"
                 onClick={() => setIsSubscriptionModalOpen(true)}
-                className="text-xs"
+                className="text-xs border-[#F9F871]/40 text-[#F9F871] hover:bg-[#F9F871]/10 hover:border-[#F9F871]/70"
               >
                 <Zap className="w-3 h-3 mr-1" />
                 Upgrade Plan
@@ -1305,6 +1366,10 @@ impl From<Error> for soroban_sdk::Error {
             refreshUser()
           }
         }}
+      />
+      <HowItWorksModal
+        open={isHowItWorksOpen}
+        onOpenChange={setIsHowItWorksOpen}
       />
       
       <div className="flex-1 flex">

@@ -55,85 +55,85 @@ export function RightPanel({ project, onClose }: RightPanelProps) {
     const analysis = analyzeContract(contractContent);
     
     const testSteps = [
-      '🔍 Analyzing contract structure...',
-      '📋 Detecting contract functions...',
-      '✅ Syntax validation passed',
-      '🔒 Security checks completed',
+      'Analyzing contract structure',
+      'Detecting contract functions',
+      'Syntax validation passed',
+      'Security checks completed',
     ];
 
     // Add dynamic test results based on actual contract analysis
     if (analysis.hasContractMacro) {
-      testSteps.push('✅ #[contract] macro detected');
+      testSteps.push('#[contract] macro detected');
     }
     if (analysis.hasContractImpl) {
-      testSteps.push('✅ #[contractimpl] macro detected');
+      testSteps.push('#[contractimpl] macro detected');
     }
     if (analysis.hasNoStd) {
-      testSteps.push('✅ #![no_std] directive found');
+      testSteps.push('#![no_std] directive found');
     }
     if (analysis.hasSorobanSdk) {
-      testSteps.push('✅ Soroban SDK imports detected');
+      testSteps.push('Soroban SDK imports detected');
     }
 
     // Function-specific tests
     if (analysis.functions.init) {
-      testSteps.push('✅ Init function detected and validated');
+      testSteps.push('Init function detected and validated');
     }
     if (analysis.functions.transfer) {
-      testSteps.push('✅ Transfer function detected and validated');
+      testSteps.push('Transfer function detected and validated');
     }
     if (analysis.functions.getBalance) {
-      testSteps.push('✅ Get balance function detected');
+      testSteps.push('Get balance function detected');
     }
     if (analysis.functions.hello) {
-      testSteps.push('✅ Hello function detected');
+      testSteps.push('Hello function detected');
     }
 
     // Security and best practices
     if (analysis.hasRequireAuth) {
-      testSteps.push('✅ Authentication checks validated');
+      testSteps.push('Authentication checks validated');
     }
     if (analysis.hasBalanceChecks) {
-      testSteps.push('✅ Balance validation detected');
+      testSteps.push('Balance validation detected');
     }
     if (analysis.hasErrorHandling) {
-      testSteps.push('✅ Error handling implemented');
+      testSteps.push('Error handling implemented');
     }
     if (analysis.hasStorageUsage) {
-      testSteps.push('✅ Storage operations detected');
+      testSteps.push('Storage operations detected');
     }
     if (analysis.hasSymbolUsage) {
-      testSteps.push('✅ Symbol type usage detected');
+      testSteps.push('Symbol type usage detected');
     }
     if (analysis.hasAddressUsage) {
-      testSteps.push('✅ Address type usage detected');
+      testSteps.push('Address type usage detected');
     }
     if (analysis.hasEnvUsage) {
-      testSteps.push('✅ Environment usage detected');
+      testSteps.push('Environment usage detected');
     }
 
     // Pattern-specific tests
     if (analysis.patterns.payment) {
-      testSteps.push('💰 Payment contract pattern detected');
+      testSteps.push('Payment contract pattern detected');
     }
     if (analysis.patterns.token) {
-      testSteps.push('🪙 Token contract pattern detected');
+      testSteps.push('Token contract pattern detected');
     }
     if (analysis.patterns.voting) {
-      testSteps.push('🗳️ Voting contract pattern detected');
+      testSteps.push('Voting contract pattern detected');
     }
     if (analysis.patterns.auction) {
-      testSteps.push('🏷️ Auction contract pattern detected');
+      testSteps.push('Auction contract pattern detected');
     }
 
     // Performance and gas estimation
     const estimatedGas = calculateGasEstimate(analysis);
-    testSteps.push(`📊 Gas estimation: ~${estimatedGas.toLocaleString()} units`);
+    testSteps.push(`Gas estimation ~ ${estimatedGas.toLocaleString()} units`);
 
     // Add final results
-    testSteps.push('📈 Performance analysis completed');
-    testSteps.push('🔍 Vulnerability scan passed');
-    testSteps.push('🎯 Contract ready for deployment');
+    testSteps.push('Performance analysis completed');
+    testSteps.push('Vulnerability scan passed');
+    testSteps.push('Contract ready for deployment');
 
     // Simulate real-time testing with variable delays
     for (let i = 0; i < testSteps.length; i++) {
@@ -431,65 +431,91 @@ export function RightPanel({ project, onClose }: RightPanelProps) {
   };
 
   return (
-    <div className="h-full bg-gradient-to-b from-slate-900 to-slate-800 border-l border-slate-700 flex flex-col">
+    <div className="relative h-full bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 border-l border-slate-800/80 flex flex-col overflow-hidden">
+      {/* Ambient brand glow */}
+      <div className="pointer-events-none absolute -top-24 -right-12 h-56 w-56 rounded-full bg-[#FF4CF0]/[0.05] blur-3xl" />
+      <div className="pointer-events-none absolute bottom-1/3 -left-12 h-48 w-48 rounded-full bg-[#A3FF12]/[0.04] blur-3xl" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#FF4CF0]/30 to-transparent" />
+
       {/* Header */}
-      <div className="p-6 border-b border-slate-700 bg-slate-800/50">
+      <div className="relative z-10 p-5 border-b border-slate-800/80 bg-slate-900/40 backdrop-blur-sm">
         <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-heading text-slate-100">Project Info</h2>
-            <p className="text-sm text-slate-400 mt-1">Smart Contract Dashboard</p>
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="relative flex-shrink-0">
+              <div className="absolute inset-0 rounded-md bg-[#FF4CF0]/20 blur-md" />
+              <div className="relative flex items-center justify-center w-8 h-8 rounded-md bg-gradient-to-br from-[#FF4CF0]/20 to-[#A3FF12]/20 border border-[#FF4CF0]/30">
+                <Activity className="w-4 h-4 text-[#FF4CF0]" />
+              </div>
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-base font-bold text-slate-100">Dashboard</h2>
+              <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500 font-mono mt-0.5">
+                Contract Control
+              </p>
+            </div>
           </div>
           <Button
             onClick={onClose}
             variant="ghost"
             size="sm"
-            className="text-slate-400 hover:text-slate-200 hover:bg-slate-700"
+            className="p-1 h-auto text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+            title="Close panel"
           >
-            ×
+            <span className="sr-only">Close</span>
+            <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
           </Button>
         </div>
       </div>
 
       {/* Content */}
-      <div className="flex-1 p-6 space-y-6 overflow-y-auto">
+      <div className="relative z-10 flex-1 p-4 space-y-4 overflow-y-auto">
         {/* Quick Actions */}
-        <Card className="bg-slate-800/50 border-slate-700 shadow-lg">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg font-heading text-slate-100 flex items-center">
-              <Zap className="w-5 h-5 mr-2 text-blue-400" />
+        <Card className="bg-slate-900/60 border-slate-800/80 shadow-lg backdrop-blur-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-xs uppercase tracking-[0.2em] text-slate-400 font-mono flex items-center gap-2">
+              <Zap className="w-3.5 h-3.5 text-[#F9F871]" />
               Quick Actions
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-2">
             <Button
               onClick={handleTestContract}
               disabled={isTestRunning}
-              className="w-full bg-gradient-to-r from-blue-600 to-slate-700 hover:from-blue-700 hover:to-slate-800 text-white"
+              className="group w-full h-9 bg-gradient-to-r from-[#FF4CF0]/90 to-[#FF4CF0] hover:from-[#FF4CF0] hover:to-[#FF4CF0]/80 text-white font-semibold shadow-[0_0_16px_rgba(255,76,240,0.2)] hover:shadow-[0_0_24px_rgba(255,76,240,0.45)] transition-all duration-300 disabled:opacity-50 disabled:shadow-none"
             >
-              <TestTube className="w-4 h-4 mr-2" />
-              {isTestRunning ? 'Running Tests...' : 'Test Contract'}
+              {isTestRunning ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <TestTube className="w-4 h-4 mr-2 group-hover:rotate-12 transition-transform" />
+              )}
+              <span className="text-sm">{isTestRunning ? 'Analyzing…' : 'Test Contract'}</span>
             </Button>
-            
+
             <Button
               onClick={handleRunTestCases}
               disabled={isRunningTests}
-              className="w-full bg-gradient-to-r from-green-600 to-slate-700 hover:from-green-700 hover:to-slate-800 text-white"
+              className="group w-full h-9 bg-gradient-to-r from-[#A3FF12] to-[#8FE600] hover:from-[#8FE600] hover:to-[#7BD300] text-black font-semibold shadow-[0_0_16px_rgba(163,255,18,0.2)] hover:shadow-[0_0_24px_rgba(163,255,18,0.45)] transition-all duration-300 disabled:opacity-50 disabled:shadow-none"
             >
-              <Play className="w-4 h-4 mr-2" />
-              {isRunningTests ? 'Running Test Cases...' : 'Run Test Cases'}
+              {isRunningTests ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Play className="w-4 h-4 mr-2 fill-current group-hover:scale-110 transition-transform" />
+              )}
+              <span className="text-sm">{isRunningTests ? 'Running…' : 'Run Test Cases'}</span>
             </Button>
-            
+
             <Button
               variant="outline"
-              className="w-full border-slate-600 text-slate-300 hover:bg-slate-700"
+              className="w-full h-8 border-slate-800 bg-slate-900/40 text-slate-400 hover:bg-slate-800 hover:text-slate-200 hover:border-slate-700 transition-colors text-xs"
               onClick={() => {
                 setTestResults([]);
                 setTestCaseResults([]);
               }}
               disabled={testResults.length === 0 && testCaseResults.length === 0}
             >
-              <Play className="w-4 h-4 mr-2" />
-              Clear All Results
+              Clear results
             </Button>
           </CardContent>
         </Card>
@@ -738,27 +764,31 @@ export function RightPanel({ project, onClose }: RightPanelProps) {
         )}
 
         {/* Metadata */}
-        <Card className="bg-slate-800/50 border-slate-700 shadow-lg">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg font-heading text-slate-100 flex items-center">
-              <FileText className="w-5 h-5 mr-2 text-blue-400" />
-              Project Metadata
+        <Card className="bg-slate-900/60 border-slate-800/80 shadow-lg backdrop-blur-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-xs uppercase tracking-[0.2em] text-slate-400 font-mono flex items-center gap-2">
+              <FileText className="w-3.5 h-3.5 text-[#A3FF12]" />
+              Metadata
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center space-x-3 text-sm">
-              <Calendar className="w-4 h-4 text-slate-400" />
-              <div>
-                <div className="text-slate-400">Created</div>
-                <div className="text-slate-200 font-medium">{formatDate(project.createdAt)}</div>
+          <CardContent className="space-y-3">
+            <div className="flex items-center gap-3 text-sm">
+              <div className="flex items-center justify-center w-7 h-7 rounded-md bg-slate-800/80 border border-slate-700/50 flex-shrink-0">
+                <Calendar className="w-3.5 h-3.5 text-slate-400" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[10px] uppercase tracking-wider text-slate-500 font-mono">Created</div>
+                <div className="text-slate-200 text-xs font-medium truncate">{formatDate(project.createdAt)}</div>
               </div>
             </div>
 
-            <div className="flex items-center space-x-3 text-sm">
-              <Clock className="w-4 h-4 text-slate-400" />
-              <div>
-                <div className="text-slate-400">Last Deployed</div>
-                <div className="text-slate-200 font-medium">
+            <div className="flex items-center gap-3 text-sm">
+              <div className="flex items-center justify-center w-7 h-7 rounded-md bg-slate-800/80 border border-slate-700/50 flex-shrink-0">
+                <Clock className="w-3.5 h-3.5 text-slate-400" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[10px] uppercase tracking-wider text-slate-500 font-mono">Last Deployed</div>
+                <div className="text-slate-200 text-xs font-medium truncate">
                   {project.lastDeployed ? formatDate(project.lastDeployed) : "Never"}
                 </div>
               </div>
@@ -766,13 +796,19 @@ export function RightPanel({ project, onClose }: RightPanelProps) {
 
             {project.contractAddress && (
               <>
-                <div className="flex items-center space-x-3 text-sm">
-                  <MapPin className="w-4 h-4 text-slate-400" />
-                  <div>
-                    <div className="text-slate-400">Contract Address</div>
-                    <div 
-                      className="text-slate-200 text-xs break-all cursor-pointer hover:text-blue-300 transition-colors font-mono"
+                <div className="flex items-start gap-3 text-sm">
+                  <div className="flex items-center justify-center w-7 h-7 rounded-md bg-[#A3FF12]/10 border border-[#A3FF12]/30 flex-shrink-0 mt-0.5">
+                    <MapPin className="w-3.5 h-3.5 text-[#A3FF12]" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] uppercase tracking-wider text-slate-500 font-mono">Contract Address</div>
+                    <div
+                      className="text-slate-200 text-[11px] break-all cursor-pointer hover:text-[#A3FF12] transition-colors font-mono mt-0.5"
                       title={`Full contract address: ${project.contractAddress}`}
+                      onClick={() => {
+                        navigator.clipboard.writeText(project.contractAddress!);
+                        toast.success('Contract address copied');
+                      }}
                     >
                       {project.contractAddress}
                     </div>
@@ -781,12 +817,12 @@ export function RightPanel({ project, onClose }: RightPanelProps) {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="w-full border-slate-600 text-slate-300 hover:bg-slate-700"
+                  className="w-full h-8 border-slate-800 bg-slate-900/40 text-slate-300 hover:bg-slate-800 hover:border-[#A3FF12]/40 hover:text-[#A3FF12] transition-all duration-300 text-xs"
                   onClick={() => {
                     window.open(`https://stellar.expert/explorer/testnet/contract/${project.contractAddress}`, '_blank');
                   }}
                 >
-                  <ExternalLink className="w-4 h-4 mr-2" />
+                  <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
                   View on Stellar Expert
                 </Button>
               </>
@@ -795,76 +831,85 @@ export function RightPanel({ project, onClose }: RightPanelProps) {
         </Card>
 
         {/* Network Status */}
-        <Card className="bg-slate-800/50 border-slate-700 shadow-lg">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg font-heading text-slate-100 flex items-center">
-              <Globe className="w-5 h-5 mr-2 text-green-400" />
-              Network Status
+        <Card className="bg-slate-900/60 border-slate-800/80 shadow-lg backdrop-blur-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-xs uppercase tracking-[0.2em] text-slate-400 font-mono flex items-center gap-2">
+              <Globe className="w-3.5 h-3.5 text-[#A3FF12]" />
+              Network
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3">
             <div className="flex items-center justify-between">
-              <div className="text-sm">
-                <div className="text-slate-400">Current Network</div>
-                <div className="text-slate-200 font-medium">Soroban Testnet</div>
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-slate-500 font-mono">Current Network</div>
+                <div className="text-slate-200 text-sm font-medium mt-0.5">Soroban Testnet</div>
               </div>
-              <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-                <Activity className="w-3 h-3 mr-1" />
-                Connected
+              <Badge className="bg-[#A3FF12]/15 text-[#A3FF12] border border-[#A3FF12]/30 font-mono text-[10px]">
+                <span className="relative flex w-1.5 h-1.5 mr-1.5">
+                  <span className="absolute inset-0 rounded-full bg-[#A3FF12] animate-ping opacity-60" />
+                  <span className="relative rounded-full bg-[#A3FF12] w-1.5 h-1.5" />
+                </span>
+                LIVE
               </Badge>
             </div>
-            
-            <div className="text-sm">
-              <div className="text-slate-400">RPC Endpoint</div>
-              <div className="text-slate-200 text-xs break-all font-mono">https://soroban-testnet.stellar.org</div>
+
+            <div className="rounded-md bg-slate-950/60 border border-slate-800/80 p-2.5">
+              <div className="text-[10px] uppercase tracking-wider text-slate-500 font-mono mb-1">RPC Endpoint</div>
+              <div className="text-slate-300 text-[11px] break-all font-mono">soroban-testnet.stellar.org</div>
             </div>
           </CardContent>
         </Card>
 
         {/* Project Stats */}
-        <Card className="bg-slate-800/50 border-slate-700 shadow-lg">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg font-heading text-slate-100 flex items-center">
-              <Rocket className="w-5 h-5 mr-2 text-purple-400" />
-              Project Stats
+        <Card className="bg-slate-900/60 border-slate-800/80 shadow-lg backdrop-blur-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-xs uppercase tracking-[0.2em] text-slate-400 font-mono flex items-center gap-2">
+              <Rocket className="w-3.5 h-3.5 text-[#FF4CF0]" />
+              Stats
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-3 bg-slate-700/50 rounded-lg">
-                <div className="text-2xl font-bold text-blue-400">{project.files.length}</div>
-                <div className="text-xs text-slate-400">Files</div>
-              </div>
-              <div className="text-center p-3 bg-slate-700/50 rounded-lg">
-                <div className="text-2xl font-bold text-green-400">
-                  {project.deploymentHistory?.length || 0}
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="group relative overflow-hidden rounded-lg border border-slate-800/80 bg-slate-950/60 p-3 hover:border-[#A3FF12]/30 transition-all duration-300">
+                <div className="absolute inset-0 bg-gradient-to-br from-[#A3FF12]/0 to-transparent group-hover:from-[#A3FF12]/[0.06] transition-all" />
+                <div className="relative">
+                  <div className="font-mono text-2xl font-bold text-[#A3FF12] leading-none">{project.files.length}</div>
+                  <div className="mt-1.5 text-[10px] uppercase tracking-wider text-slate-500 font-mono">Files</div>
                 </div>
-                <div className="text-xs text-slate-400">Deployments</div>
+              </div>
+              <div className="group relative overflow-hidden rounded-lg border border-slate-800/80 bg-slate-950/60 p-3 hover:border-[#FF4CF0]/30 transition-all duration-300">
+                <div className="absolute inset-0 bg-gradient-to-br from-[#FF4CF0]/0 to-transparent group-hover:from-[#FF4CF0]/[0.06] transition-all" />
+                <div className="relative">
+                  <div className="font-mono text-2xl font-bold text-[#FF4CF0] leading-none">
+                    {project.deploymentHistory?.length || 0}
+                  </div>
+                  <div className="mt-1.5 text-[10px] uppercase tracking-wider text-slate-500 font-mono">Deploys</div>
+                </div>
               </div>
             </div>
-            
-            <div className="text-sm">
-              <div className="text-slate-400">Last Modified</div>
-              <div className="text-slate-200 font-medium">{formatDate(project.updatedAt)}</div>
+
+            <div className="rounded-md bg-slate-950/60 border border-slate-800/80 p-2.5">
+              <div className="text-[10px] uppercase tracking-wider text-slate-500 font-mono">Last Modified</div>
+              <div className="text-slate-200 text-xs font-medium mt-0.5">{formatDate(project.updatedAt)}</div>
             </div>
           </CardContent>
         </Card>
 
         {/* Deployment History */}
-        <Card className="bg-slate-800/50 border-slate-700 shadow-lg">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg font-heading text-slate-100 flex items-center">
-              <History className="w-5 h-5 mr-2 text-orange-400" />
-              Deployment History
+        <Card className="bg-slate-900/60 border-slate-800/80 shadow-lg backdrop-blur-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-xs uppercase tracking-[0.2em] text-slate-400 font-mono flex items-center gap-2">
+              <History className="w-3.5 h-3.5 text-[#F9F871]" />
+              History
             </CardTitle>
           </CardHeader>
           <CardContent>
             <Button
               variant="outline"
               size="sm"
-              className="w-full border-slate-600 text-slate-300 hover:bg-slate-700"
+              className="w-full h-8 border-slate-800 bg-slate-900/40 text-slate-300 hover:bg-slate-800 hover:border-[#F9F871]/40 hover:text-[#F9F871] transition-all duration-300 text-xs"
             >
-              <History className="w-4 h-4 mr-2" />
+              <History className="w-3.5 h-3.5 mr-1.5" />
               View Full History
             </Button>
           </CardContent>

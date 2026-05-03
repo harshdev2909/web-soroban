@@ -34,9 +34,16 @@ export default function PlaygroundNavbar({ onSignInClick }: PlaygroundNavbarProp
         <div className="flex justify-between items-center">
           <a
             href="/"
-            className="font-bold text-base md:text-lg text-white transition-all duration-300 hover:text-purple-300 hover:scale-105 transform"
+            className="group flex items-center gap-2 font-bold text-base md:text-lg text-white transition-all duration-300 hover:scale-105 transform"
           >
-            WebSoroban
+            <img
+              src="/websoroban_logo.png"
+              alt="WebSoroban"
+              className="w-7 h-7 md:w-8 md:h-8 object-contain drop-shadow-[0_0_8px_rgba(160,32,240,0.4)] transition-transform duration-300 group-hover:rotate-[8deg]"
+            />
+            <span className="bg-gradient-to-r from-white via-purple-200 to-purple-400 bg-clip-text text-transparent group-hover:from-[#A3FF12] group-hover:to-[#FF4CF0] transition-all duration-500">
+              WebSoroban
+            </span>
           </a>
 
           <div className="hidden md:flex items-center space-x-6">

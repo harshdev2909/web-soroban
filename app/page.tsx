@@ -13,6 +13,7 @@ export default function HomePage() {
   const heroRef = useRef<HTMLDivElement>(null)
   const featuresRef = useRef<HTMLDivElement>(null)
   const stepsRef = useRef<HTMLDivElement>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
   const router = useRouter()
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const { isAuthenticated } = useAuth()
@@ -36,6 +37,17 @@ export default function HomePage() {
     animatedElements.forEach((el) => observer.observe(el))
 
     return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    const v = videoRef.current
+    if (!v) return
+    v.playbackRate = 2.0
+    const onLoaded = () => {
+      v.playbackRate = 2.0
+    }
+    v.addEventListener('loadedmetadata', onLoaded)
+    return () => v.removeEventListener('loadedmetadata', onLoaded)
   }, [])
 
   const handleLoginSuccess = () => {
@@ -168,6 +180,120 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+        {/* How It Works — Video Section */}
+        <section className="py-24 bg-black relative overflow-hidden">
+          <div className="absolute top-1/3 -left-20 w-72 h-72 bg-[#A3FF12]/10 rounded-full blur-3xl animate-pulse-slow" />
+          <div className="absolute bottom-1/4 -right-20 w-72 h-72 bg-[#FF4CF0]/10 rounded-full blur-3xl animate-pulse-slow animation-delay-1000" />
+
+          <div className="container mx-auto max-w-6xl px-6 relative z-10">
+            <div className="text-center mb-14 animate-on-scroll opacity-0 translate-y-4 transition-all duration-1000">
+              <span className="inline-block text-xs uppercase tracking-[0.3em] text-[#A3FF12] mb-4 font-mono">
+                How It Works
+              </span>
+              <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+                See{' '}
+                <span className="bg-gradient-to-r from-[#A3FF12] via-[#FF4CF0] to-[#F9F871] bg-clip-text text-transparent animate-gradient-x">
+                  WebSoroban
+                </span>{' '}
+                in Action
+              </h2>
+              <p className="text-gray-400 max-w-2xl mx-auto">
+                From a blank editor to a live contract on Stellar — watch the entire workflow happen
+                in your browser. No installs, no toolchain headaches, no context switches.
+              </p>
+            </div>
+
+            <div className="grid lg:grid-cols-5 gap-8 items-center">
+              <div className="lg:col-span-3 animate-on-scroll opacity-0 translate-y-8 transition-all duration-1000 delay-200">
+                <div className="relative rounded-2xl overflow-hidden border border-purple-500/30 shadow-[0_0_40px_rgba(160,32,240,0.4)] hover:shadow-[0_0_60px_rgba(160,32,240,0.7)] transition-all duration-500 group bg-[#0a0a0a]">
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    preload="metadata"
+                    className="w-full h-auto block"
+                  >
+                    <source src="/howitworks.mp4" type="video/mp4" />
+                    <source src="/howitworks.mov" type="video/quicktime" />
+                  </video>
+                  <div className="absolute top-3 right-3 flex items-center gap-2 bg-black/70 backdrop-blur-sm text-[#A3FF12] text-xs font-mono px-3 py-1.5 rounded-md border border-[#A3FF12]/30">
+                    <span className="w-2 h-2 rounded-full bg-[#A3FF12] animate-pulse" />
+                    LIVE · 2× speed
+                  </div>
+                  <div className="absolute bottom-3 left-3 bg-black/70 backdrop-blur-sm text-gray-300 text-xs font-mono px-3 py-1.5 rounded-md border border-white/10">
+                    websoroban.dev/ide
+                  </div>
+                </div>
+                <p className="text-gray-500 text-xs text-center mt-4 italic">
+                  Real recording — no edits, no fake terminals. What you see is what you ship.
+                </p>
+              </div>
+
+              <div className="lg:col-span-2 space-y-5 animate-on-scroll opacity-0 translate-x-8 transition-all duration-1000 delay-400">
+                {[
+                  {
+                    color: '#A3FF12',
+                    step: '01',
+                    title: 'Spin Up Instantly',
+                    desc: 'Open a fresh Soroban project in one click — no Rust toolchain, no cargo, no Docker.',
+                  },
+                  {
+                    color: '#FF4CF0',
+                    step: '02',
+                    title: 'Compile in the Browser',
+                    desc: 'WASM builds run client-side with sub-second feedback as you type.',
+                  },
+                  {
+                    color: '#F9F871',
+                    step: '03',
+                    title: 'Simulate & Test',
+                    desc: 'Mock invocations against a sandboxed VM with realistic gas estimates.',
+                  },
+                  {
+                    color: '#A3FF12',
+                    step: '04',
+                    title: 'Deploy in One Click',
+                    desc: 'Push directly to Stellar Testnet or Mainnet from the editor — keys never leave your browser.',
+                  },
+                ].map((item) => (
+                  <div
+                    key={item.step}
+                    className="flex gap-4 group p-4 rounded-xl border border-white/5 hover:border-white/20 hover:bg-white/[0.02] transition-all duration-300 cursor-pointer"
+                  >
+                    <div
+                      className="font-mono text-xs font-bold flex-shrink-0 mt-1 group-hover:scale-110 transition-transform duration-300"
+                      style={{ color: item.color }}
+                    >
+                      {item.step}
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-bold text-white mb-1">{item.title}</h4>
+                      <p className="text-gray-400 text-sm leading-relaxed">{item.desc}</p>
+                    </div>
+                    <div
+                      className="w-1 self-stretch rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                      style={{ backgroundColor: item.color, boxShadow: `0 0 12px ${item.color}` }}
+                    />
+                  </div>
+                ))}
+
+                <div className="flex items-center gap-6 pt-4 border-t border-white/10 text-xs text-gray-500">
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#A3FF12]" />
+                    Avg. first deploy in &lt; 90s
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#FF4CF0]" />
+                    Zero local setup
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
         {/* Steps Section */}
         <section className="py-20" ref={stepsRef}>

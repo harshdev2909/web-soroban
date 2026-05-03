@@ -36,39 +36,39 @@ export function BottomPanel({ logs, onClose, onClear }: BottomPanelProps) {
   const getLogIcon = (type: LogEntry["type"]) => {
     switch (type) {
       case "error":
-        return <AlertCircle className="w-4 h-4 text-red-400" />
+        return <AlertCircle className="w-4 h-4 text-rose-400" />
       case "success":
-        return <CheckCircle className="w-4 h-4 text-green-400" />
+        return <CheckCircle className="w-4 h-4 text-[#A3FF12]" />
       case "warning":
-        return <AlertCircle className="w-4 h-4 text-yellow-400" />
+        return <AlertCircle className="w-4 h-4 text-amber-400" />
       default:
-        return <Info className="w-4 h-4 text-blue-400" />
+        return <Info className="w-4 h-4 text-sky-400" />
     }
   }
 
   const getLogBgColor = (type: LogEntry["type"]) => {
     switch (type) {
       case "error":
-        return "bg-red-950/30 border-red-800/50"
+        return "bg-rose-950/20 border-rose-900/40"
       case "success":
-        return "bg-green-950/30 border-green-800/50"
+        return "bg-[#A3FF12]/[0.04] border-[#A3FF12]/20"
       case "warning":
-        return "bg-yellow-950/30 border-yellow-800/50"
+        return "bg-amber-950/20 border-amber-900/40"
       default:
-        return "bg-gray-800/50 border-gray-700/50"
+        return "bg-slate-900/50 border-slate-800/60"
     }
   }
 
   const getLogColor = (type: LogEntry["type"]) => {
     switch (type) {
       case "error":
-        return "text-red-300"
+        return "text-rose-200"
       case "success":
-        return "text-green-300"
+        return "text-emerald-200"
       case "warning":
-        return "text-yellow-300"
+        return "text-amber-200"
       default:
-        return "text-gray-300"
+        return "text-slate-300"
     }
   }
 
@@ -164,63 +164,91 @@ export function BottomPanel({ logs, onClose, onClear }: BottomPanelProps) {
   }
 
   return (
-    <div className="h-full bg-gray-900 border-t border-gray-700 flex flex-col">
+    <div className="h-full bg-slate-950 border-t border-slate-800/80 flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between p-3 border-b border-gray-700 bg-gray-800/50">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-slate-800/80 bg-slate-900/40 backdrop-blur-sm">
         <div className="flex items-center gap-3">
-          <h3 className="text-sm font-semibold text-gray-200">Build Output</h3>
+          <div className="flex items-center gap-2">
+            <Filter className="w-3.5 h-3.5 text-[#A3FF12]" />
+            <h3 className="text-xs uppercase tracking-[0.2em] font-mono font-semibold text-slate-300">
+              Build Output
+            </h3>
+          </div>
           {logs.length > 0 && (
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className="text-xs border-gray-600 text-gray-400">
-                {filteredLogs.length} / {logs.length}
+              <Badge variant="outline" className="text-[10px] font-mono border-slate-700 text-slate-400 bg-slate-900/60 px-1.5 py-0">
+                {filteredLogs.length}/{logs.length}
               </Badge>
-              {/* Filter buttons */}
+              {/* Filter chips */}
               <div className="flex items-center gap-1">
-                <Button
-                  size="sm"
-                  variant={filterType === "all" ? "default" : "ghost"}
-                  className={`h-6 px-2 text-xs ${filterType === "all" ? "bg-gray-700" : ""}`}
+                <button
                   onClick={() => setFilterType("all")}
+                  className={`h-6 px-2 rounded text-[10px] font-mono transition-all ${
+                    filterType === "all"
+                      ? "bg-slate-800 text-slate-200 border border-slate-700"
+                      : "text-slate-500 hover:text-slate-300 hover:bg-slate-800/50"
+                  }`}
                 >
-                  All ({logCounts.all})
-                </Button>
+                  ALL · {logCounts.all}
+                </button>
                 {logCounts.error > 0 && (
-                  <Button
-                    size="sm"
-                    variant={filterType === "error" ? "default" : "ghost"}
-                    className={`h-6 px-2 text-xs ${filterType === "error" ? "bg-red-900/50 text-red-300" : "text-red-400"}`}
+                  <button
                     onClick={() => setFilterType("error")}
+                    className={`h-6 px-2 rounded text-[10px] font-mono transition-all ${
+                      filterType === "error"
+                        ? "bg-rose-500/20 text-rose-300 border border-rose-500/30"
+                        : "text-rose-400 hover:bg-rose-500/10"
+                    }`}
                   >
-                    Errors ({logCounts.error})
-                  </Button>
+                    ERR · {logCounts.error}
+                  </button>
                 )}
                 {logCounts.warning > 0 && (
-                  <Button
-                    size="sm"
-                    variant={filterType === "warning" ? "default" : "ghost"}
-                    className={`h-6 px-2 text-xs ${filterType === "warning" ? "bg-yellow-900/50 text-yellow-300" : "text-yellow-400"}`}
+                  <button
                     onClick={() => setFilterType("warning")}
+                    className={`h-6 px-2 rounded text-[10px] font-mono transition-all ${
+                      filterType === "warning"
+                        ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                        : "text-amber-400 hover:bg-amber-500/10"
+                    }`}
                   >
-                    Warnings ({logCounts.warning})
-                  </Button>
+                    WARN · {logCounts.warning}
+                  </button>
+                )}
+                {logCounts.success > 0 && (
+                  <button
+                    onClick={() => setFilterType("success")}
+                    className={`h-6 px-2 rounded text-[10px] font-mono transition-all ${
+                      filterType === "success"
+                        ? "bg-[#A3FF12]/15 text-[#A3FF12] border border-[#A3FF12]/30"
+                        : "text-[#A3FF12]/70 hover:bg-[#A3FF12]/10"
+                    }`}
+                  >
+                    OK · {logCounts.success}
+                  </button>
                 )}
               </div>
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           {onClear && logs.length > 0 && (
-            <Button 
-              onClick={onClear} 
-              size="sm" 
-              variant="ghost" 
-              className="h-7 px-2 text-xs text-gray-400 hover:text-gray-200"
+            <Button
+              onClick={onClear}
+              size="sm"
+              variant="ghost"
+              className="h-7 px-2 text-[10px] font-mono uppercase tracking-wider text-slate-500 hover:text-slate-200 hover:bg-slate-800"
             >
               Clear
             </Button>
           )}
-          <Button onClick={onClose} size="sm" variant="ghost" className="h-7 w-7 p-0 text-gray-400 hover:text-gray-200">
-            <X className="w-4 h-4" />
+          <Button
+            onClick={onClose}
+            size="sm"
+            variant="ghost"
+            className="h-7 w-7 p-0 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10"
+          >
+            <X className="w-3.5 h-3.5" />
           </Button>
         </div>
       </div>
