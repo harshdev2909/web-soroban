@@ -168,6 +168,15 @@
   }
 }
 
+@keyframes maintenanceShimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -207,6 +216,11 @@
 
 .animate-pulse-slow {
   animation: pulseSlow 4s ease-in-out infinite;
+}
+
+.maintenance-shimmer {
+  animation: maintenanceShimmer 2.2s ease-in-out infinite;
+  width: 40%;
 }
 
 /* Animation Delays */
