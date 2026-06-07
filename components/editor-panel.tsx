@@ -2,15 +2,15 @@
 
 import { useRef } from "react"
 import { Button } from "@/components/ui/button"
-import { Loader2, Play, Upload } from "lucide-react"
+import { Loader2, Hammer, Rocket } from "lucide-react"
 import dynamic from "next/dynamic"
 
 // Dynamically import Monaco Editor to avoid SSR issues
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
   loading: () => (
-    <div className="flex items-center justify-center h-full">
-      <Loader2 className="w-8 h-8 animate-spin text-blue-400" />
+    <div className="flex h-full items-center justify-center bg-background">
+      <Loader2 className="h-8 w-8 animate-spin text-brand" />
     </div>
   ),
 })
@@ -42,11 +42,7 @@ export function EditorPanel({
 
   const handleEditorDidMount = (editor: any, monaco: any) => {
     editorRef.current = editor
-
-    // Configure Monaco for dark theme
     monaco.editor.setTheme("vs-dark")
-
-    // Set up Rust language support
     monaco.languages.register({ id: "rust" })
   }
 
@@ -56,88 +52,45 @@ export function EditorPanel({
     return "plaintext"
   }
 
-  const getTabAccent = (fileName: string) => {
-    if (fileName.endsWith(".rs")) return "#FF8C42"
-    if (fileName.endsWith(".toml")) return "#FF4CF0"
-    if (fileName.endsWith(".json")) return "#A3FF12"
-    return "#94A3B8"
-  }
-
   return (
-    <div className="relative h-full bg-[#0a0e14] flex flex-col">
-      {/* File Tabs Bar */}
-      <div className="relative bg-slate-950/80 border-b border-slate-800/80 flex items-center backdrop-blur-sm">
-        {/* subtle top accent */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-700/50 to-transparent" />
-
-        <div className="flex flex-1 min-w-0 overflow-x-auto scrollbar-thin">
+    <div className="flex h-full flex-col bg-background">
+      {/* File tabs + actions */}
+      <div className="flex items-center border-b border-border bg-card/40">
+        <div className="flex min-w-0 flex-1 overflow-x-auto">
           {files.map((file) => {
             const isActive = activeFile.name === file.name
-            const accent = getTabAccent(file.name)
             return (
               <button
                 key={file.name}
                 onClick={() => onFileSelect(file)}
-                className={`group relative flex items-center gap-2 px-4 py-2.5 text-xs font-mono whitespace-nowrap transition-all duration-200 ${
+                aria-current={isActive}
+                className={`group relative flex items-center gap-2 whitespace-nowrap px-4 py-2.5 font-mono text-xs transition-colors ${
                   isActive
-                    ? "text-white bg-[#0a0e14]"
-                    : "text-slate-500 hover:text-slate-200 hover:bg-slate-900/50"
+                    ? "bg-background text-foreground"
+                    : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
                 }`}
               >
-                <span
-                  className="h-1.5 w-1.5 rounded-full transition-all"
-                  style={{
-                    backgroundColor: accent,
-                    boxShadow: isActive ? `0 0 8px ${accent}` : "none",
-                    opacity: isActive ? 1 : 0.4,
-                  }}
-                />
+                <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-brand" : "bg-border"}`} />
                 {file.name}
-                {/* Active underline */}
-                {isActive && (
-                  <span
-                    className="pointer-events-none absolute inset-x-0 bottom-0 h-0.5"
-                    style={{ backgroundColor: accent, boxShadow: `0 0 8px ${accent}` }}
-                  />
-                )}
+                {isActive && <span className="pointer-events-none absolute inset-x-0 bottom-0 h-0.5 bg-brand" />}
               </button>
             )
           })}
         </div>
 
-        {/* Action Buttons */}
-        <div className="ml-auto flex items-center gap-2 px-3 py-1.5 border-l border-slate-800/80 flex-shrink-0">
-          <Button
-            onClick={onCompile}
-            disabled={isCompiling}
-            size="sm"
-            className="group relative h-8 bg-gradient-to-r from-[#FF4CF0]/90 to-[#FF4CF0] hover:from-[#FF4CF0] hover:to-[#FF4CF0]/80 text-white font-semibold shadow-[0_0_16px_rgba(255,76,240,0.25)] hover:shadow-[0_0_24px_rgba(255,76,240,0.5)] transition-all duration-300 disabled:opacity-50 disabled:shadow-none"
-          >
-            {isCompiling ? (
-              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-            ) : (
-              <Play className="w-3.5 h-3.5 mr-1.5 fill-current group-hover:scale-110 transition-transform" />
-            )}
-            <span className="text-xs">{isCompiling ? "Compiling..." : "Compile"}</span>
+        <div className="ml-auto flex flex-shrink-0 items-center gap-2 border-l border-border px-3 py-1.5">
+          <Button onClick={onCompile} disabled={isCompiling} size="sm" variant="outline" className="h-8 gap-1.5">
+            {isCompiling ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Hammer className="h-3.5 w-3.5" />}
+            <span className="text-xs">{isCompiling ? "Compiling…" : "Compile"}</span>
           </Button>
-
-          <Button
-            onClick={onDeploy}
-            disabled={isDeploying}
-            size="sm"
-            className="group relative h-8 bg-gradient-to-r from-[#A3FF12] to-[#8FE600] hover:from-[#8FE600] hover:to-[#7BD300] text-black font-semibold shadow-[0_0_16px_rgba(163,255,18,0.25)] hover:shadow-[0_0_24px_rgba(163,255,18,0.5)] transition-all duration-300 disabled:opacity-50 disabled:shadow-none"
-          >
-            {isDeploying ? (
-              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-            ) : (
-              <Upload className="w-3.5 h-3.5 mr-1.5 group-hover:-translate-y-0.5 transition-transform" />
-            )}
-            <span className="text-xs">{isDeploying ? "Deploying..." : "Deploy"}</span>
+          <Button onClick={onDeploy} disabled={isDeploying} size="sm" className="h-8 gap-1.5">
+            {isDeploying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Rocket className="h-3.5 w-3.5" />}
+            <span className="text-xs">{isDeploying ? "Deploying…" : "Deploy"}</span>
           </Button>
         </div>
       </div>
 
-      {/* Monaco Editor */}
+      {/* Monaco */}
       <div className="relative flex-1">
         <MonacoEditor
           height="100%"
@@ -148,7 +101,7 @@ export function EditorPanel({
           theme="vs-dark"
           options={{
             minimap: { enabled: true, renderCharacters: false },
-            fontSize: 14,
+            fontSize: 13.5,
             lineNumbers: "on",
             roundedSelection: false,
             scrollBeyondLastLine: false,
@@ -156,35 +109,33 @@ export function EditorPanel({
             tabSize: 4,
             insertSpaces: true,
             wordWrap: "on",
-            fontFamily: "'JetBrains Mono', 'Fira Code', Consolas, Monaco, monospace",
+            fontFamily: "var(--font-mono), 'JetBrains Mono', Consolas, monospace",
             fontLigatures: true,
             smoothScrolling: true,
             cursorBlinking: "smooth",
             cursorSmoothCaretAnimation: "on",
             renderLineHighlight: "gutter",
-            padding: { top: 12, bottom: 12 },
+            padding: { top: 14, bottom: 14 },
           }}
         />
       </div>
 
       {/* Status bar */}
-      <div className="relative flex items-center justify-between px-4 py-1.5 border-t border-slate-800/80 bg-slate-950/80 text-[10px] font-mono text-slate-500 backdrop-blur-sm">
-        <div className="flex items-center gap-3">
-          <span className="flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#A3FF12] shadow-[0_0_4px_#A3FF12]" />
+      <div className="flex items-center justify-between border-t border-border bg-card/40 px-4 py-1.5 font-mono text-[10px] text-muted-foreground">
+        <div className="flex items-center gap-2.5">
+          <span className="flex items-center gap-1.5 text-foreground">
+            <span className="h-1.5 w-1.5 rounded-full bg-brand" />
             {getLanguage(activeFile.name).toUpperCase()}
           </span>
-          <span className="text-slate-600">·</span>
+          <span className="opacity-40">·</span>
           <span>UTF-8</span>
-          <span className="text-slate-600">·</span>
-          <span>LF</span>
-          <span className="text-slate-600">·</span>
+          <span className="opacity-40">·</span>
           <span>Spaces: 4</span>
         </div>
-        <div className="flex items-center gap-3">
-          <span>{(activeFile.content || "").length.toLocaleString()} chars</span>
-          <span className="text-slate-600">·</span>
-          <span>{(activeFile.content || "").split("\n").length} lines</span>
+        <div className="flex items-center gap-2.5">
+          <span className="font-mono-tnum">{(activeFile.content || "").length.toLocaleString()} chars</span>
+          <span className="opacity-40">·</span>
+          <span className="font-mono-tnum">{(activeFile.content || "").split("\n").length} lines</span>
         </div>
       </div>
     </div>

@@ -19,22 +19,34 @@ import { SubscriptionModal } from '@/components/subscription-modal'
 import { HowItWorksModal } from '@/components/how-it-works-modal'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Loader2, AlertCircle, Zap } from 'lucide-react'
+import { CommandPalette, type PaletteCommand } from '@/components/command-palette'
+import {
+  Loader2,
+  Zap,
+  Hammer,
+  Rocket,
+  FilePlus2,
+  Save,
+  Terminal,
+  FileCode2,
+  Store,
+  Home,
+} from 'lucide-react'
 
-function IDEPageFallback() {
+function IDELoading({ label = 'Loading IDE…' }: { label?: string }) {
   return (
-    <div className="relative h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 overflow-hidden">
-      <div className="pointer-events-none absolute -top-32 -left-32 h-96 w-96 rounded-full bg-[#A3FF12]/5 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-[#FF4CF0]/5 blur-3xl" />
+    <div className="relative grid h-screen place-items-center overflow-hidden bg-background">
+      <div className="pointer-events-none absolute inset-0 bg-radial-fade" aria-hidden />
       <div className="relative text-center">
-        <div className="relative inline-flex items-center justify-center mb-4">
-          <div className="absolute inset-0 rounded-full bg-[#A3FF12]/20 blur-xl animate-pulse" />
-          <Loader2 className="relative w-10 h-10 animate-spin text-[#A3FF12]" />
-        </div>
-        <p className="text-slate-400 font-mono text-sm tracking-wider">Loading IDE…</p>
+        <Loader2 className="mx-auto h-9 w-9 animate-spin text-brand" />
+        <p className="mt-4 font-mono text-sm tracking-wide text-muted-foreground">{label}</p>
       </div>
     </div>
   )
+}
+
+function IDEPageFallback() {
+  return <IDELoading />
 }
 
 function IDEPageContent() {
@@ -48,6 +60,7 @@ function IDEPageContent() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false)
   const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(false)
+  const [isCommandOpen, setIsCommandOpen] = useState(false)
   const [usage, setUsage] = useState<any>(null)
   const currentJobIdRef = useRef<string | null>(null)
 
@@ -742,18 +755,18 @@ mod tests {
                   }]);
                 }
                 
-                toast.success(`Deployment successful! Contract: ${result.contractAddress}`);
-                
-                // Add explorer link
+                toast.success('Deployment successful', { description: `Contract ${result.contractAddress}` });
+
+                // Inline result — contract id is shown in the logs/console and the
+                // Contract Control panel (no external explorer hop).
                 if (result.contractAddress) {
-                  const explorerUrl = `https://stellar.expert/explorer/testnet/contract/${result.contractAddress}`;
                   setLogs(prev => [...prev, {
-                    type: "info",
-                    message: `🔗 View on Stellar Expert: ${explorerUrl}`,
+                    type: "success",
+                    message: `Contract ID: ${result.contractAddress}`,
                     timestamp: new Date().toISOString()
                   }]);
                 }
-                
+
                 // Update project
                 try {
                   const updatedProject = await projectApi.getProject(projectToDeploy._id);
@@ -1225,80 +1238,70 @@ impl From<Error> for soroban_sdk::Error {
     console.log("Right panel close requested");
   };
 
-  // Show login modal if not authenticated
+  // Show login prompt if not authenticated
   if (!authLoading && !isAuthenticated) {
     return (
-      <div className="relative h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 overflow-hidden">
-        <div className="pointer-events-none absolute -top-32 -left-32 h-96 w-96 rounded-full bg-[#A3FF12]/5 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-[#FF4CF0]/5 blur-3xl" />
-        <div className="relative text-center max-w-md px-6">
-          <LoginModal
-            open={isLoginModalOpen}
-            onOpenChange={setIsLoginModalOpen}
-          />
-          <img
-            src="/websoroban_logo.png"
-            alt="WebSoroban"
-            className="mx-auto w-16 h-16 mb-6 drop-shadow-[0_0_20px_rgba(163,255,18,0.4)]"
-          />
-          <h1 className="text-3xl font-bold text-white mb-3 tracking-tight">
-            Sign in to{' '}
-            <span className="bg-gradient-to-r from-[#A3FF12] via-[#FF4CF0] to-[#F9F871] bg-clip-text text-transparent">
-              WebSoroban
-            </span>
+      <div className="relative grid h-screen place-items-center overflow-hidden bg-background px-6">
+        <div className="pointer-events-none absolute inset-0 bg-radial-fade" aria-hidden />
+        <div className="pointer-events-none absolute inset-0 grain" aria-hidden />
+        <div className="relative max-w-md text-center">
+          <LoginModal open={isLoginModalOpen} onOpenChange={setIsLoginModalOpen} />
+          <img src="/websoroban_logo.png" alt="" className="mx-auto mb-6 h-14 w-14 object-contain" aria-hidden />
+          <h1 className="font-display text-3xl font-semibold tracking-tight">
+            Sign in to <span className="text-gradient-brand">WebSoroban</span>
           </h1>
-          <p className="text-slate-400 text-sm">
-            Authentication required to access the IDE.
+          <p className="mt-2 text-sm text-muted-foreground">
+            Authentication is required to open the IDE.
           </p>
-          <div className="mt-6 flex items-center justify-center gap-2 text-[10px] uppercase tracking-[0.25em] font-mono text-slate-500">
-            <span className="h-1 w-1 rounded-full bg-[#A3FF12] animate-pulse" />
-            Secure · End-to-end
-            <span className="h-1 w-1 rounded-full bg-[#A3FF12] animate-pulse" />
-          </div>
+          <Button className="mt-6" onClick={() => setIsLoginModalOpen(true)}>
+            Sign in to continue
+          </Button>
         </div>
       </div>
     );
   }
 
   if (isLoading) {
-    return (
-      <div className="relative h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 overflow-hidden">
-        <div className="pointer-events-none absolute -top-32 -left-32 h-96 w-96 rounded-full bg-[#A3FF12]/5 blur-3xl" />
-        <div className="relative text-center">
-          <div className="relative inline-flex items-center justify-center mb-4">
-            <div className="absolute inset-0 rounded-full bg-[#A3FF12]/20 blur-xl animate-pulse" />
-            <Loader2 className="relative w-10 h-10 animate-spin text-[#A3FF12]" />
-          </div>
-          <p className="text-slate-400 font-mono text-sm tracking-wider">Loading IDE…</p>
-        </div>
-      </div>
-    );
+    return <IDELoading />;
   }
 
   if (!project || !activeFile) {
     return (
-      <div className="h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-600">No project loaded</p>
-        </div>
+      <div className="grid h-screen place-items-center bg-background">
+        <p className="text-sm text-muted-foreground">No project loaded</p>
       </div>
     );
   }
 
+  const paletteCommands: PaletteCommand[] = [
+    { id: 'compile', group: 'Actions', label: 'Compile project', hint: '⌘B', icon: Hammer, disabled: isCompiling, perform: () => handleCompile() },
+    { id: 'deploy', group: 'Actions', label: 'Deploy to testnet', icon: Rocket, disabled: isDeploying, perform: () => handleDeploy() },
+    { id: 'new-file', group: 'Actions', label: 'New file', icon: FilePlus2, perform: () => handleNewFile() },
+    { id: 'save', group: 'Actions', label: 'Save project', hint: '⌘S', icon: Save, perform: () => handleSaveProject() },
+    { id: 'logs', group: 'Actions', label: 'Toggle console', icon: Terminal, perform: () => setIsBottomPanelOpen((v) => !v) },
+    ...project.files.map((f) => ({
+      id: `file-${f.name}`,
+      group: 'Files',
+      label: f.name,
+      icon: FileCode2,
+      keywords: ['open', f.name],
+      perform: () => handleFileSelect(f),
+    })),
+    { id: 'nav-templates', group: 'Go to', label: 'Templates', icon: Store, perform: () => router.push('/marketplace') },
+    { id: 'nav-home', group: 'Go to', label: 'Home', icon: Home, perform: () => router.push('/') },
+  ]
+
   return (
-    <div className="relative h-screen flex flex-col bg-slate-950 overflow-hidden">
-      {/* Ambient brand backdrop */}
-      <div className="pointer-events-none fixed inset-0 -z-10">
-        <div className="absolute -top-40 -left-40 h-[28rem] w-[28rem] rounded-full bg-[#A3FF12]/[0.03] blur-3xl" />
-        <div className="absolute -bottom-40 -right-40 h-[28rem] w-[28rem] rounded-full bg-[#FF4CF0]/[0.03] blur-3xl" />
-      </div>
+    <div className="relative flex h-screen flex-col overflow-hidden bg-background">
+      {/* Ambient deep-space backdrop */}
+      <div className="pointer-events-none fixed inset-0 -z-10 bg-radial-fade" aria-hidden />
+      <CommandPalette open={isCommandOpen} onOpenChange={setIsCommandOpen} commands={paletteCommands} />
       <Navbar
-        walletAddress={address || null}
-        onConnectWallet={connect}
         user={user}
         onLoginClick={() => setIsLoginModalOpen(true)}
         onSubscriptionClick={() => setIsSubscriptionModalOpen(true)}
         onHowItWorksClick={() => setIsHowItWorksOpen(true)}
+        onOpenCommandPalette={() => setIsCommandOpen(true)}
         projectSelector={
           <ProjectSelector
             currentProject={project}
@@ -1311,26 +1314,26 @@ impl From<Error> for soroban_sdk::Error {
       
       {/* Usage Limit Warnings */}
       {usage && (
-        <div className="px-4 py-2 bg-slate-900/80 border-b border-slate-800/80 backdrop-blur-sm">
+        <div className="border-b border-border bg-card/40 px-4 py-1.5 backdrop-blur-sm">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4 text-xs font-mono">
-              <span className="flex items-center gap-2 text-slate-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#A3FF12] shadow-[0_0_6px_#A3FF12]" />
+            <div className="flex items-center gap-4 font-mono text-xs">
+              <span className="flex items-center gap-2 text-muted-foreground">
+                <span className="h-1.5 w-1.5 rounded-full bg-brand" />
                 Deploys
-                <span className="text-slate-200">
+                <span className="font-mono-tnum text-foreground">
                   {usage.deployments.count}
-                  <span className="text-slate-500">
+                  <span className="text-muted-foreground">
                     /{usage.deployments.limit === -1 ? '∞' : usage.deployments.limit}
                   </span>
                 </span>
               </span>
-              <span className="h-3 w-px bg-slate-700" />
-              <span className="flex items-center gap-2 text-slate-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#FF4CF0] shadow-[0_0_6px_#FF4CF0]" />
+              <span className="h-3 w-px bg-border" />
+              <span className="flex items-center gap-2 text-muted-foreground">
+                <span className="h-1.5 w-1.5 rounded-full bg-cosmic" />
                 Tests
-                <span className="text-slate-200">
+                <span className="font-mono-tnum text-foreground">
                   {usage.functionTests.count}
-                  <span className="text-slate-500">
+                  <span className="text-muted-foreground">
                     /{usage.functionTests.limit === -1 ? '∞' : usage.functionTests.limit}
                   </span>
                 </span>
@@ -1342,10 +1345,10 @@ impl From<Error> for soroban_sdk::Error {
                 size="sm"
                 variant="outline"
                 onClick={() => setIsSubscriptionModalOpen(true)}
-                className="text-xs border-[#F9F871]/40 text-[#F9F871] hover:bg-[#F9F871]/10 hover:border-[#F9F871]/70"
+                className="h-7 border-warning/40 text-xs text-warning hover:bg-warning/10"
               >
-                <Zap className="w-3 h-3 mr-1" />
-                Upgrade Plan
+                <Zap className="mr-1 h-3 w-3" />
+                Upgrade
               </Button>
             ) : null}
           </div>

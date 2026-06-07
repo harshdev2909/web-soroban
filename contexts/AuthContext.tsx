@@ -1,8 +1,21 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { authApi, User } from '@/lib/api'
+import { authApi, walletApi, User } from '@/lib/api'
 import { useRouter } from 'next/navigation'
+
+// Ensure the per-user testnet wallet exists + is funded, once per browser session.
+async function ensureWalletOnce() {
+  if (typeof window === 'undefined') return
+  if (sessionStorage.getItem('wallet_ensured') === '1') return
+  try {
+    await walletApi.ensure()
+    sessionStorage.setItem('wallet_ensured', '1')
+  } catch (err) {
+    // Non-fatal: the wallet widget will retry on demand.
+    console.warn('Wallet ensure failed:', err)
+  }
+}
 
 interface AuthContextType {
   user: User | null
@@ -33,6 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (response.success && response.user) {
         setUser(response.user)
         authApi.setToken(token) // Ensure token is stored
+        void ensureWalletOnce()
       } else {
         setUser(null)
         authApi.clearToken()

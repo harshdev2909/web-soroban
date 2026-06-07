@@ -3,9 +3,8 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { File, FileText, Plus, Save, Edit3, Check, X, Folder, Code2, Zap, Clock, GitBranch, Trash2, AlertTriangle, Loader2 } from "lucide-react"
+import { File, FileText, Plus, Save, Pencil, Check, X, Code2, Clock, Trash2, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 
 import { Project, ProjectFile } from "@/lib/api"
@@ -30,7 +29,7 @@ export function Sidebar({ project, activeFile, onFileSelect, onProjectNameChange
   const handleNameSave = () => {
     onProjectNameChange(editName)
     setIsEditingName(false)
-    toast.success("Project name updated!")
+    toast.success("Project name updated")
   }
 
   const handleNameCancel = () => {
@@ -42,8 +41,8 @@ export function Sidebar({ project, activeFile, onFileSelect, onProjectNameChange
     setIsSaving(true)
     try {
       await onSaveProject()
-      toast.success("Project saved successfully!")
-    } catch (error) {
+      toast.success("Project saved")
+    } catch {
       toast.error("Failed to save project")
     } finally {
       setIsSaving(false)
@@ -55,21 +54,11 @@ export function Sidebar({ project, activeFile, onFileSelect, onProjectNameChange
       toast.error("Cannot delete the last file in the project")
       return
     }
-    
     if (activeFile.name === fileName) {
-      // Allow deletion of active file but show warning
-      if (!confirm(`Are you sure you want to delete the currently active file "${fileName}"?`)) {
-        return
-      }
+      if (!confirm(`Delete the currently active file "${fileName}"?`)) return
     }
-    
     onDeleteFile(fileName)
-    toast.success(`File "${fileName}" deleted successfully!`)
-  }
-
-  const handleNewFileClick = () => {
-    setNewFileName("")
-    setShowNewFileDialog(true)
+    toast.success(`Deleted "${fileName}"`)
   }
 
   const handleCreateNewFile = () => {
@@ -77,31 +66,19 @@ export function Sidebar({ project, activeFile, onFileSelect, onProjectNameChange
       toast.error("Please enter a file name")
       return
     }
-
-    // Ensure the file has .rs extension
-    const fileName = newFileName.trim().endsWith('.rs') ? newFileName.trim() : `${newFileName.trim()}.rs`
-    
-    // Check if file already exists
-    if (project.files.some(f => f.name === fileName)) {
+    const fileName = newFileName.trim().endsWith(".rs") ? newFileName.trim() : `${newFileName.trim()}.rs`
+    if (project.files.some((f) => f.name === fileName)) {
       toast.error("A file with this name already exists")
       return
     }
-
     onNewFile(fileName)
     setShowNewFileDialog(false)
     setNewFileName("")
   }
 
-  const handleCancelNewFile = () => {
-    setShowNewFileDialog(false)
-    setNewFileName("")
-  }
-
   const getFileIcon = (fileName: string) => {
-    if (fileName.endsWith(".rs")) return <FileText className="w-4 h-4 text-[#FF8C42] flex-shrink-0" />
-    if (fileName.endsWith(".toml")) return <File className="w-4 h-4 text-[#FF4CF0] flex-shrink-0" />
-    if (fileName.endsWith(".json")) return <File className="w-4 h-4 text-[#A3FF12] flex-shrink-0" />
-    return <File className="w-4 h-4 text-slate-500 flex-shrink-0" />
+    if (fileName.endsWith(".rs")) return <FileText className="h-4 w-4 shrink-0 text-brand" />
+    return <File className="h-4 w-4 shrink-0 text-muted-foreground" />
   }
 
   const getFileType = (fileName: string) => {
@@ -112,122 +89,86 @@ export function Sidebar({ project, activeFile, onFileSelect, onProjectNameChange
   }
 
   return (
-    <div className="relative h-full bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 border-r border-slate-800/80 flex flex-col overflow-hidden">
-      {/* Ambient brand glow */}
-      <div className="pointer-events-none absolute -top-24 -left-12 h-48 w-48 rounded-full bg-[#A3FF12]/[0.05] blur-3xl" />
-      <div className="pointer-events-none absolute bottom-0 -right-12 h-48 w-48 rounded-full bg-[#FF4CF0]/[0.04] blur-3xl" />
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#A3FF12]/30 to-transparent" />
-
-      {/* Project Header */}
-      <div className="relative z-10 p-5 border-b border-slate-800/80 bg-slate-900/40 backdrop-blur-sm">
+    <div className="flex h-full flex-col overflow-hidden border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
+      {/* Project header */}
+      <div className="border-b border-sidebar-border p-4">
         {isEditingName ? (
-          <div className="space-y-3">
+          <div className="space-y-2">
             <Input
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
-              className="text-sm bg-slate-800 border-slate-700 text-slate-200 focus:border-[#A3FF12]/50 focus:ring-[#A3FF12]/20"
-              placeholder="Enter project name..."
+              placeholder="Project name"
+              autoFocus
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleNameSave()
                 if (e.key === "Escape") handleNameCancel()
               }}
-              autoFocus
             />
             <div className="flex gap-2">
-              <Button size="sm" variant="ghost" onClick={handleNameSave} className="text-[#A3FF12] hover:text-[#A3FF12] hover:bg-[#A3FF12]/10">
-                <Check className="w-3 h-3 mr-1" />
-                Save
+              <Button size="sm" variant="ghost" onClick={handleNameSave} className="text-brand">
+                <Check className="mr-1 h-3 w-3" /> Save
               </Button>
-              <Button size="sm" variant="ghost" onClick={handleNameCancel} className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/10">
-                <X className="w-3 h-3 mr-1" />
-                Cancel
+              <Button size="sm" variant="ghost" onClick={handleNameCancel} className="text-muted-foreground">
+                <X className="mr-1 h-3 w-3" /> Cancel
               </Button>
             </div>
           </div>
         ) : (
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="relative flex-shrink-0">
-                  <div className="absolute inset-0 rounded-md bg-[#A3FF12]/20 blur-md" />
-                  <div className="relative flex items-center justify-center w-8 h-8 rounded-md bg-gradient-to-br from-[#A3FF12]/20 to-[#FF4CF0]/20 border border-[#A3FF12]/30">
-                    <Code2 className="w-4 h-4 text-[#A3FF12]" />
-                  </div>
-                </div>
-                <h2 className="text-base font-bold text-slate-100 truncate">{project.name}</h2>
+              <div className="flex min-w-0 items-center gap-2.5">
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-brand/12 text-brand">
+                  <Code2 className="h-4 w-4" />
+                </span>
+                <h2 className="truncate font-display text-sm font-semibold text-foreground">{project.name}</h2>
               </div>
-              <Button
-                size="sm"
-                variant="ghost"
+              <button
                 onClick={() => setIsEditingName(true)}
-                className="p-1 h-auto text-slate-500 hover:text-[#A3FF12] hover:bg-[#A3FF12]/10 transition-colors"
+                className="rounded p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
                 title="Rename project"
+                aria-label="Rename project"
               >
-                <Edit3 className="w-3.5 h-3.5" />
-              </Button>
+                <Pencil className="h-3.5 w-3.5" />
+              </button>
             </div>
-            <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-slate-500 font-mono">
-              <Clock className="w-3 h-3" />
+            <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+              <Clock className="h-3 w-3" />
               <span>{new Date(project.updatedAt).toLocaleDateString()}</span>
             </div>
           </div>
         )}
       </div>
 
-      {/* Action Buttons */}
-      <div className="relative z-10 p-3 border-b border-slate-800/80 space-y-2">
-        <Button
-          size="sm"
-          className="group w-full bg-gradient-to-r from-[#A3FF12] to-[#8FE600] hover:from-[#8FE600] hover:to-[#7BD300] text-black font-semibold shadow-[0_0_16px_rgba(163,255,18,0.25)] hover:shadow-[0_0_24px_rgba(163,255,18,0.45)] transition-all duration-300"
-          onClick={handleNewFileClick}
-        >
-          <Plus className="w-4 h-4 mr-2 transition-transform group-hover:rotate-90 duration-300" />
-          New File
+      {/* Actions */}
+      <div className="space-y-2 border-b border-sidebar-border p-3">
+        <Button size="sm" className="w-full gap-2" onClick={() => { setNewFileName(""); setShowNewFileDialog(true) }}>
+          <Plus className="h-4 w-4" /> New file
         </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          className="w-full border-slate-700 bg-slate-900/40 text-slate-300 hover:bg-slate-800 hover:border-[#FF4CF0]/40 hover:text-white transition-all duration-300"
-          onClick={handleSaveProject}
-          disabled={isSaving}
-        >
-          {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-          {isSaving ? "Saving..." : "Save Project"}
+        <Button size="sm" variant="outline" className="w-full gap-2" onClick={handleSaveProject} disabled={isSaving}>
+          {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          {isSaving ? "Saving…" : "Save project"}
         </Button>
       </div>
 
-      {/* Project Stats */}
-      <div className="relative z-10 p-3 border-b border-slate-800/80">
-        <div className="grid grid-cols-2 gap-2">
-          <div className="group relative overflow-hidden rounded-lg border border-slate-800/80 bg-slate-900/40 p-3 hover:border-[#A3FF12]/30 transition-all duration-300">
-            <div className="absolute inset-0 bg-gradient-to-br from-[#A3FF12]/0 to-[#A3FF12]/0 group-hover:from-[#A3FF12]/[0.06] group-hover:to-transparent transition-all duration-300" />
-            <div className="relative">
-              <div className="font-mono text-2xl font-bold text-[#A3FF12] leading-none">{project.files.length}</div>
-              <div className="mt-1.5 text-[10px] uppercase tracking-wider text-slate-500 font-mono">Files</div>
-            </div>
+      {/* Stats */}
+      <div className="grid grid-cols-2 gap-2 border-b border-sidebar-border p-3">
+        <div className="rounded-lg border border-border bg-card p-3">
+          <div className="font-mono-tnum text-2xl font-semibold leading-none text-foreground">{project.files.length}</div>
+          <div className="mt-1.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Files</div>
+        </div>
+        <div className="rounded-lg border border-border bg-card p-3">
+          <div className="font-mono-tnum text-2xl font-semibold leading-none text-foreground">
+            {project.deploymentHistory?.length || 0}
           </div>
-          <div className="group relative overflow-hidden rounded-lg border border-slate-800/80 bg-slate-900/40 p-3 hover:border-[#FF4CF0]/30 transition-all duration-300">
-            <div className="absolute inset-0 bg-gradient-to-br from-[#FF4CF0]/0 to-[#FF4CF0]/0 group-hover:from-[#FF4CF0]/[0.06] group-hover:to-transparent transition-all duration-300" />
-            <div className="relative">
-              <div className="font-mono text-2xl font-bold text-[#FF4CF0] leading-none">
-                {project.deploymentHistory?.length || 0}
-              </div>
-              <div className="mt-1.5 text-[10px] uppercase tracking-wider text-slate-500 font-mono">Deploys</div>
-            </div>
-          </div>
+          <div className="mt-1.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Deploys</div>
         </div>
       </div>
 
-      {/* File Explorer */}
-      <div className="relative z-10 flex-1 p-3 overflow-y-auto">
-        <div className="flex items-center justify-between mb-3 px-1">
-          <h3 className="text-[10px] uppercase tracking-[0.2em] text-slate-500 font-mono flex items-center gap-1.5">
-            <Folder className="w-3 h-3 text-[#F9F871]" />
-            Explorer
-          </h3>
-          <Badge className="bg-slate-800/80 text-slate-400 border border-slate-700/50 text-[9px] font-mono px-1.5 py-0">
-            {project.files.length}
-          </Badge>
+      {/* File explorer */}
+      <div className="flex-1 overflow-y-auto p-3">
+        <div className="mb-2 flex items-center justify-between px-1">
+          <h3 className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Explorer</h3>
+          <span className="font-mono text-[10px] text-muted-foreground">{project.files.length}</span>
         </div>
         <div className="space-y-0.5">
           {project.files.map((file) => {
@@ -235,38 +176,29 @@ export function Sidebar({ project, activeFile, onFileSelect, onProjectNameChange
             return (
               <div
                 key={file.name}
-                className={`relative w-full flex items-center justify-between pl-3 pr-2 py-1.5 rounded-md text-sm transition-all duration-200 group cursor-pointer ${
-                  isActive
-                    ? "bg-[#A3FF12]/[0.08] text-white"
-                    : "text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
+                className={`group relative flex cursor-pointer items-center justify-between rounded-md py-1.5 pl-3 pr-2 text-sm transition-colors ${
+                  isActive ? "bg-brand/10 text-foreground" : "text-muted-foreground hover:bg-accent hover:text-foreground"
                 }`}
               >
-                {/* Active indicator bar */}
                 {isActive && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-0.5 rounded-full bg-[#A3FF12] shadow-[0_0_8px_#A3FF12]" />
+                  <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-brand" />
                 )}
-                <button
-                  onClick={() => onFileSelect(file)}
-                  className="flex items-center gap-2 flex-1 text-left min-w-0"
-                >
+                <button onClick={() => onFileSelect(file)} className="flex min-w-0 flex-1 items-center gap-2 text-left">
                   {getFileIcon(file.name)}
-                  <span className="truncate font-medium">{file.name}</span>
+                  <span className="truncate font-mono text-[13px]">{file.name}</span>
                 </button>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2">
-                  <Badge className="bg-slate-800 text-slate-400 border border-slate-700/50 text-[9px] font-mono px-1 py-0">
+                <div className="ml-2 flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                  <span className="rounded border border-border bg-muted px-1 py-0 font-mono text-[9px] text-muted-foreground">
                     {getFileType(file.name)}
-                  </Badge>
+                  </span>
                   {project.files.length > 1 && (
                     <button
                       onClick={() => handleDeleteFile(file.name)}
-                      className={`p-1 rounded transition-colors ${
-                        file.name === activeFile.name
-                          ? "text-amber-400 hover:text-amber-300 hover:bg-amber-500/20"
-                          : "text-rose-400 hover:text-rose-300 hover:bg-rose-500/20"
-                      }`}
-                      title={`Delete ${file.name}${file.name === activeFile.name ? ' (currently active)' : ''}`}
+                      className="rounded p-1 text-muted-foreground transition-colors hover:bg-destructive/15 hover:text-destructive"
+                      title={`Delete ${file.name}`}
+                      aria-label={`Delete ${file.name}`}
                     >
-                      <Trash2 className="w-3 h-3" />
+                      <Trash2 className="h-3 w-3" />
                     </button>
                   )}
                 </div>
@@ -277,66 +209,47 @@ export function Sidebar({ project, activeFile, onFileSelect, onProjectNameChange
       </div>
 
       {/* Footer */}
-      <div className="relative z-10 px-4 py-2.5 border-t border-slate-800/80 bg-slate-950/60 backdrop-blur-sm">
-        <div className="flex items-center justify-between text-[10px] font-mono text-slate-500">
-          <div className="flex items-center gap-1.5">
-            <GitBranch className="w-3 h-3 text-[#A3FF12]/60" />
-            <span>WebSoroban</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="h-1 w-1 rounded-full bg-[#A3FF12] animate-pulse" />
-            <span>v1.0.0</span>
-          </div>
+      <div className="border-t border-sidebar-border px-4 py-2.5">
+        <div className="flex items-center justify-between font-mono text-[10px] text-muted-foreground">
+          <span>WebSoroban</span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-1 w-1 rounded-full bg-success" /> v1.0.0
+          </span>
         </div>
       </div>
 
-      {/* New File Dialog */}
+      {/* New file dialog */}
       <Dialog open={showNewFileDialog} onOpenChange={setShowNewFileDialog}>
-        <DialogContent className="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border-slate-800 shadow-[0_0_40px_rgba(163,255,18,0.15)]">
+        <DialogContent className="sm:max-w-[420px]">
           <DialogHeader>
-            <DialogTitle className="text-slate-100 flex items-center gap-2">
-              <div className="flex items-center justify-center w-7 h-7 rounded-md bg-[#A3FF12]/10 border border-[#A3FF12]/30">
-                <Plus className="w-4 h-4 text-[#A3FF12]" />
-              </div>
-              Create New File
+            <DialogTitle className="flex items-center gap-2">
+              <span className="grid h-7 w-7 place-items-center rounded-md bg-brand/12 text-brand">
+                <Plus className="h-4 w-4" />
+              </span>
+              Create new file
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 pt-2">
-            <div>
-              <label className="text-xs uppercase tracking-wider font-mono text-slate-400 mb-2 block">
-                File Name
-              </label>
-              <Input
-                value={newFileName}
-                onChange={(e) => setNewFileName(e.target.value)}
-                placeholder="my_contract.rs"
-                className="bg-slate-900 border-slate-700 text-slate-200 focus:border-[#A3FF12]/50 focus:ring-[#A3FF12]/20 font-mono"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleCreateNewFile()
-                  if (e.key === "Escape") handleCancelNewFile()
-                }}
-                autoFocus
-              />
-              <p className="text-[11px] text-slate-500 mt-1.5 flex items-center gap-1.5">
-                <span className="h-1 w-1 rounded-full bg-[#A3FF12]" />
-                .rs extension added automatically
-              </p>
-            </div>
+          <div className="space-y-2 pt-2">
+            <label htmlFor="new-file-name" className="block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+              File name
+            </label>
+            <Input
+              id="new-file-name"
+              value={newFileName}
+              onChange={(e) => setNewFileName(e.target.value)}
+              placeholder="my_contract.rs"
+              className="font-mono"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleCreateNewFile()
+                if (e.key === "Escape") setShowNewFileDialog(false)
+              }}
+            />
+            <p className="text-[11px] text-muted-foreground">.rs extension is added automatically.</p>
           </div>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={handleCancelNewFile}
-              className="border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleCreateNewFile}
-              className="bg-gradient-to-r from-[#A3FF12] to-[#8FE600] hover:from-[#8FE600] hover:to-[#7BD300] text-black font-semibold shadow-[0_0_16px_rgba(163,255,18,0.3)]"
-            >
-              Create File
-            </Button>
+            <Button variant="outline" onClick={() => setShowNewFileDialog(false)}>Cancel</Button>
+            <Button onClick={handleCreateNewFile}>Create file</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -1,369 +1,199 @@
 "use client"
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { Button } from './ui/button';
-import { Badge } from './ui/badge';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
+import React, { useState } from 'react'
+import Link from 'next/link'
+import { Button } from './ui/button'
+import { Badge } from './ui/badge'
 import {
-  Wallet,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu'
+import {
   LogOut,
-  Code2,
-  Zap,
-  Star,
   Settings,
-  HelpCircle,
-  Github,
-  ExternalLink,
-  Globe,
-  Activity,
-  Bell,
+  FileCode,
+  PlayCircle,
+  Crown,
+  LogIn,
   Search,
   Menu,
   X,
-  Mail,
-  Wrench,
-  FileCode,
-  PlayCircle,
-  Sparkles
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { WalletData } from './wallet-data';
-import { useAuth } from '@/contexts/AuthContext';
-import { useWalletKit } from '@/contexts/WalletKitContext';
-import { User } from '@/lib/api';
-import { Crown, LogIn } from 'lucide-react';
+  Command,
+} from 'lucide-react'
+import { toast } from 'sonner'
+import { WalletWidget } from './wallet-widget'
+import { useAuth } from '@/contexts/AuthContext'
+import { User } from '@/lib/api'
 
 interface NavbarProps {
-  walletAddress: string | null;
-  onConnectWallet: () => void;
-  projectSelector?: React.ReactNode;
-  onInviteClick?: () => void;
-  user?: User | null;
-  onLoginClick?: () => void;
-  onSubscriptionClick?: () => void;
-  onHowItWorksClick?: () => void;
+  projectSelector?: React.ReactNode
+  user?: User | null
+  onLoginClick?: () => void
+  onSubscriptionClick?: () => void
+  onHowItWorksClick?: () => void
+  onOpenCommandPalette?: () => void
 }
 
-export function Navbar({ walletAddress, onConnectWallet, projectSelector, onInviteClick, user, onLoginClick, onSubscriptionClick, onHowItWorksClick }: NavbarProps) {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const { logout } = useAuth();
-  const { address, disconnect } = useWalletKit();
+const planMeta: Record<string, { label: string; className: string; icon?: boolean }> = {
+  free: { label: 'Free', className: 'border-border text-muted-foreground' },
+  plan2: { label: 'Pro', className: 'border-brand/40 text-brand bg-brand/10' },
+  plan3: { label: 'Premium', className: 'border-warning/40 text-warning bg-warning/10', icon: true },
+}
+
+export function Navbar({
+  projectSelector,
+  user,
+  onLoginClick,
+  onSubscriptionClick,
+  onHowItWorksClick,
+  onOpenCommandPalette,
+}: NavbarProps) {
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const { logout } = useAuth()
+  const plan = user ? planMeta[user.subscription.plan] ?? planMeta.free : null
 
   return (
-    <div className="relative h-16 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-b border-slate-700/70 flex items-center justify-between px-6 backdrop-blur-md shadow-xl">
-      {/* Subtle brand-color top accent line */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#A3FF12]/40 to-transparent" />
-
-      {/* Left Section - Logo and Project Selector */}
-      <div className="flex items-center space-x-6">
-        {/* Logo */}
-        <Link href="/" className="group flex items-center space-x-3">
-          <div className="relative flex items-center justify-center">
-            <div className="absolute inset-0 rounded-xl bg-[#A3FF12]/20 blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            <img
-              src="/websoroban_logo.png"
-              alt="WebSoroban"
-              className="relative w-10 h-10 object-contain drop-shadow-[0_0_10px_rgba(163,255,18,0.35)] transition-transform duration-300 group-hover:scale-110"
-            />
-          </div>
-          <div className="flex flex-col leading-tight">
-            <span className="text-lg font-bold bg-gradient-to-r from-[#A3FF12] via-blue-300 to-[#FF4CF0] bg-clip-text text-transparent tracking-tight">
-              WebSoroban
-            </span>
-            <div className="flex items-center space-x-1.5">
-              <Star className="w-3 h-3 text-[#F9F871] fill-[#F9F871]" />
-              <span className="text-[10px] uppercase tracking-[0.18em] text-slate-400 font-semibold">
-                Stellar · Soroban IDE
-              </span>
-            </div>
-          </div>
+    <header className="relative z-30 flex h-14 items-center justify-between gap-3 border-b border-border bg-background/80 px-3 backdrop-blur-xl sm:px-4">
+      {/* Left: brand + project */}
+      <div className="flex min-w-0 items-center gap-3">
+        <Link href="/" className="flex items-center gap-2 shrink-0" aria-label="WebSoroban home">
+          <img src="/websoroban_logo.png" alt="" className="h-7 w-7 object-contain" aria-hidden />
+          <span className="hidden font-display text-base font-semibold tracking-tight sm:inline">
+            WebSoroban
+          </span>
         </Link>
-
-        {/* Divider */}
-        <div className="w-px h-8 bg-gradient-to-b from-transparent via-slate-600/70 to-transparent"></div>
-
-        {/* Project Selector */}
-        {projectSelector && (
-          <div className="flex items-center space-x-2 px-2 py-1 bg-slate-800/50 rounded-lg border border-slate-600/50 hover:border-[#A3FF12]/40 transition-colors duration-300">
-            <Zap className="w-4 h-4 text-[#F9F871]" />
-            {projectSelector}
-          </div>
-        )}
+        <div className="h-6 w-px bg-border" />
+        {projectSelector && <div className="min-w-0">{projectSelector}</div>}
       </div>
 
-      {/* Center Section - Search (Optional) */}
-      <div className="hidden lg:flex items-center space-x-4 flex-1 max-w-md mx-8">
-        <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-blue-400" />
-          <input
-            type="text"
-            placeholder="Search files, functions, or documentation..."
-            className="w-full pl-10 pr-4 py-2.5 bg-slate-800/70 border-2 border-slate-600/50 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 shadow-lg shadow-blue-500/10"
-          />
-        </div>
-      </div>
+      {/* Center: command palette trigger */}
+      <button
+        onClick={onOpenCommandPalette}
+        className="group hidden h-9 max-w-sm flex-1 items-center gap-2 rounded-lg border border-border bg-card/60 px-3 text-sm text-muted-foreground transition-colors hover:border-brand/40 hover:bg-accent lg:flex"
+        aria-label="Open command palette"
+      >
+        <Search className="h-4 w-4" />
+        <span className="flex-1 text-left">Search files, run actions…</span>
+        <kbd className="flex items-center gap-0.5 rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+          <Command className="h-3 w-3" />K
+        </kbd>
+      </button>
 
-      {/* Right Section - Actions and Wallet */}
-      <div className="flex items-center space-x-3">
-        {/* Network Status */}
-        <div className="hidden md:flex items-center space-x-2 px-3 py-1.5 bg-green-500/15 rounded-lg border border-green-400/40 shadow-lg shadow-green-500/10">
-          <div className="relative">
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <div className="absolute inset-0 w-2 h-2 bg-green-400 rounded-full animate-ping opacity-75"></div>
-          </div>
-          <span className="text-sm text-green-300 font-semibold">Testnet</span>
-        </div>
+      {/* Right */}
+      <div className="flex items-center gap-1.5 sm:gap-2">
+        <span className="hidden items-center gap-1.5 rounded-full border border-success/30 bg-success/10 px-2.5 py-1 text-xs font-medium text-success md:flex">
+          <span className="h-1.5 w-1.5 rounded-full bg-success" />
+          Testnet
+        </span>
 
-        {/* How It Works */}
+        <button
+          onClick={onOpenCommandPalette}
+          className="grid h-9 w-9 place-items-center rounded-lg border border-border text-muted-foreground hover:bg-accent hover:text-foreground lg:hidden"
+          aria-label="Open command palette"
+        >
+          <Search className="h-4 w-4" />
+        </button>
+
         {onHowItWorksClick && (
           <Button
             variant="ghost"
             size="sm"
             onClick={onHowItWorksClick}
-            className="group relative text-slate-300 hover:text-[#A3FF12] hover:bg-[#A3FF12]/10 border border-[#A3FF12]/30 hover:border-[#A3FF12]/60 rounded-lg px-2 md:px-3 transition-all duration-300"
-            title="Watch how WebSoroban works"
+            className="hidden text-muted-foreground hover:text-foreground md:inline-flex"
+            title="How it works"
           >
-            <PlayCircle className="h-4 w-4 md:mr-1.5 group-hover:scale-110 transition-transform duration-300" />
-            <span className="hidden md:inline text-sm font-medium">How it works</span>
-            <span className="absolute -top-1 -right-1 hidden md:flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#A3FF12] opacity-60"></span>
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#A3FF12]"></span>
-            </span>
+            <PlayCircle className="h-4 w-4 md:mr-1.5" />
+            <span className="hidden md:inline">How it works</span>
           </Button>
         )}
 
-        {/* Templates */}
-        <Link href="/marketplace">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-slate-300 hover:text-white hover:bg-slate-700/70 border border-slate-600/30 hover:border-[#FF4CF0]/40 rounded-lg px-2 md:px-3 transition-all duration-300"
-            title="Template Library"
-          >
+        <Button asChild variant="ghost" size="sm" className="hidden text-muted-foreground hover:text-foreground md:inline-flex">
+          <Link href="/marketplace" title="Templates">
             <FileCode className="h-4 w-4 md:mr-1.5" />
-            <span className="hidden md:inline text-sm font-medium">Templates</span>
-          </Button>
-        </Link>
+            <span className="hidden md:inline">Templates</span>
+          </Link>
+        </Button>
 
-        {/* Developer Tools */}
-        <Link href="/dashboard/api-keys">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-slate-300 hover:text-white hover:bg-slate-700/70 border border-slate-600/30 rounded-lg px-2"
-            title="Developer Tools"
-          >
-            <Wrench className="h-4 w-4" />
-          </Button>
-        </Link>
-
-        {/* User Info / Login */}
         {user ? (
           <>
-            {/* Subscription Plan Badge */}
-            <Badge 
-              variant="outline" 
-              className={`
-                px-3 py-1.5 font-semibold text-sm border-2 shadow-lg
-                ${user.subscription.plan === 'free' 
-                  ? 'border-slate-500 text-slate-300 bg-slate-800/80' 
-                  : user.subscription.plan === 'plan2'
-                  ? 'border-blue-500 text-blue-300 bg-blue-500/20 shadow-blue-500/20'
-                  : 'border-yellow-500 text-yellow-300 bg-yellow-500/20 shadow-yellow-500/20'
-                }
-              `}
-            >
-              {user.subscription.plan === 'free' && 'Free'}
-              {user.subscription.plan === 'plan2' && 'Pro'}
-              {user.subscription.plan === 'plan3' && (
-                <span className="flex items-center gap-1">
-                  <Crown className="w-3.5 h-3.5" />
-                  Premium
-                </span>
-              )}
-            </Badge>
-            
-            {/* Subscription Button */}
-            {onSubscriptionClick && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onSubscriptionClick}
-                className="text-yellow-400 hover:text-yellow-300 hover:bg-yellow-500/10 border border-yellow-500/30 rounded-lg px-2"
-                title="Manage Subscription"
-              >
-                <Crown className="w-4 h-4" />
-              </Button>
+            {plan && (
+              <button onClick={onSubscriptionClick} title="Manage subscription">
+                <Badge variant="outline" className={`gap-1 px-2.5 py-1 font-medium ${plan.className}`}>
+                  {plan.icon && <Crown className="h-3 w-3" />}
+                  {plan.label}
+                </Badge>
+              </button>
             )}
-            
-            {/* User Email */}
-            <div className="hidden md:flex items-center space-x-2 px-3 py-1.5 bg-slate-800/70 rounded-lg border border-slate-600/50">
-              <Mail className="w-3.5 h-3.5 text-blue-400" />
-              <span className="text-sm text-slate-200 font-medium">
-                {user.email}
-              </span>
-            </div>
+            <WalletWidget />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground" aria-label="Account menu">
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="truncate text-xs font-normal text-muted-foreground">
+                  {user.email}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {onSubscriptionClick && (
+                  <DropdownMenuItem onClick={onSubscriptionClick}>
+                    <Crown className="mr-2 h-4 w-4" /> Subscription
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem asChild>
+                  <Link href="/marketplace"><FileCode className="mr-2 h-4 w-4" /> Templates</Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  onClick={async () => {
+                    await logout()
+                    toast.success('Signed out')
+                  }}
+                >
+                  <LogOut className="mr-2 h-4 w-4" /> Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </>
         ) : (
           onLoginClick && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onLoginClick}
-              className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 border border-blue-500/30 rounded-lg px-3"
-            >
-              <LogIn className="w-4 h-4 mr-2" />
-              Sign In
+            <Button size="sm" onClick={onLoginClick}>
+              <LogIn className="mr-1.5 h-4 w-4" /> Sign in
             </Button>
           )
         )}
 
-        {/* Notifications */}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-slate-300 hover:text-white hover:bg-slate-700/70 border border-slate-600/30 rounded-lg px-2"
-          title="Notifications"
+        <button
+          className="grid h-9 w-9 place-items-center rounded-lg border border-border text-muted-foreground hover:bg-accent md:hidden"
+          onClick={() => setMobileOpen(!mobileOpen)}
+          aria-label="Menu"
         >
-          <Bell className="w-4 h-4" />
-        </Button>
-
-        {/* Help & Documentation */}
-
-
-        {/* Settings */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-slate-300 hover:text-white hover:bg-slate-700/70 border border-slate-600/30 rounded-lg px-2"
-              title="Settings"
-            >
-              <Settings className="w-4 h-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-48 bg-slate-800 border-slate-700">
-            <DropdownMenuItem className="text-slate-200 hover:bg-slate-700">
-              <Activity className="w-4 h-4 mr-2" />
-              Performance
-            </DropdownMenuItem>
-            <DropdownMenuItem className="text-slate-200 hover:bg-slate-700">
-              <Code2 className="w-4 h-4 mr-2" />
-              Editor Settings
-            </DropdownMenuItem>
-            <DropdownMenuSeparator className="bg-slate-600" />
-            {onSubscriptionClick && (
-              <DropdownMenuItem 
-                className="text-slate-200 hover:bg-slate-700"
-                onClick={onSubscriptionClick}
-              >
-                <Crown className="w-4 h-4 mr-2" />
-                Subscription
-              </DropdownMenuItem>
-            )}
-            {address && (
-              <>
-                <DropdownMenuSeparator className="bg-slate-600" />
-                <DropdownMenuItem 
-                  className="text-slate-200 hover:bg-slate-700"
-                  onClick={() => {
-                    disconnect();
-                    toast.success('Wallet disconnected');
-                  }}
-                >
-                  <Wallet className="w-4 h-4 mr-2" />
-                  Disconnect Wallet
-                </DropdownMenuItem>
-              </>
-            )}
-            <DropdownMenuSeparator className="bg-slate-600" />
-            <DropdownMenuItem 
-              className="text-slate-200 hover:bg-slate-700"
-              onClick={async () => {
-                await logout();
-                toast.success('Logged out successfully');
-              }}
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Sign Out
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {/* Wallet Data */}
-        <WalletData />
-
-        {/* Mobile Menu Button */}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="lg:hidden text-slate-300 hover:text-white hover:bg-slate-700/70 border border-slate-600/30 rounded-lg px-2"
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-        >
-          {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </Button>
+          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
       </div>
 
-      {/* Mobile Menu */}
-      {isMenuOpen && (
-        <div className="absolute top-16 left-0 right-0 bg-slate-900/95 border-b border-slate-700 backdrop-blur-md lg:hidden">
-          <div className="p-4 space-y-4">
-            {/* Mobile Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search..."
-                className="w-full pl-10 pr-4 py-2 bg-slate-800/50 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            {/* Mobile Network Status */}
-            <div className="flex items-center space-x-2 px-3 py-2 bg-slate-800/50 rounded-lg border border-slate-600/30">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-              <span className="text-sm text-slate-300 font-medium">Testnet Connected</span>
-            </div>
-
-            {/* Mobile Menu Items */}
-            <div className="space-y-2">
-              {onHowItWorksClick && (
-                <Button
-                  variant="ghost"
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    onHowItWorksClick();
-                  }}
-                  className="w-full justify-start text-[#A3FF12] hover:bg-[#A3FF12]/10 border border-[#A3FF12]/30"
-                >
-                  <PlayCircle className="w-4 h-4 mr-2" />
-                  How it works
-                </Button>
-              )}
-              <Link href="/marketplace" onClick={() => setIsMenuOpen(false)}>
-                <Button variant="ghost" className="w-full justify-start text-slate-200 hover:bg-slate-700">
-                  <FileCode className="w-4 h-4 mr-2" />
-                  Templates
-                </Button>
+      {mobileOpen && (
+        <div className="absolute inset-x-0 top-14 border-b border-border bg-background/95 p-3 backdrop-blur-xl md:hidden">
+          <div className="flex flex-col gap-1">
+            {onHowItWorksClick && (
+              <Button variant="ghost" className="justify-start" onClick={() => { setMobileOpen(false); onHowItWorksClick() }}>
+                <PlayCircle className="mr-2 h-4 w-4" /> How it works
+              </Button>
+            )}
+            <Button asChild variant="ghost" className="justify-start">
+              <Link href="/marketplace" onClick={() => setMobileOpen(false)}>
+                <FileCode className="mr-2 h-4 w-4" /> Templates
               </Link>
-              <Button variant="ghost" className="w-full justify-start text-slate-200 hover:bg-slate-700">
-                <HelpCircle className="w-4 h-4 mr-2" />
-                Documentation
-              </Button>
-              <Button variant="ghost" className="w-full justify-start text-slate-200 hover:bg-slate-700">
-                <Settings className="w-4 h-4 mr-2" />
-                Settings
-              </Button>
-              <Button variant="ghost" className="w-full justify-start text-slate-200 hover:bg-slate-700">
-                <Github className="w-4 h-4 mr-2" />
-                GitHub
-              </Button>
-            </div>
+            </Button>
           </div>
         </div>
       )}
-    </div>
-  );
+    </header>
+  )
 }

@@ -882,8 +882,51 @@ export interface UsageResponse {
 export interface HealthResponse {
   status: string;
   timestamp: string;
-  mongodb: string;
+  database: string;
 }
+
+// Wallet API — per-user server-managed Stellar testnet wallet.
+// The secret key is never returned by the backend and never stored client-side.
+export interface WalletInfo {
+  success?: boolean;
+  publicKey: string;
+  funded: boolean;
+  balance: number;
+}
+
+export const walletApi = {
+  /** Get the logged-in user's testnet wallet (public info only). */
+  async me(): Promise<WalletInfo> {
+    const token = authApi.getToken();
+    const response = await fetch(`${API_BASE_URL}/wallet/me`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    });
+    if (!response.ok) throw new Error('Failed to load wallet');
+    return response.json();
+  },
+
+  /** Create + fund the wallet if missing (call right after login). */
+  async ensure(): Promise<WalletInfo> {
+    const token = authApi.getToken();
+    const response = await fetch(`${API_BASE_URL}/wallet/ensure`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    });
+    if (!response.ok) throw new Error('Failed to ensure wallet');
+    return response.json();
+  },
+
+  /** Re-run Friendbot if the testnet balance is low. */
+  async fund(): Promise<WalletInfo> {
+    const token = authApi.getToken();
+    const response = await fetch(`${API_BASE_URL}/wallet/fund`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    });
+    if (!response.ok) throw new Error('Failed to fund wallet');
+    return response.json();
+  },
+};
 
 export interface UsageSummaryDay {
   date: string;
