@@ -277,7 +277,7 @@ export default function AnalyticsPage() {
                   >
                     <div className="flex flex-col gap-0.5 min-w-0">
                       <span className="font-medium">
-                        {tx.plan === "plan2" ? "Pro" : "Team"} — {tx.amount} {tx.currency}
+                        {tx.plan === "plan2" ? "Pro" : "Team"} · {tx.amount} {tx.currency}
                       </span>
                       {tx.user?.email && (
                         <span className="text-xs text-muted-foreground truncate">

@@ -1,7 +1,9 @@
 'use client'
 
-import { Mail, CheckCircle, XCircle, Sparkles } from 'lucide-react'
+import { Mail, CheckCircle, XCircle, Loader2 } from 'lucide-react'
 import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 type Status = 'success' | 'error' | null
 
@@ -12,85 +14,54 @@ export default function PlaygroundSubscription() {
   const [message, setMessage] = useState('')
 
   const handleSubmit = async () => {
-    console.log('handleSubmit called with email:', email)
-
-    if (!email || isSubmitting) {
-      console.log('Early return - no email or already submitting')
-      return
-    }
-
+    if (!email || isSubmitting) return
     setIsSubmitting(true)
     setStatus(null)
     setMessage('')
-
     try {
-      console.log('Making API call to /api/subscribe')
-
       const response = await fetch('/api/subscribe', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       })
-
-      console.log('Response status:', response.status)
-
       const data = await response.json()
-      console.log('Response data:', data)
-
       if (response.ok) {
         setStatus('success')
-        setMessage('Successfully subscribed! Check your email for confirmation.')
+        setMessage('Subscribed. Check your inbox for confirmation.')
         setEmail('')
       } else {
         setStatus('error')
-        if (data.details && data.details.title === 'Member Exists') {
-          setMessage('This email is already subscribed.')
-        } else {
-          setMessage(data.error || 'Subscription failed. Please try again.')
-        }
+        setMessage(
+          data.details && data.details.title === 'Member Exists'
+            ? 'This email is already subscribed.'
+            : data.error || 'Subscription failed. Please try again.',
+        )
       }
     } catch (err) {
-      console.error('Network error details:', err)
       setStatus('error')
-      setMessage(`Network error: ${err instanceof Error ? err.message : 'Unknown error'}`)
+      setMessage(`Network error. ${err instanceof Error ? err.message : 'Please try again.'}`)
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden">
-      {/* Animated Background Elements */}
-      <div className="absolute top-20 left-10 w-6 h-6 bg-[hsl(var(--brand))] rounded-full animate-float animation-delay-1000 opacity-30"></div>
-      <div className="absolute top-40 right-20 w-4 h-4 bg-[hsl(var(--cosmic))] rounded-full animate-float animation-delay-1500 opacity-40"></div>
-      <div className="absolute bottom-20 left-1/4 w-5 h-5 bg-[hsl(var(--warning))] rounded-full animate-float animation-delay-2000 opacity-35"></div>
-      <div className="absolute bottom-40 right-1/3 w-3 h-3 bg-brand rounded-full animate-float animation-delay-2500 opacity-25"></div>
-
-      <div className="max-w-5xl h-[25rem] w-full text-center bg-card/60 backdrop-blur-xl border border-white/10 rounded-2xl flex flex-col items-center justify-center px-8 relative shadow-[10px_10px_30px_rgba(160,32,240,0.3),inset_-20px_-20px_60px_rgba(255,255,255,0.05)] hover:shadow-[15px_15px_40px_rgba(160,32,240,0.4)] transition-all duration-500 group">
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[hsl(var(--brand))]/5 via-[hsl(var(--cosmic))]/5 to-[hsl(var(--warning))]/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-
-        {/* Content */}
-        <div className="relative z-10">
-          <div className="flex items-center justify-center mb-4">
-            <Sparkles className="w-8 h-8 text-brand animate-pulse mr-3" />
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-foreground via-brand to-foreground bg-clip-text text-transparent animate-fade-in-up">
-              Start Building
-            </h1>
-            <Sparkles className="w-8 h-8 text-cosmic animate-pulse ml-3 animation-delay-500" />
-          </div>
-
-          <p className="text-muted-foreground text-lg md:text-xl mb-12 max-w-lg mx-auto animate-fade-in-up animation-delay-200 hover:text-muted-foreground transition-colors duration-300">
-            No clutter. No delays. No dev drama.
+    <section className="mx-auto max-w-6xl px-6 pb-8">
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-card/40 px-6 py-10 md:px-12">
+        <div className="pointer-events-none absolute inset-0 grain" aria-hidden />
+        <div className="relative mx-auto flex max-w-xl flex-col items-center text-center">
+          <p className="eyebrow">Stay in the loop</p>
+          <h2 className="font-display mt-3 text-title font-semibold">Product updates, no noise</h2>
+          <p className="lead mt-2 text-sm">
+            New templates, network changes, and shipping notes. One email when it matters.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto mb-6 animate-fade-in-up animation-delay-400">
-            <div className="relative flex-1 group/input">
-              <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5 group-focus-within/input:text-brand transition-colors duration-300 z-10" />
+          <div className="mt-6 flex w-full max-w-md flex-col gap-2.5 sm:flex-row">
+            <div className="relative flex-1">
+              <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="email"
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 onKeyDown={(e) => {
@@ -99,56 +70,32 @@ export default function PlaygroundSubscription() {
                     handleSubmit()
                   }
                 }}
-                placeholder="Your mail address"
-                className="w-full pl-12 pr-4 py-4 bg-black/20 backdrop-blur-sm border border-border rounded-lg text-white placeholder:text-muted-foreground focus:outline-none focus:border-[hsl(var(--brand))] focus:shadow-[0_0_20px_rgba(163,255,18,0.3)] transition-all duration-300 hover:border-brand/40 hover:bg-black/30"
+                placeholder="you@example.com"
+                aria-label="Email address"
+                className="h-11 w-full rounded-lg border border-input bg-background pl-10 pr-4 text-sm text-foreground transition-colors duration-200 placeholder:text-muted-foreground focus:border-brand focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-[hsl(var(--brand))]/0 via-[hsl(var(--brand))]/5 to-[hsl(var(--brand))]/0 rounded-lg opacity-0 group-focus-within/input:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
             </div>
-
-            <button
-              onClick={handleSubmit}
-              disabled={isSubmitting || !email}
-              className="px-8 py-4 bg-primary text-primary-foreground font-semibold rounded-lg hover:from-[hsl(var(--brand))]/90 hover:to-[hsl(var(--brand))]/70 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand))] focus:ring-offset-2 focus:ring-offset-black transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 hover:shadow-[0_0_25px_rgba(163,255,18,0.5)] active:scale-95 relative overflow-hidden group/button"
-            >
-              {/* Button shine effect */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/button:translate-x-full transition-transform duration-700"></div>
-
-              <span className="relative z-10 flex items-center justify-center">
-                {isSubmitting ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin mr-2"></div>
-                    Getting Started...
-                  </>
-                ) : (
-                  'Get Started'
-                )}
-              </span>
-            </button>
+            <Button onClick={handleSubmit} disabled={isSubmitting || !email} size="lg" className="gap-2">
+              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+              {isSubmitting ? 'Subscribing' : 'Subscribe'}
+            </Button>
           </div>
 
-          {/* Status Messages */}
           {status && (
             <div
-              className={`flex items-center justify-center gap-2 p-4 rounded-lg animate-fade-in-up backdrop-blur-sm border transition-all duration-500 transform ${
+              className={cn(
+                'mt-4 flex items-center gap-2 rounded-lg border px-3 py-2 text-sm',
                 status === 'success'
-                  ? 'bg-[hsl(var(--brand))]/10 border-[hsl(var(--brand))]/30 text-brand shadow-[0_0_20px_rgba(163,255,18,0.2)]'
-                  : 'bg-[hsl(var(--cosmic))]/10 border-[hsl(var(--cosmic))]/30 text-cosmic shadow-[0_0_20px_rgba(255,76,240,0.2)]'
-              }`}
-            >
-              {status === 'success' ? (
-                <CheckCircle className="w-5 h-5 flex-shrink-0 animate-bounce" />
-              ) : (
-                <XCircle className="w-5 h-5 flex-shrink-0 animate-pulse" />
+                  ? 'border-success/30 bg-success/10 text-success'
+                  : 'border-destructive/30 bg-destructive/10 text-destructive',
               )}
-              <span className="text-sm font-medium">{message}</span>
+            >
+              {status === 'success' ? <CheckCircle className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
+              <span>{message}</span>
             </div>
           )}
         </div>
-
-        {/* Decorative Elements */}
-        <div className="absolute top-4 right-4 w-2 h-2 bg-[hsl(var(--warning))] rounded-full animate-ping opacity-60"></div>
-        <div className="absolute bottom-4 left-4 w-1.5 h-1.5 bg-[hsl(var(--cosmic))] rounded-full animate-ping animation-delay-1000 opacity-40"></div>
       </div>
-    </div>
+    </section>
   )
 }

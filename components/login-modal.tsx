@@ -59,7 +59,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
               <button
                 key={p.id}
                 onClick={p.onClick}
-                className="flex h-11 w-full items-center justify-center gap-3 rounded-lg border border-border bg-card text-sm font-medium text-foreground transition-all hover:border-brand/40 hover:bg-accent active:scale-[0.99]"
+                className="flex h-11 w-full items-center justify-center gap-3 rounded-lg border border-border bg-card text-sm font-medium text-foreground transition-[transform,background-color,border-color] duration-200 hover:border-brand/40 hover:bg-accent active:scale-[0.99]"
               >
                 <Icon className="h-5 w-5" />
                 {p.label}
@@ -70,8 +70,8 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
           <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2.5">
             <Wallet className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
             <p className="text-xs leading-relaxed text-muted-foreground">
-              No external wallet needed. Your testnet keypair is created and funded on first login —
-              your secret key never leaves the server.
+              No external wallet needed. Your testnet keypair is created and funded on first login,
+              and your secret key never leaves the server.
             </p>
           </div>
 

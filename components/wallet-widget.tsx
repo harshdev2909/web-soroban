@@ -162,7 +162,7 @@ export function WalletWidget({ className }: { className?: string }) {
 
             {lowBalance && (
               <p className="mt-3 flex items-center gap-1.5 text-[11px] text-warning">
-                <AlertTriangle className="h-3 w-3" /> Low balance — top up before deploying.
+                <AlertTriangle className="h-3 w-3" /> Low balance. Top up before deploying.
               </p>
             )}
 

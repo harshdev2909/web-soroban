@@ -872,15 +872,15 @@ export function RightPanel({ project, onClose }: RightPanelProps) {
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="grid grid-cols-2 gap-2">
-              <div className="group relative overflow-hidden rounded-lg border border-border/80 bg-background/60 p-3 hover:border-[hsl(var(--brand))]/30 transition-all duration-300">
-                <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--brand))]/0 to-transparent group-hover:from-[hsl(var(--brand))]/[0.06] transition-all" />
+              <div className="group relative overflow-hidden rounded-lg border border-border/80 bg-background/60 p-3 hover:border-[hsl(var(--brand))]/30 transition-colors duration-300">
+                <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--brand))]/0 to-transparent group-hover:from-[hsl(var(--brand))]/[0.06] transition-colors" />
                 <div className="relative">
                   <div className="font-mono text-2xl font-bold text-brand leading-none">{project.files.length}</div>
                   <div className="mt-1.5 text-[10px] uppercase tracking-wider text-muted-foreground font-mono">Files</div>
                 </div>
               </div>
-              <div className="group relative overflow-hidden rounded-lg border border-border/80 bg-background/60 p-3 hover:border-[hsl(var(--cosmic))]/30 transition-all duration-300">
-                <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--cosmic))]/0 to-transparent group-hover:from-[hsl(var(--cosmic))]/[0.06] transition-all" />
+              <div className="group relative overflow-hidden rounded-lg border border-border/80 bg-background/60 p-3 hover:border-[hsl(var(--cosmic))]/30 transition-colors duration-300">
+                <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--cosmic))]/0 to-transparent group-hover:from-[hsl(var(--cosmic))]/[0.06] transition-colors" />
                 <div className="relative">
                   <div className="font-mono text-2xl font-bold text-cosmic leading-none">
                     {project.deploymentHistory?.length || 0}
@@ -909,7 +909,7 @@ export function RightPanel({ project, onClose }: RightPanelProps) {
             <Button
               variant="outline"
               size="sm"
-              className="w-full h-8 border-border bg-background/40 text-muted-foreground hover:bg-accent hover:border-[hsl(var(--warning))]/40 hover:text-warning transition-all duration-300 text-xs"
+              className="w-full h-8 border-border bg-background/40 text-muted-foreground hover:bg-accent hover:border-[hsl(var(--warning))]/40 hover:text-warning transition-colors duration-300 text-xs"
             >
               <History className="w-3.5 h-3.5 mr-1.5" />
               View Full History

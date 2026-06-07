@@ -144,6 +144,31 @@
     font-variant-numeric: tabular-nums;
   }
 
+  /* Display headings: tight, optically balanced */
+  .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+  }
+
+  /* Mono eyebrow / kicker label */
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    line-height: 1;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* Comfortable reading paragraph */
+  .lead {
+    max-width: 46ch;
+    line-height: 1.65;
+    text-wrap: pretty;
+    color: hsl(var(--muted-foreground));
+  }
+
   /* Faint dot/grid texture for "deep space" backdrops */
   .bg-space {
     background-color: hsl(var(--background));

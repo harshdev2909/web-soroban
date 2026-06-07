@@ -20,9 +20,9 @@ const display = Space_Grotesk({
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || ''
 
 export const metadata: Metadata = {
-  title: 'WebSoroban — Write, compile & deploy Soroban contracts in the browser',
+  title: 'WebSoroban · Write, compile and deploy Soroban contracts in the browser',
   description:
-    'A browser IDE for Stellar/Soroban smart contracts. Write Rust, compile to WASM, and deploy to testnet from your own auto-provisioned wallet — zero local setup.',
+    'A browser IDE for Stellar and Soroban smart contracts. Write Rust, compile to WASM, and deploy to testnet from your own auto provisioned wallet with zero local setup.',
 }
 
 export default function RootLayout({

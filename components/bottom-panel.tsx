@@ -146,7 +146,7 @@ export function BottomPanel({ logs, onClose, onClear }: BottomPanelProps) {
             <div className="flex flex-col items-center gap-2 py-10 text-center">
               <Terminal className="h-6 w-6 text-muted-foreground/50" />
               <p className="text-sm text-muted-foreground">
-                {filterType === "all" ? "No output yet — compile or deploy to see logs." : `No ${filterType} logs`}
+                {filterType === "all" ? "No output yet. Compile or deploy to see logs." : `No ${filterType} logs`}
               </p>
             </div>
           ) : (
