@@ -151,20 +151,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Trusted stack strip */}
-      <section className="border-y border-border/60 bg-card/30">
-        <div className="mx-auto flex max-w-6xl flex-col items-center gap-5 px-6 py-7 sm:flex-row sm:justify-between">
-          <p className="eyebrow">Built on the Stellar network</p>
-          <div className="flex flex-wrap items-center gap-x-7 gap-y-3">
-            {['Stellar', 'Soroban', 'Rust', 'WebAssembly', 'Freighter'].map((name) => (
-              <span key={name} className="font-display text-sm font-medium text-muted-foreground/80">
-                {name}
-              </span>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Features — asymmetric bento */}
       <section className="mx-auto max-w-6xl px-6 py-20 md:py-28">
         <Reveal className="max-w-2xl">

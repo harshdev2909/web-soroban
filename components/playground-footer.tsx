@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Github, Twitter, ArrowUpRight } from 'lucide-react'
+import { Github, Twitter, ArrowUpRight, ArrowUp } from 'lucide-react'
 
 export const socials = [
   { href: 'https://github.com', icon: <Github className="h-4 w-4" />, name: 'GitHub' },
@@ -34,12 +34,20 @@ const columns = [
 ]
 
 const PlaygroundFooter = () => {
+  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' })
+
   return (
     <footer className="relative overflow-hidden border-t border-border/60 bg-background">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand/40 to-transparent" />
+      {/* top hairline glow + faint radial */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand/50 to-transparent" />
+      <div
+        className="pointer-events-none absolute -top-32 left-1/2 h-64 w-[60%] -translate-x-1/2 rounded-full opacity-[0.10] blur-3xl"
+        style={{ background: 'hsl(var(--brand))' }}
+        aria-hidden
+      />
 
-      <div className="mx-auto max-w-6xl px-6 pt-16">
-        <div className="grid gap-12 md:grid-cols-[1.6fr_1fr_1fr_1fr]">
+      <div className="relative mx-auto max-w-6xl px-6 pt-16">
+        <div className="grid gap-12 md:grid-cols-[1.7fr_1fr_1fr_1fr]">
           <div>
             <Link href="/" className="flex items-center gap-2.5">
               <img src="/websoroban_logo.png" alt="" className="h-7 w-7 object-contain" aria-hidden />
@@ -49,7 +57,7 @@ const PlaygroundFooter = () => {
               A browser IDE for Stellar smart contracts. Write Rust, compile to WASM, and deploy to
               testnet from your own wallet with zero local setup.
             </p>
-            <div className="mt-6 flex gap-2">
+            <div className="mt-6 flex items-center gap-2">
               {socials.map((item) => (
                 <a
                   key={item.name}
@@ -85,25 +93,34 @@ const PlaygroundFooter = () => {
           ))}
         </div>
 
-        {/* Ghost wordmark */}
-        <div
-          className="pointer-events-none mt-12 select-none text-center font-display text-[19vw] font-bold leading-none tracking-tighter text-foreground/[0.035] md:text-[12rem]"
-          aria-hidden
-        >
-          WebSoroban
+        {/* Gradient-masked ghost wordmark, bleeding off the bottom edge */}
+        <div className="relative mt-14 h-[7.5rem] overflow-hidden md:h-[12rem]" aria-hidden>
+          <div className="absolute inset-x-0 top-0 select-none text-center font-display text-[22vw] font-bold leading-[0.85] tracking-tighter text-gradient-brand opacity-[0.12] md:text-[15rem]">
+            WebSoroban
+          </div>
         </div>
       </div>
 
-      <div className="border-t border-border/60">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-6 py-6 text-xs text-muted-foreground sm:flex-row">
+      <div className="relative border-t border-border/60">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 py-6 text-xs text-muted-foreground sm:flex-row">
           <p>© {new Date().getFullYear()} WebSoroban. All rights reserved.</p>
-          <p className="flex items-center gap-1.5">
-            <span className="relative flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-60" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-success" />
+          <div className="flex items-center gap-5">
+            <span className="flex items-center gap-1.5">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-60" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-success" />
+              </span>
+              Stellar Testnet · operational
             </span>
-            Stellar Testnet · operational
-          </p>
+            <button
+              onClick={scrollToTop}
+              className="group inline-flex items-center gap-1.5 rounded-md text-muted-foreground transition-colors duration-200 hover:text-foreground"
+              aria-label="Back to top"
+            >
+              Back to top
+              <ArrowUp className="h-3.5 w-3.5 transition-transform duration-200 group-hover:-translate-y-0.5" />
+            </button>
+          </div>
         </div>
       </div>
     </footer>
