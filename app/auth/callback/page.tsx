@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
+import { useEffect, useRef, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { authApi, walletApi, type WalletInfo } from '@/lib/api'
@@ -26,8 +26,14 @@ function AuthCallbackContent() {
   const [phase, setPhase] = useState<'auth' | 'wallet' | 'ready' | 'error'>('auth')
   const [wallet, setWallet] = useState<WalletInfo | null>(null)
   const [copied, setCopied] = useState(false)
+  const ranRef = useRef(false)
 
   useEffect(() => {
+    // Run exactly once. Without this guard, the wallet `ensure` + `auth/me`
+    // calls fire in a loop on every re-render.
+    if (ranRef.current) return
+    ranRef.current = true
+
     const run = async () => {
       const token = searchParams.get('token')
       const success = searchParams.get('success')
@@ -52,7 +58,8 @@ function AuthCallbackContent() {
       }
     }
     run()
-  }, [searchParams, router, refreshUser])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const onCopy = async () => {
     if (!wallet) return

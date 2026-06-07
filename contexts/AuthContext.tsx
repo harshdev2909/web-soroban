@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { createContext, useContext, useCallback, useEffect, useState, ReactNode } from 'react'
 import { authApi, walletApi, User } from '@/lib/api'
 import { useRouter } from 'next/navigation'
 
@@ -33,7 +33,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
-  const refreshUser = async () => {
+  // Stable identity so effects that depend on it (e.g. the OAuth callback)
+  // don't re-run on every render.
+  const refreshUser = useCallback(async () => {
     try {
       const token = authApi.getToken()
       if (!token) {
@@ -58,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     // Check for token in URL (OAuth callback)
