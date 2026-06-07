@@ -8,7 +8,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Alert, AlertDescription } from './ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Calendar, Clock, MapPin, History, Play, TestTube, Code2, Zap, Shield, Globe, Activity, FileText, GitBranch, Rocket, Loader2, AlertCircle, ExternalLink } from 'lucide-react';
+import { Calendar, Clock, MapPin, History, Play, TestTube, Code2, Zap, Shield, Globe, Activity, FileText, GitBranch, Rocket, Loader2, AlertCircle, Copy } from 'lucide-react';
 import { Project, contractApi } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -431,25 +431,25 @@ export function RightPanel({ project, onClose }: RightPanelProps) {
   };
 
   return (
-    <div className="relative h-full bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 border-l border-slate-800/80 flex flex-col overflow-hidden">
+    <div className="relative h-full bg-sidebar border-l border-border/80 flex flex-col overflow-hidden">
       {/* Ambient brand glow */}
-      <div className="pointer-events-none absolute -top-24 -right-12 h-56 w-56 rounded-full bg-[#FF4CF0]/[0.05] blur-3xl" />
-      <div className="pointer-events-none absolute bottom-1/3 -left-12 h-48 w-48 rounded-full bg-[#A3FF12]/[0.04] blur-3xl" />
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#FF4CF0]/30 to-transparent" />
+      <div className="pointer-events-none absolute -top-24 -right-12 h-56 w-56 rounded-full bg-[hsl(var(--cosmic))]/[0.05] blur-3xl" />
+      <div className="pointer-events-none absolute bottom-1/3 -left-12 h-48 w-48 rounded-full bg-[hsl(var(--brand))]/[0.04] blur-3xl" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[hsl(var(--cosmic))]/30 to-transparent" />
 
       {/* Header */}
-      <div className="relative z-10 p-5 border-b border-slate-800/80 bg-slate-900/40 backdrop-blur-sm">
+      <div className="relative z-10 p-5 border-b border-border/80 bg-background/40 backdrop-blur-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
             <div className="relative flex-shrink-0">
-              <div className="absolute inset-0 rounded-md bg-[#FF4CF0]/20 blur-md" />
-              <div className="relative flex items-center justify-center w-8 h-8 rounded-md bg-gradient-to-br from-[#FF4CF0]/20 to-[#A3FF12]/20 border border-[#FF4CF0]/30">
-                <Activity className="w-4 h-4 text-[#FF4CF0]" />
+              <div className="absolute inset-0 rounded-md bg-[hsl(var(--cosmic))]/20 blur-md" />
+              <div className="relative flex items-center justify-center w-8 h-8 rounded-md bg-gradient-to-br from-[hsl(var(--cosmic))]/20 to-[hsl(var(--brand))]/20 border border-[hsl(var(--cosmic))]/30">
+                <Activity className="w-4 h-4 text-cosmic" />
               </div>
             </div>
             <div className="min-w-0">
-              <h2 className="text-base font-bold text-slate-100">Dashboard</h2>
-              <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500 font-mono mt-0.5">
+              <h2 className="text-base font-bold text-foreground">Dashboard</h2>
+              <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-mono mt-0.5">
                 Contract Control
               </p>
             </div>
@@ -458,7 +458,7 @@ export function RightPanel({ project, onClose }: RightPanelProps) {
             onClick={onClose}
             variant="ghost"
             size="sm"
-            className="p-1 h-auto text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+            className="p-1 h-auto text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
             title="Close panel"
           >
             <span className="sr-only">Close</span>
@@ -472,10 +472,10 @@ export function RightPanel({ project, onClose }: RightPanelProps) {
       {/* Content */}
       <div className="relative z-10 flex-1 p-4 space-y-4 overflow-y-auto">
         {/* Quick Actions */}
-        <Card className="bg-slate-900/60 border-slate-800/80 shadow-lg backdrop-blur-sm">
+        <Card className="bg-card border-border/80 shadow-lg backdrop-blur-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="text-xs uppercase tracking-[0.2em] text-slate-400 font-mono flex items-center gap-2">
-              <Zap className="w-3.5 h-3.5 text-[#F9F871]" />
+            <CardTitle className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-mono flex items-center gap-2">
+              <Zap className="w-3.5 h-3.5 text-warning" />
               Quick Actions
             </CardTitle>
           </CardHeader>
@@ -483,7 +483,8 @@ export function RightPanel({ project, onClose }: RightPanelProps) {
             <Button
               onClick={handleTestContract}
               disabled={isTestRunning}
-              className="group w-full h-9 bg-gradient-to-r from-[#FF4CF0]/90 to-[#FF4CF0] hover:from-[#FF4CF0] hover:to-[#FF4CF0]/80 text-white font-semibold shadow-[0_0_16px_rgba(255,76,240,0.2)] hover:shadow-[0_0_24px_rgba(255,76,240,0.45)] transition-all duration-300 disabled:opacity-50 disabled:shadow-none"
+              variant="outline"
+              className="group h-9 w-full font-medium"
             >
               {isTestRunning ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -496,7 +497,7 @@ export function RightPanel({ project, onClose }: RightPanelProps) {
             <Button
               onClick={handleRunTestCases}
               disabled={isRunningTests}
-              className="group w-full h-9 bg-gradient-to-r from-[#A3FF12] to-[#8FE600] hover:from-[#8FE600] hover:to-[#7BD300] text-black font-semibold shadow-[0_0_16px_rgba(163,255,18,0.2)] hover:shadow-[0_0_24px_rgba(163,255,18,0.45)] transition-all duration-300 disabled:opacity-50 disabled:shadow-none"
+              className="group h-9 w-full font-medium"
             >
               {isRunningTests ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -508,7 +509,7 @@ export function RightPanel({ project, onClose }: RightPanelProps) {
 
             <Button
               variant="outline"
-              className="w-full h-8 border-slate-800 bg-slate-900/40 text-slate-400 hover:bg-slate-800 hover:text-slate-200 hover:border-slate-700 transition-colors text-xs"
+              className="w-full h-8 border-border bg-background/40 text-muted-foreground hover:bg-accent hover:text-foreground hover:border-border transition-colors text-xs"
               onClick={() => {
                 setTestResults([]);
                 setTestCaseResults([]);
@@ -522,14 +523,14 @@ export function RightPanel({ project, onClose }: RightPanelProps) {
 
         {/* Test Results */}
         {testResults.length > 0 && (
-          <Card className="bg-slate-800/50 border-slate-700 shadow-lg">
+          <Card className="bg-card border-border shadow-lg">
             <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-heading text-slate-100 flex items-center justify-between">
+              <CardTitle className="text-lg font-heading text-foreground flex items-center justify-between">
                 <div className="flex items-center">
-                  <TestTube className="w-5 h-5 mr-2 text-green-400" />
+                  <TestTube className="w-5 h-5 mr-2 text-success" />
                   Contract Analysis
                 </div>
-                <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                <Badge className="bg-success/15 text-success border-success/30">
                   {testResults.length} checks
                 </Badge>
               </CardTitle>
@@ -537,8 +538,8 @@ export function RightPanel({ project, onClose }: RightPanelProps) {
             <CardContent>
               <div className="space-y-2 max-h-40 overflow-y-auto">
                 {testResults.map((result, index) => (
-                  <div key={index} className="text-sm font-mono text-slate-300 bg-slate-700/50 p-2 rounded border-l-2 border-green-500/50">
-                    <span className="text-green-400">[{index + 1}]</span> {result}
+                  <div key={index} className="text-sm font-mono text-muted-foreground bg-muted/40 p-2 rounded border-l-2 border-success/40">
+                    <span className="text-success">[{index + 1}]</span> {result}
                   </div>
                 ))}
               </div>
@@ -546,32 +547,32 @@ export function RightPanel({ project, onClose }: RightPanelProps) {
               {/* Test Summary */}
               {!isTestRunning && testResults.length > 0 && (
                 <div className="mt-4 space-y-3">
-                  <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-                    <div className="flex items-center space-x-2 text-green-400 text-sm">
+                  <div className="p-3 bg-success/10 border border-success/20 rounded-lg">
+                    <div className="flex items-center space-x-2 text-success text-sm">
                       <TestTube className="w-4 h-4" />
                       <span className="font-medium">Contract analysis completed successfully!</span>
                     </div>
                   </div>
                   
                   {/* Contract Analysis Summary */}
-                  <div className="bg-slate-700/30 rounded-lg p-3">
-                    <h4 className="text-sm font-medium text-slate-200 mb-2">Contract Analysis Summary</h4>
+                  <div className="bg-muted/40 rounded-lg p-3">
+                    <h4 className="text-sm font-medium text-foreground mb-2">Contract Analysis Summary</h4>
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                        <span className="text-slate-300">Syntax Valid</span>
+                        <div className="w-2 h-2 bg-success rounded-full"></div>
+                        <span className="text-muted-foreground">Syntax Valid</span>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                        <span className="text-slate-300">Security Passed</span>
+                        <div className="w-2 h-2 bg-success rounded-full"></div>
+                        <span className="text-muted-foreground">Security Passed</span>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                        <span className="text-slate-300">Gas Optimized</span>
+                        <div className="w-2 h-2 bg-brand rounded-full"></div>
+                        <span className="text-muted-foreground">Gas Optimized</span>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
-                        <span className="text-slate-300">Ready for Deployment</span>
+                        <div className="w-2 h-2 bg-cosmic rounded-full"></div>
+                        <span className="text-muted-foreground">Ready for Deployment</span>
                       </div>
                     </div>
                   </div>
@@ -583,14 +584,14 @@ export function RightPanel({ project, onClose }: RightPanelProps) {
 
         {/* Test Case Results */}
         {testCaseResults.length > 0 && (
-          <Card className="bg-slate-800/50 border-slate-700 shadow-lg">
+          <Card className="bg-card border-border shadow-lg">
             <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-heading text-slate-100 flex items-center justify-between">
+              <CardTitle className="text-lg font-heading text-foreground flex items-center justify-between">
                 <div className="flex items-center">
-                  <Play className="w-5 h-5 mr-2 text-blue-400" />
+                  <Play className="w-5 h-5 mr-2 text-brand" />
                   Test Case Results
                 </div>
-                <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+                <Badge className="bg-brand/15 text-brand border-brand/30">
                   {testCaseResults.length} tests
                 </Badge>
               </CardTitle>
@@ -598,16 +599,16 @@ export function RightPanel({ project, onClose }: RightPanelProps) {
             <CardContent>
               <div className="space-y-2 max-h-40 overflow-y-auto">
                 {testCaseResults.map((result, index) => (
-                  <div key={index} className={`text-sm font-mono text-slate-300 bg-slate-700/50 p-2 rounded border-l-2 ${
-                    result.status === 'success' ? 'border-green-500/50' : 'border-red-500/50'
+                  <div key={index} className={`text-sm font-mono text-muted-foreground bg-muted/40 p-2 rounded border-l-2 ${
+                    result.status === 'success' ? 'border-success/40' : 'border-destructive/40'
                   }`}>
                     <div className="flex items-center justify-between">
-                      <span className={result.status === 'success' ? 'text-green-400' : 'text-red-400'}>
+                      <span className={result.status === 'success' ? 'text-success' : 'text-destructive'}>
                         [{index + 1}] {result.name}
                       </span>
-                      <span className="text-xs text-slate-400">{result.duration}ms</span>
+                      <span className="text-xs text-muted-foreground">{result.duration}ms</span>
                     </div>
-                    <div className="text-xs text-slate-400 mt-1">
+                    <div className="text-xs text-muted-foreground mt-1">
                       {result.message} • {result.file}
                     </div>
                   </div>
@@ -625,14 +626,14 @@ export function RightPanel({ project, onClose }: RightPanelProps) {
                     return (
                       <div className={`p-3 border rounded-lg ${
                         successRate === 100 
-                          ? 'bg-green-500/10 border-green-500/20' 
+                          ? 'bg-success/10 border-success/20' 
                           : successRate >= 80 
-                          ? 'bg-yellow-500/10 border-yellow-500/20'
-                          : 'bg-red-500/10 border-red-500/20'
+                          ? 'bg-warning/10 border-warning/20'
+                          : 'bg-destructive/10 border-destructive/20'
                       }`}>
                         <div className={`flex items-center space-x-2 text-sm ${
-                          successRate === 100 ? 'text-green-400' : 
-                          successRate >= 80 ? 'text-yellow-400' : 'text-red-400'
+                          successRate === 100 ? 'text-success' : 
+                          successRate >= 80 ? 'text-warning' : 'text-destructive'
                         }`}>
                           <Play className="w-4 h-4" />
                           <span className="font-medium">
@@ -650,31 +651,31 @@ export function RightPanel({ project, onClose }: RightPanelProps) {
 
         {/* Function Testing Section - Only show if contract is deployed */}
         {project.contractAddress && (
-          <Card className="bg-slate-800/50 border-slate-700 shadow-lg">
+          <Card className="bg-card border-border shadow-lg">
             <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-heading text-slate-100 flex items-center">
-                <Rocket className="w-5 h-5 mr-2 text-purple-400" />
+              <CardTitle className="text-lg font-heading text-foreground flex items-center">
+                <Rocket className="w-5 h-5 mr-2 text-cosmic" />
                 Function Testing
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="functionName" className="text-slate-300">Function Name</Label>
+                <Label htmlFor="functionName" className="text-muted-foreground">Function Name</Label>
                 {availableFunctions.length > 0 ? (
                   <Select
                     value={functionName}
                     onValueChange={setFunctionName}
                     disabled={isInvoking}
                   >
-                    <SelectTrigger className="bg-slate-700/50 border-slate-600 text-slate-200">
+                    <SelectTrigger className="bg-muted/40 border-border text-foreground">
                       <SelectValue placeholder="Select a function..." />
                     </SelectTrigger>
-                    <SelectContent className="bg-slate-800 border-slate-600">
+                    <SelectContent className="bg-popover border-border">
                       {availableFunctions.map((func) => (
                         <SelectItem 
                           key={func} 
                           value={func}
-                          className="text-slate-200 hover:bg-slate-700 focus:bg-slate-700"
+                          className="text-foreground hover:bg-accent focus:bg-accent"
                         >
                           {func}
                         </SelectItem>
@@ -688,33 +689,33 @@ export function RightPanel({ project, onClose }: RightPanelProps) {
                     value={functionName}
                     onChange={(e) => setFunctionName(e.target.value)}
                     disabled={isInvoking}
-                    className="bg-slate-700/50 border-slate-600 text-slate-200"
+                    className="bg-muted/40 border-border text-foreground"
                   />
                 )}
                 {availableFunctions.length === 0 && (
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-muted-foreground">
                     No functions detected. Type function name manually or ensure contract has #[contractimpl] functions.
                   </p>
                 )}
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="functionArgs" className="text-slate-300">Arguments (comma-separated)</Label>
+                <Label htmlFor="functionArgs" className="text-muted-foreground">Arguments (comma-separated)</Label>
                 <Input
                   id="functionArgs"
                   placeholder="e.g., arg1, arg2, arg3"
                   value={functionArgs}
                   onChange={(e) => setFunctionArgs(e.target.value)}
                   disabled={isInvoking}
-                  className="bg-slate-700/50 border-slate-600 text-slate-200"
+                  className="bg-muted/40 border-border text-foreground"
                 />
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-muted-foreground">
                   Enter function arguments separated by commas
                 </p>
               </div>
 
               {user && (
-                <div className="text-xs text-slate-400 bg-slate-700/30 p-2 rounded">
+                <div className="text-xs text-muted-foreground bg-muted/40 p-2 rounded">
                   Function Tests: {user.usage.functionTests.count}/{user.usage.functionTests.limit === -1 ? '∞' : user.usage.functionTests.limit}
                 </div>
               )}
@@ -722,7 +723,7 @@ export function RightPanel({ project, onClose }: RightPanelProps) {
               <Button
                 onClick={handleInvokeFunction}
                 disabled={isInvoking || !functionName.trim() || !project.contractAddress}
-                className="w-full bg-gradient-to-r from-purple-600 to-slate-700 hover:from-purple-700 hover:to-slate-800 text-white"
+                className="w-full"
               >
                 {isInvoking ? (
                   <>
@@ -738,22 +739,22 @@ export function RightPanel({ project, onClose }: RightPanelProps) {
               </Button>
 
               {invokeError && (
-                <Alert variant="destructive" className="bg-red-500/10 border-red-500/20">
+                <Alert variant="destructive" className="bg-destructive/10 border-destructive/20">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertDescription className="text-red-400">{invokeError}</AlertDescription>
+                  <AlertDescription className="text-destructive">{invokeError}</AlertDescription>
                 </Alert>
               )}
 
               {invokeResult && (
-                <div className="bg-slate-700/30 rounded-lg p-3 space-y-2">
-                  <div className="text-sm font-medium text-green-400">Result:</div>
-                  <pre className="text-xs font-mono text-slate-300 bg-slate-800/50 p-2 rounded overflow-x-auto">
+                <div className="bg-muted/40 rounded-lg p-3 space-y-2">
+                  <div className="text-sm font-medium text-success">Result:</div>
+                  <pre className="text-xs font-mono text-muted-foreground bg-muted/40 p-2 rounded overflow-x-auto">
                     {typeof invokeResult.output === 'string' 
                       ? invokeResult.output 
                       : JSON.stringify(invokeResult.output, null, 2)}
                   </pre>
                   {invokeResult.usage && (
-                    <div className="text-xs text-slate-400 mt-2">
+                    <div className="text-xs text-muted-foreground mt-2">
                       Remaining: {invokeResult.usage.remaining === 'unlimited' ? '∞' : invokeResult.usage.remaining} function tests
                     </div>
                   )}
@@ -764,31 +765,31 @@ export function RightPanel({ project, onClose }: RightPanelProps) {
         )}
 
         {/* Metadata */}
-        <Card className="bg-slate-900/60 border-slate-800/80 shadow-lg backdrop-blur-sm">
+        <Card className="bg-card border-border/80 shadow-lg backdrop-blur-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="text-xs uppercase tracking-[0.2em] text-slate-400 font-mono flex items-center gap-2">
-              <FileText className="w-3.5 h-3.5 text-[#A3FF12]" />
+            <CardTitle className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-mono flex items-center gap-2">
+              <FileText className="w-3.5 h-3.5 text-brand" />
               Metadata
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex items-center gap-3 text-sm">
-              <div className="flex items-center justify-center w-7 h-7 rounded-md bg-slate-800/80 border border-slate-700/50 flex-shrink-0">
-                <Calendar className="w-3.5 h-3.5 text-slate-400" />
+              <div className="flex items-center justify-center w-7 h-7 rounded-md bg-muted border border-border/50 flex-shrink-0">
+                <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="text-[10px] uppercase tracking-wider text-slate-500 font-mono">Created</div>
-                <div className="text-slate-200 text-xs font-medium truncate">{formatDate(project.createdAt)}</div>
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-mono">Created</div>
+                <div className="text-foreground text-xs font-medium truncate">{formatDate(project.createdAt)}</div>
               </div>
             </div>
 
             <div className="flex items-center gap-3 text-sm">
-              <div className="flex items-center justify-center w-7 h-7 rounded-md bg-slate-800/80 border border-slate-700/50 flex-shrink-0">
-                <Clock className="w-3.5 h-3.5 text-slate-400" />
+              <div className="flex items-center justify-center w-7 h-7 rounded-md bg-muted border border-border/50 flex-shrink-0">
+                <Clock className="w-3.5 h-3.5 text-muted-foreground" />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="text-[10px] uppercase tracking-wider text-slate-500 font-mono">Last Deployed</div>
-                <div className="text-slate-200 text-xs font-medium truncate">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-mono">Last Deployed</div>
+                <div className="text-foreground text-xs font-medium truncate">
                   {project.lastDeployed ? formatDate(project.lastDeployed) : "Never"}
                 </div>
               </div>
@@ -797,13 +798,13 @@ export function RightPanel({ project, onClose }: RightPanelProps) {
             {project.contractAddress && (
               <>
                 <div className="flex items-start gap-3 text-sm">
-                  <div className="flex items-center justify-center w-7 h-7 rounded-md bg-[#A3FF12]/10 border border-[#A3FF12]/30 flex-shrink-0 mt-0.5">
-                    <MapPin className="w-3.5 h-3.5 text-[#A3FF12]" />
+                  <div className="flex items-center justify-center w-7 h-7 rounded-md bg-[hsl(var(--brand))]/10 border border-[hsl(var(--brand))]/30 flex-shrink-0 mt-0.5">
+                    <MapPin className="w-3.5 h-3.5 text-brand" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="text-[10px] uppercase tracking-wider text-slate-500 font-mono">Contract Address</div>
+                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-mono">Contract Address</div>
                     <div
-                      className="text-slate-200 text-[11px] break-all cursor-pointer hover:text-[#A3FF12] transition-colors font-mono mt-0.5"
+                      className="text-foreground text-[11px] break-all cursor-pointer hover:text-brand transition-colors font-mono mt-0.5"
                       title={`Full contract address: ${project.contractAddress}`}
                       onClick={() => {
                         navigator.clipboard.writeText(project.contractAddress!);
@@ -817,13 +818,14 @@ export function RightPanel({ project, onClose }: RightPanelProps) {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="w-full h-8 border-slate-800 bg-slate-900/40 text-slate-300 hover:bg-slate-800 hover:border-[#A3FF12]/40 hover:text-[#A3FF12] transition-all duration-300 text-xs"
+                  className="h-8 w-full gap-1.5 text-xs"
                   onClick={() => {
-                    window.open(`https://stellar.expert/explorer/testnet/contract/${project.contractAddress}`, '_blank');
+                    navigator.clipboard.writeText(project.contractAddress!);
+                    toast.success('Contract address copied');
                   }}
                 >
-                  <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
-                  View on Stellar Expert
+                  <Copy className="h-3.5 w-3.5" />
+                  Copy contract ID
                 </Button>
               </>
             )}
@@ -831,75 +833,75 @@ export function RightPanel({ project, onClose }: RightPanelProps) {
         </Card>
 
         {/* Network Status */}
-        <Card className="bg-slate-900/60 border-slate-800/80 shadow-lg backdrop-blur-sm">
+        <Card className="bg-card border-border/80 shadow-lg backdrop-blur-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="text-xs uppercase tracking-[0.2em] text-slate-400 font-mono flex items-center gap-2">
-              <Globe className="w-3.5 h-3.5 text-[#A3FF12]" />
+            <CardTitle className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-mono flex items-center gap-2">
+              <Globe className="w-3.5 h-3.5 text-brand" />
               Network
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-[10px] uppercase tracking-wider text-slate-500 font-mono">Current Network</div>
-                <div className="text-slate-200 text-sm font-medium mt-0.5">Soroban Testnet</div>
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-mono">Current Network</div>
+                <div className="text-foreground text-sm font-medium mt-0.5">Soroban Testnet</div>
               </div>
-              <Badge className="bg-[#A3FF12]/15 text-[#A3FF12] border border-[#A3FF12]/30 font-mono text-[10px]">
+              <Badge className="bg-[hsl(var(--brand))]/15 text-brand border border-[hsl(var(--brand))]/30 font-mono text-[10px]">
                 <span className="relative flex w-1.5 h-1.5 mr-1.5">
-                  <span className="absolute inset-0 rounded-full bg-[#A3FF12] animate-ping opacity-60" />
-                  <span className="relative rounded-full bg-[#A3FF12] w-1.5 h-1.5" />
+                  <span className="absolute inset-0 rounded-full bg-[hsl(var(--brand))] animate-ping opacity-60" />
+                  <span className="relative rounded-full bg-[hsl(var(--brand))] w-1.5 h-1.5" />
                 </span>
                 LIVE
               </Badge>
             </div>
 
-            <div className="rounded-md bg-slate-950/60 border border-slate-800/80 p-2.5">
-              <div className="text-[10px] uppercase tracking-wider text-slate-500 font-mono mb-1">RPC Endpoint</div>
-              <div className="text-slate-300 text-[11px] break-all font-mono">soroban-testnet.stellar.org</div>
+            <div className="rounded-md bg-background/60 border border-border/80 p-2.5">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-mono mb-1">RPC Endpoint</div>
+              <div className="text-muted-foreground text-[11px] break-all font-mono">soroban-testnet.stellar.org</div>
             </div>
           </CardContent>
         </Card>
 
         {/* Project Stats */}
-        <Card className="bg-slate-900/60 border-slate-800/80 shadow-lg backdrop-blur-sm">
+        <Card className="bg-card border-border/80 shadow-lg backdrop-blur-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="text-xs uppercase tracking-[0.2em] text-slate-400 font-mono flex items-center gap-2">
-              <Rocket className="w-3.5 h-3.5 text-[#FF4CF0]" />
+            <CardTitle className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-mono flex items-center gap-2">
+              <Rocket className="w-3.5 h-3.5 text-cosmic" />
               Stats
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="grid grid-cols-2 gap-2">
-              <div className="group relative overflow-hidden rounded-lg border border-slate-800/80 bg-slate-950/60 p-3 hover:border-[#A3FF12]/30 transition-all duration-300">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#A3FF12]/0 to-transparent group-hover:from-[#A3FF12]/[0.06] transition-all" />
+              <div className="group relative overflow-hidden rounded-lg border border-border/80 bg-background/60 p-3 hover:border-[hsl(var(--brand))]/30 transition-all duration-300">
+                <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--brand))]/0 to-transparent group-hover:from-[hsl(var(--brand))]/[0.06] transition-all" />
                 <div className="relative">
-                  <div className="font-mono text-2xl font-bold text-[#A3FF12] leading-none">{project.files.length}</div>
-                  <div className="mt-1.5 text-[10px] uppercase tracking-wider text-slate-500 font-mono">Files</div>
+                  <div className="font-mono text-2xl font-bold text-brand leading-none">{project.files.length}</div>
+                  <div className="mt-1.5 text-[10px] uppercase tracking-wider text-muted-foreground font-mono">Files</div>
                 </div>
               </div>
-              <div className="group relative overflow-hidden rounded-lg border border-slate-800/80 bg-slate-950/60 p-3 hover:border-[#FF4CF0]/30 transition-all duration-300">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#FF4CF0]/0 to-transparent group-hover:from-[#FF4CF0]/[0.06] transition-all" />
+              <div className="group relative overflow-hidden rounded-lg border border-border/80 bg-background/60 p-3 hover:border-[hsl(var(--cosmic))]/30 transition-all duration-300">
+                <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--cosmic))]/0 to-transparent group-hover:from-[hsl(var(--cosmic))]/[0.06] transition-all" />
                 <div className="relative">
-                  <div className="font-mono text-2xl font-bold text-[#FF4CF0] leading-none">
+                  <div className="font-mono text-2xl font-bold text-cosmic leading-none">
                     {project.deploymentHistory?.length || 0}
                   </div>
-                  <div className="mt-1.5 text-[10px] uppercase tracking-wider text-slate-500 font-mono">Deploys</div>
+                  <div className="mt-1.5 text-[10px] uppercase tracking-wider text-muted-foreground font-mono">Deploys</div>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-md bg-slate-950/60 border border-slate-800/80 p-2.5">
-              <div className="text-[10px] uppercase tracking-wider text-slate-500 font-mono">Last Modified</div>
-              <div className="text-slate-200 text-xs font-medium mt-0.5">{formatDate(project.updatedAt)}</div>
+            <div className="rounded-md bg-background/60 border border-border/80 p-2.5">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-mono">Last Modified</div>
+              <div className="text-foreground text-xs font-medium mt-0.5">{formatDate(project.updatedAt)}</div>
             </div>
           </CardContent>
         </Card>
 
         {/* Deployment History */}
-        <Card className="bg-slate-900/60 border-slate-800/80 shadow-lg backdrop-blur-sm">
+        <Card className="bg-card border-border/80 shadow-lg backdrop-blur-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="text-xs uppercase tracking-[0.2em] text-slate-400 font-mono flex items-center gap-2">
-              <History className="w-3.5 h-3.5 text-[#F9F871]" />
+            <CardTitle className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-mono flex items-center gap-2">
+              <History className="w-3.5 h-3.5 text-warning" />
               History
             </CardTitle>
           </CardHeader>
@@ -907,7 +909,7 @@ export function RightPanel({ project, onClose }: RightPanelProps) {
             <Button
               variant="outline"
               size="sm"
-              className="w-full h-8 border-slate-800 bg-slate-900/40 text-slate-300 hover:bg-slate-800 hover:border-[#F9F871]/40 hover:text-[#F9F871] transition-all duration-300 text-xs"
+              className="w-full h-8 border-border bg-background/40 text-muted-foreground hover:bg-accent hover:border-[hsl(var(--warning))]/40 hover:text-warning transition-all duration-300 text-xs"
             >
               <History className="w-3.5 h-3.5 mr-1.5" />
               View Full History

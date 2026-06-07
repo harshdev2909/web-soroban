@@ -63,32 +63,32 @@ export default function PlaygroundSubscription() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden">
       {/* Animated Background Elements */}
-      <div className="absolute top-20 left-10 w-6 h-6 bg-[#A3FF12] rounded-full animate-float animation-delay-1000 opacity-30"></div>
-      <div className="absolute top-40 right-20 w-4 h-4 bg-[#FF4CF0] rounded-full animate-float animation-delay-1500 opacity-40"></div>
-      <div className="absolute bottom-20 left-1/4 w-5 h-5 bg-[#F9F871] rounded-full animate-float animation-delay-2000 opacity-35"></div>
-      <div className="absolute bottom-40 right-1/3 w-3 h-3 bg-purple-500 rounded-full animate-float animation-delay-2500 opacity-25"></div>
+      <div className="absolute top-20 left-10 w-6 h-6 bg-[hsl(var(--brand))] rounded-full animate-float animation-delay-1000 opacity-30"></div>
+      <div className="absolute top-40 right-20 w-4 h-4 bg-[hsl(var(--cosmic))] rounded-full animate-float animation-delay-1500 opacity-40"></div>
+      <div className="absolute bottom-20 left-1/4 w-5 h-5 bg-[hsl(var(--warning))] rounded-full animate-float animation-delay-2000 opacity-35"></div>
+      <div className="absolute bottom-40 right-1/3 w-3 h-3 bg-brand rounded-full animate-float animation-delay-2500 opacity-25"></div>
 
-      <div className="max-w-5xl h-[25rem] w-full text-center bg-gradient-to-br from-gray-900/40 via-purple-900/20 to-gray-900/40 backdrop-blur-xl border border-white/10 rounded-2xl flex flex-col items-center justify-center px-8 relative shadow-[10px_10px_30px_rgba(160,32,240,0.3),inset_-20px_-20px_60px_rgba(255,255,255,0.05)] hover:shadow-[15px_15px_40px_rgba(160,32,240,0.4)] transition-all duration-500 group">
+      <div className="max-w-5xl h-[25rem] w-full text-center bg-card/60 backdrop-blur-xl border border-white/10 rounded-2xl flex flex-col items-center justify-center px-8 relative shadow-[10px_10px_30px_rgba(160,32,240,0.3),inset_-20px_-20px_60px_rgba(255,255,255,0.05)] hover:shadow-[15px_15px_40px_rgba(160,32,240,0.4)] transition-all duration-500 group">
         {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#A3FF12]/5 via-[#FF4CF0]/5 to-[#F9F871]/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-[hsl(var(--brand))]/5 via-[hsl(var(--cosmic))]/5 to-[hsl(var(--warning))]/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
         {/* Content */}
         <div className="relative z-10">
           <div className="flex items-center justify-center mb-4">
-            <Sparkles className="w-8 h-8 text-[#A3FF12] animate-pulse mr-3" />
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-white via-purple-200 to-white bg-clip-text text-transparent animate-fade-in-up">
+            <Sparkles className="w-8 h-8 text-brand animate-pulse mr-3" />
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-foreground via-brand to-foreground bg-clip-text text-transparent animate-fade-in-up">
               Start Building
             </h1>
-            <Sparkles className="w-8 h-8 text-[#FF4CF0] animate-pulse ml-3 animation-delay-500" />
+            <Sparkles className="w-8 h-8 text-cosmic animate-pulse ml-3 animation-delay-500" />
           </div>
 
-          <p className="text-gray-400 text-lg md:text-xl mb-12 max-w-lg mx-auto animate-fade-in-up animation-delay-200 hover:text-gray-300 transition-colors duration-300">
+          <p className="text-muted-foreground text-lg md:text-xl mb-12 max-w-lg mx-auto animate-fade-in-up animation-delay-200 hover:text-muted-foreground transition-colors duration-300">
             No clutter. No delays. No dev drama.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto mb-6 animate-fade-in-up animation-delay-400">
             <div className="relative flex-1 group/input">
-              <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 group-focus-within/input:text-[#A3FF12] transition-colors duration-300 z-10" />
+              <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5 group-focus-within/input:text-brand transition-colors duration-300 z-10" />
               <input
                 type="email"
                 value={email}
@@ -100,15 +100,15 @@ export default function PlaygroundSubscription() {
                   }
                 }}
                 placeholder="Your mail address"
-                className="w-full pl-12 pr-4 py-4 bg-black/20 backdrop-blur-sm border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-[#A3FF12] focus:shadow-[0_0_20px_rgba(163,255,18,0.3)] transition-all duration-300 hover:border-gray-500 hover:bg-black/30"
+                className="w-full pl-12 pr-4 py-4 bg-black/20 backdrop-blur-sm border border-border rounded-lg text-white placeholder:text-muted-foreground focus:outline-none focus:border-[hsl(var(--brand))] focus:shadow-[0_0_20px_rgba(163,255,18,0.3)] transition-all duration-300 hover:border-brand/40 hover:bg-black/30"
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-[#A3FF12]/0 via-[#A3FF12]/5 to-[#A3FF12]/0 rounded-lg opacity-0 group-focus-within/input:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-[hsl(var(--brand))]/0 via-[hsl(var(--brand))]/5 to-[hsl(var(--brand))]/0 rounded-lg opacity-0 group-focus-within/input:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
             </div>
 
             <button
               onClick={handleSubmit}
               disabled={isSubmitting || !email}
-              className="px-8 py-4 bg-gradient-to-r from-[#A3FF12] to-[#A3FF12]/80 text-black font-semibold rounded-lg hover:from-[#A3FF12]/90 hover:to-[#A3FF12]/70 focus:outline-none focus:ring-2 focus:ring-[#A3FF12] focus:ring-offset-2 focus:ring-offset-black transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 hover:shadow-[0_0_25px_rgba(163,255,18,0.5)] active:scale-95 relative overflow-hidden group/button"
+              className="px-8 py-4 bg-primary text-primary-foreground font-semibold rounded-lg hover:from-[hsl(var(--brand))]/90 hover:to-[hsl(var(--brand))]/70 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand))] focus:ring-offset-2 focus:ring-offset-black transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 hover:shadow-[0_0_25px_rgba(163,255,18,0.5)] active:scale-95 relative overflow-hidden group/button"
             >
               {/* Button shine effect */}
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/button:translate-x-full transition-transform duration-700"></div>
@@ -131,8 +131,8 @@ export default function PlaygroundSubscription() {
             <div
               className={`flex items-center justify-center gap-2 p-4 rounded-lg animate-fade-in-up backdrop-blur-sm border transition-all duration-500 transform ${
                 status === 'success'
-                  ? 'bg-[#A3FF12]/10 border-[#A3FF12]/30 text-[#A3FF12] shadow-[0_0_20px_rgba(163,255,18,0.2)]'
-                  : 'bg-[#FF4CF0]/10 border-[#FF4CF0]/30 text-[#FF4CF0] shadow-[0_0_20px_rgba(255,76,240,0.2)]'
+                  ? 'bg-[hsl(var(--brand))]/10 border-[hsl(var(--brand))]/30 text-brand shadow-[0_0_20px_rgba(163,255,18,0.2)]'
+                  : 'bg-[hsl(var(--cosmic))]/10 border-[hsl(var(--cosmic))]/30 text-cosmic shadow-[0_0_20px_rgba(255,76,240,0.2)]'
               }`}
             >
               {status === 'success' ? (
@@ -146,8 +146,8 @@ export default function PlaygroundSubscription() {
         </div>
 
         {/* Decorative Elements */}
-        <div className="absolute top-4 right-4 w-2 h-2 bg-[#F9F871] rounded-full animate-ping opacity-60"></div>
-        <div className="absolute bottom-4 left-4 w-1.5 h-1.5 bg-[#FF4CF0] rounded-full animate-ping animation-delay-1000 opacity-40"></div>
+        <div className="absolute top-4 right-4 w-2 h-2 bg-[hsl(var(--warning))] rounded-full animate-ping opacity-60"></div>
+        <div className="absolute bottom-4 left-4 w-1.5 h-1.5 bg-[hsl(var(--cosmic))] rounded-full animate-ping animation-delay-1000 opacity-40"></div>
       </div>
     </div>
   )

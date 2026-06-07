@@ -253,7 +253,7 @@ export function ProjectSelector({ currentProject, onProjectSelect, onProjectCrea
             {currentProject?.name || "Select Project"}
           </Button>
         </DialogTrigger>
-        <DialogContent className="bg-gray-800 border-gray-700 text-gray-100">
+        <DialogContent className="bg-popover border-border text-popover-foreground">
           <DialogHeader>
             <DialogTitle>Projects</DialogTitle>
           </DialogHeader>
@@ -267,7 +267,7 @@ export function ProjectSelector({ currentProject, onProjectSelect, onProjectCrea
                     placeholder="New project name"
                     value={newProjectName}
                     onChange={(e) => setNewProjectName(e.target.value)}
-                    className="bg-gray-700 border-gray-600 text-gray-100"
+                    className="bg-muted border-border text-foreground"
                     onKeyDown={(e) => {
                       if (e.key === "Enter") handleCreateProject()
                     }}
@@ -285,7 +285,7 @@ export function ProjectSelector({ currentProject, onProjectSelect, onProjectCrea
                 onClick={handleCreateBlankProject} 
                 size="sm" 
                 variant="outline"
-                className="w-full border-gray-600 text-gray-300 hover:bg-gray-700"
+                className="w-full border-border text-muted-foreground hover:bg-accent"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Create Blank Project
@@ -295,9 +295,9 @@ export function ProjectSelector({ currentProject, onProjectSelect, onProjectCrea
             {/* Project List */}
             <div className="space-y-2 max-h-60 overflow-y-auto">
               {isLoading ? (
-                <div className="text-center text-gray-400">Loading projects...</div>
+                <div className="text-center text-muted-foreground">Loading projects...</div>
               ) : projects.length === 0 ? (
-                <div className="text-center text-gray-400">No projects found</div>
+                <div className="text-center text-muted-foreground">No projects found</div>
               ) : (
                 projects.map((project) => (
                   <div
@@ -305,7 +305,7 @@ export function ProjectSelector({ currentProject, onProjectSelect, onProjectCrea
                     className={`flex items-center justify-between p-3 rounded border cursor-pointer transition-colors ${
                       currentProject?._id === project._id
                         ? "bg-blue-600 border-blue-500"
-                        : "bg-gray-700 border-gray-600 hover:bg-gray-600"
+                        : "bg-muted border-border hover:bg-accent"
                     }`}
                   >
                     <div
@@ -315,8 +315,8 @@ export function ProjectSelector({ currentProject, onProjectSelect, onProjectCrea
                         setIsDialogOpen(false)
                       }}
                     >
-                      <div className="font-medium text-gray-100">{project.name}</div>
-                      <div className="text-sm text-gray-400 flex items-center">
+                      <div className="font-medium text-foreground">{project.name}</div>
+                      <div className="text-sm text-muted-foreground flex items-center">
                         <Clock className="w-3 h-3 mr-1" />
                         {formatDate(project.updatedAt)}
                       </div>
@@ -339,10 +339,10 @@ export function ProjectSelector({ currentProject, onProjectSelect, onProjectCrea
 
       {/* Project Name Modal */}
       <Dialog open={isNameModalOpen} onOpenChange={setIsNameModalOpen}>
-        <DialogContent className="bg-gray-800 border-gray-700 text-gray-100">
+        <DialogContent className="bg-popover border-border text-popover-foreground">
           <DialogHeader>
             <DialogTitle>Enter Project Name</DialogTitle>
-            <DialogDescription className="text-gray-400">
+            <DialogDescription className="text-muted-foreground">
               Please provide a name for your new project
             </DialogDescription>
           </DialogHeader>
@@ -354,7 +354,7 @@ export function ProjectSelector({ currentProject, onProjectSelect, onProjectCrea
                 placeholder="My Soroban Contract"
                 value={projectNameInput}
                 onChange={(e) => setProjectNameInput(e.target.value)}
-                className="bg-gray-700 border-gray-600 text-gray-100"
+                className="bg-muted border-border text-foreground"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && projectNameInput.trim()) {
                     handleConfirmProjectCreation()
@@ -372,7 +372,7 @@ export function ProjectSelector({ currentProject, onProjectSelect, onProjectCrea
                 setPendingAction(null)
                 setProjectNameInput("")
               }}
-              className="border-gray-600 text-gray-300 hover:bg-gray-700"
+              className="border-border text-muted-foreground hover:bg-accent"
             >
               Cancel
             </Button>
