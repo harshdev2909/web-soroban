@@ -93,11 +93,11 @@ const PlaygroundFooter = () => {
           ))}
         </div>
 
-        {/* Gradient-masked ghost wordmark, bleeding off the bottom edge */}
-        <div className="relative mt-14 h-[7.5rem] overflow-hidden md:h-[12rem]" aria-hidden>
-          <div className="absolute inset-x-0 top-0 select-none text-center font-display text-[22vw] font-bold leading-[0.85] tracking-tighter text-gradient-brand opacity-[0.12] md:text-[15rem]">
+        {/* Gradient-masked ghost wordmark — scales to fit so the full word always shows */}
+        <div className="mt-14 flex justify-center" aria-hidden>
+          <span className="select-none whitespace-nowrap font-display font-bold leading-none tracking-tighter text-gradient-brand opacity-[0.16] text-[clamp(2.25rem,14.5vw,12rem)]">
             WebSoroban
-          </div>
+          </span>
         </div>
       </div>
 
