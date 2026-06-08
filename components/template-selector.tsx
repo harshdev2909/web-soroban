@@ -107,14 +107,21 @@ export function TemplateSelector({ onTemplateSelect, onClose }: TemplateSelector
           New Project
         </Button>
       </DialogTrigger>
-      <DialogContent className="bg-gray-800 border-gray-700 text-gray-100 max-w-2xl">
-        <DialogHeader>
+      <DialogContent className="bg-gray-800 border-gray-700 text-gray-100 max-w-2xl flex max-h-[85vh] flex-col gap-0 p-0">
+        <DialogHeader className="border-b border-gray-700 px-6 py-4">
           <DialogTitle>Choose a Template</DialogTitle>
         </DialogHeader>
-        
-        <div className="space-y-4">
+
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-4">
           {isLoading ? (
-            <div className="text-center text-gray-400">Loading templates...</div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-[148px] animate-pulse rounded-lg border border-gray-600 bg-gray-700/60"
+                />
+              ))}
+            </div>
           ) : (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -173,14 +180,15 @@ export function TemplateSelector({ onTemplateSelect, onClose }: TemplateSelector
                   )
                 })}
               </div>
-              <div className="pt-2 border-t border-gray-600">
-                <Link href="/marketplace" target="_blank" className="text-xs text-gray-400 hover:text-gray-300 inline-flex items-center gap-1">
-                  <ExternalLink className="w-3 h-3" />
-                  Browse template docs & marketplace
-                </Link>
-              </div>
             </>
           )}
+        </div>
+
+        <div className="border-t border-gray-700 px-6 py-3">
+          <Link href="/marketplace" target="_blank" className="text-xs text-gray-400 hover:text-gray-300 inline-flex items-center gap-1">
+            <ExternalLink className="w-3 h-3" />
+            Browse template docs & marketplace
+          </Link>
         </div>
       </DialogContent>
       <TemplatePurchaseModal
