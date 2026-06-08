@@ -30,8 +30,9 @@ interface CommandPaletteProps {
 }
 
 /**
- * Cmd/Ctrl-K command palette. Groups commands and runs the selected action.
- * Registers its own global keyboard shortcut.
+ * Cmd/Ctrl-K command palette — a signature surface. Raised, blurred backdrop,
+ * grouped results (Files / Actions / Navigation), keyboard hints. Registers its
+ * own global shortcut.
  */
 export function CommandPalette({ open, onOpenChange, commands }: CommandPaletteProps) {
   useEffect(() => {
@@ -50,10 +51,12 @@ export function CommandPalette({ open, onOpenChange, commands }: CommandPaletteP
   for (const c of commands) if (!groups.includes(c.group)) groups.push(c.group)
 
   return (
-    <CommandDialog open={open} onOpenChange={onOpenChange}>
+    <CommandDialog open={open} onOpenChange={onOpenChange} className="max-w-xl">
       <CommandInput placeholder="Search files, run actions, navigate…" />
-      <CommandList>
-        <CommandEmpty>No results found.</CommandEmpty>
+      <CommandList className="max-h-[60vh]">
+        <CommandEmpty>
+          <span className="text-muted-foreground">No results found.</span>
+        </CommandEmpty>
         {groups.map((group, gi) => (
           <div key={group}>
             {gi > 0 && <CommandSeparator />}
@@ -72,12 +75,18 @@ export function CommandPalette({ open, onOpenChange, commands }: CommandPaletteP
                         // defer so the dialog closes before side effects
                         requestAnimationFrame(() => c.perform())
                       }}
-                      className="gap-2"
+                      className="gap-2.5"
                     >
-                      {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
+                      {Icon && (
+                        <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md border border-border/60 bg-muted/40 text-muted-foreground">
+                          <Icon className="h-3.5 w-3.5" />
+                        </span>
+                      )}
                       <span className="flex-1 truncate">{c.label}</span>
                       {c.hint && (
-                        <span className="font-mono text-[11px] text-muted-foreground">{c.hint}</span>
+                        <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+                          {c.hint}
+                        </kbd>
                       )}
                     </CommandItem>
                   )
@@ -86,6 +95,22 @@ export function CommandPalette({ open, onOpenChange, commands }: CommandPaletteP
           </div>
         ))}
       </CommandList>
+
+      {/* Keyboard hint footer */}
+      <div className="flex items-center justify-between border-t border-border px-3 py-2 font-mono text-[10px] text-muted-foreground">
+        <span className="flex items-center gap-1.5">
+          <kbd className="rounded border border-border bg-muted px-1 py-0.5">↑</kbd>
+          <kbd className="rounded border border-border bg-muted px-1 py-0.5">↓</kbd>
+          navigate
+        </span>
+        <span className="flex items-center gap-1.5">
+          <kbd className="rounded border border-border bg-muted px-1 py-0.5">↵</kbd>
+          select
+          <span className="text-border">·</span>
+          <kbd className="rounded border border-border bg-muted px-1 py-0.5">esc</kbd>
+          close
+        </span>
+      </div>
     </CommandDialog>
   )
 }

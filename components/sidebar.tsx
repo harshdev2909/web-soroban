@@ -4,7 +4,21 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { File, FileText, Plus, Save, Pencil, Check, X, Code2, Clock, Trash2, Loader2 } from "lucide-react"
+import {
+  File,
+  FileCode2,
+  FileCog,
+  FileJson,
+  Plus,
+  Save,
+  Pencil,
+  Check,
+  X,
+  Code2,
+  Trash2,
+  Loader2,
+} from "lucide-react"
+import { motion } from "framer-motion"
 import { toast } from "sonner"
 
 import { Project, ProjectFile } from "@/lib/api"
@@ -76,22 +90,27 @@ export function Sidebar({ project, activeFile, onFileSelect, onProjectNameChange
     setNewFileName("")
   }
 
-  const getFileIcon = (fileName: string) => {
-    if (fileName.endsWith(".rs")) return <FileText className="h-4 w-4 shrink-0 text-brand" />
-    return <File className="h-4 w-4 shrink-0 text-muted-foreground" />
+  const getFileIcon = (fileName: string, active: boolean) => {
+    const base = "h-4 w-4 shrink-0"
+    if (fileName.endsWith(".rs")) return <FileCode2 className={`${base} ${active ? "text-brand" : "text-brand/70"}`} />
+    if (fileName.endsWith(".toml")) return <FileCog className={`${base} text-warning/70`} />
+    if (fileName.endsWith(".json")) return <FileJson className={`${base} text-info/70`} />
+    return <File className={`${base} text-muted-foreground`} />
   }
 
   const getFileType = (fileName: string) => {
     if (fileName.endsWith(".rs")) return "Rust"
-    if (fileName.endsWith(".toml")) return "Config"
+    if (fileName.endsWith(".toml")) return "TOML"
     if (fileName.endsWith(".json")) return "JSON"
     return "File"
   }
 
+  const deployCount = project.deploymentHistory?.length || 0
+
   return (
     <div className="flex h-full flex-col overflow-hidden border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
       {/* Project header */}
-      <div className="border-b border-sidebar-border p-4">
+      <div className="border-b border-sidebar-border p-3">
         {isEditingName ? (
           <div className="space-y-2">
             <Input
@@ -114,102 +133,111 @@ export function Sidebar({ project, activeFile, onFileSelect, onProjectNameChange
             </div>
           </div>
         ) : (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex min-w-0 items-center gap-2.5">
-                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-brand/12 text-brand">
-                  <Code2 className="h-4 w-4" />
-                </span>
-                <h2 className="truncate font-display text-sm font-semibold text-foreground">{project.name}</h2>
-              </div>
-              <button
-                onClick={() => setIsEditingName(true)}
-                className="rounded p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-                title="Rename project"
-                aria-label="Rename project"
-              >
-                <Pencil className="h-3.5 w-3.5" />
-              </button>
+          <div className="group/header flex items-center justify-between gap-2">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-brand/12 text-brand">
+                <Code2 className="h-4 w-4" />
+              </span>
+              <h2 className="truncate font-display text-sm font-semibold text-foreground">{project.name}</h2>
             </div>
-            <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-              <Clock className="h-3 w-3" />
-              <span>{new Date(project.updatedAt).toLocaleDateString()}</span>
-            </div>
+            <button
+              onClick={() => setIsEditingName(true)}
+              className="rounded p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground focus-visible:opacity-100 group-hover/header:opacity-100"
+              title="Rename project"
+              aria-label="Rename project"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
           </div>
         )}
-      </div>
 
-      {/* Actions */}
-      <div className="space-y-2 border-b border-sidebar-border p-3">
-        <Button size="sm" className="w-full gap-2" onClick={() => { setNewFileName(""); setShowNewFileDialog(true) }}>
-          <Plus className="h-4 w-4" /> New file
-        </Button>
-        <Button size="sm" variant="outline" className="w-full gap-2" onClick={handleSaveProject} disabled={isSaving}>
-          {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          {isSaving ? "Saving…" : "Save project"}
-        </Button>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-2 border-b border-sidebar-border p-3">
-        <div className="rounded-lg border border-border bg-card p-3">
-          <div className="font-mono-tnum text-2xl font-semibold leading-none text-foreground">{project.files.length}</div>
-          <div className="mt-1.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Files</div>
+        {/* Slim stat row — replaces the two stat tiles */}
+        <div className="mt-2.5 flex items-center gap-2 font-mono text-[11px] text-muted-foreground">
+          <span className="font-mono-tnum text-foreground/90">{project.files.length}</span>
+          <span>{project.files.length === 1 ? "file" : "files"}</span>
+          <span className="text-border">·</span>
+          <span className="font-mono-tnum text-foreground/90">{deployCount}</span>
+          <span>{deployCount === 1 ? "deploy" : "deploys"}</span>
+          <span className="ml-auto truncate" title={`Edited ${new Date(project.updatedAt).toLocaleString()}`}>
+            {new Date(project.updatedAt).toLocaleDateString()}
+          </span>
         </div>
-        <div className="rounded-lg border border-border bg-card p-3">
-          <div className="font-mono-tnum text-2xl font-semibold leading-none text-foreground">
-            {project.deploymentHistory?.length || 0}
+      </div>
+
+      {/* Explorer — the primary content of the rail */}
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="flex items-center justify-between px-3 pb-1 pt-3">
+          <div className="flex items-center gap-2">
+            <h3 className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Explorer</h3>
+            <span className="font-mono-tnum text-[10px] text-muted-foreground/70">{project.files.length}</span>
           </div>
-          <div className="mt-1.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Deploys</div>
+          <div className="flex items-center gap-0.5">
+            <button
+              onClick={() => { setNewFileName(""); setShowNewFileDialog(true) }}
+              className="rounded p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              title="New file"
+              aria-label="New file"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={handleSaveProject}
+              disabled={isSaving}
+              className="rounded p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+              title="Save project"
+              aria-label="Save project"
+            >
+              {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+            </button>
+          </div>
         </div>
-      </div>
 
-      {/* File explorer */}
-      <div className="flex-1 overflow-y-auto p-3">
-        <div className="mb-2 flex items-center justify-between px-1">
-          <h3 className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Explorer</h3>
-          <span className="font-mono text-[10px] text-muted-foreground">{project.files.length}</span>
-        </div>
-        <div className="space-y-0.5">
-          {project.files.map((file) => {
-            const isActive = activeFile.name === file.name
-            return (
-              <div
-                key={file.name}
-                className={`group relative flex cursor-pointer items-center justify-between rounded-md py-1.5 pl-3 pr-2 text-sm transition-colors ${
-                  isActive ? "bg-brand/10 text-foreground" : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                }`}
-              >
-                {isActive && (
-                  <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-brand" />
-                )}
-                <button onClick={() => onFileSelect(file)} className="flex min-w-0 flex-1 items-center gap-2 text-left">
-                  {getFileIcon(file.name)}
-                  <span className="truncate font-mono text-[13px]">{file.name}</span>
-                </button>
-                <div className="ml-2 flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                  <span className="rounded border border-border bg-muted px-1 py-0 font-mono text-[9px] text-muted-foreground">
-                    {getFileType(file.name)}
-                  </span>
-                  {project.files.length > 1 && (
-                    <button
-                      onClick={() => handleDeleteFile(file.name)}
-                      className="rounded p-1 text-muted-foreground transition-colors hover:bg-destructive/15 hover:text-destructive"
-                      title={`Delete ${file.name}`}
-                      aria-label={`Delete ${file.name}`}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </button>
+        <div className="flex-1 overflow-y-auto px-2 pb-3">
+          <div className="space-y-0.5">
+            {project.files.map((file) => {
+              const isActive = activeFile.name === file.name
+              return (
+                <div
+                  key={file.name}
+                  className={`group relative flex cursor-pointer items-center justify-between rounded-md py-1.5 pl-3 pr-1.5 text-sm transition-colors ${
+                    isActive ? "bg-brand/10 text-foreground" : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                  }`}
+                >
+                  {isActive && (
+                    <motion.span
+                      layoutId="file-active-bar"
+                      className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-brand"
+                      transition={{ type: "spring", stiffness: 500, damping: 40 }}
+                    />
                   )}
+                  <button onClick={() => onFileSelect(file)} className="flex min-w-0 flex-1 items-center gap-2 text-left">
+                    {getFileIcon(file.name, isActive)}
+                    <span className="truncate font-mono text-[13px]">{file.name}</span>
+                  </button>
+                  <div className="ml-2 flex shrink-0 items-center gap-1">
+                    <span className="rounded border border-border bg-muted px-1 py-0 font-mono text-[9px] text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
+                      {getFileType(file.name)}
+                    </span>
+                    {project.files.length > 1 && (
+                      <button
+                        onClick={() => handleDeleteFile(file.name)}
+                        className="rounded p-1 text-muted-foreground opacity-0 transition-all hover:bg-destructive/15 hover:text-destructive group-hover:opacity-100 focus-visible:opacity-100"
+                        title={`Delete ${file.name}`}
+                        aria-label={`Delete ${file.name}`}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
         </div>
       </div>
 
       {/* Footer */}
-      <div className="border-t border-sidebar-border px-4 py-2.5">
+      <div className="border-t border-sidebar-border px-3 py-2.5">
         <div className="flex items-center justify-between font-mono text-[10px] text-muted-foreground">
           <span>WebSoroban</span>
           <span className="flex items-center gap-1.5">

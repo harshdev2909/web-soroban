@@ -103,7 +103,7 @@ export default function HomePage() {
               variants={reduce ? undefined : item}
               className="font-display mt-6 text-display-lg font-semibold"
             >
-              Write, compile and deploy
+              Write, compile, test and deploy
               <br />
               <span className="text-brand">Soroban contracts</span> in the browser.
             </motion.h1>

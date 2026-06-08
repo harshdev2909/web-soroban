@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { useWalletKit } from '@/contexts/WalletKitContext'
-import { projectApi, compileApi, deployApi, jobsApi, Project, ProjectFile, Template, usageApi, contractApi } from '@/lib/api'
+import { projectApi, compileApi, deployApi, jobsApi, Project, ProjectFile, Template, usageApi } from '@/lib/api'
 import { socketService } from '@/lib/socket'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -20,9 +20,10 @@ import { HowItWorksModal } from '@/components/how-it-works-modal'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { CommandPalette, type PaletteCommand } from '@/components/command-palette'
+import { StatusBar } from '@/components/status-bar'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Loader2,
-  Zap,
   Hammer,
   Rocket,
   FilePlus2,
@@ -49,6 +50,62 @@ function IDEPageFallback() {
   return <IDELoading />
 }
 
+/** Three-zone skeleton matching the IDE shell — shown while the project loads. */
+function IDESkeleton() {
+  return (
+    <div className="flex h-screen flex-col bg-background">
+      {/* Navbar shell */}
+      <div className="flex h-14 items-center justify-between border-b border-border px-4">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-7 w-7 rounded-md" />
+          <Skeleton className="h-4 w-28" />
+        </div>
+        <Skeleton className="hidden h-9 w-80 rounded-lg lg:block" />
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-7 w-16 rounded-full" />
+          <Skeleton className="h-9 w-9 rounded-lg" />
+        </div>
+      </div>
+      <div className="flex min-h-0 flex-1">
+        {/* Explorer */}
+        <div className="hidden w-[20%] flex-col gap-3 border-r border-border p-3 md:flex">
+          <Skeleton className="h-8 w-full rounded-md" />
+          <Skeleton className="h-3 w-24" />
+          <div className="mt-2 space-y-2">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-7 w-full rounded-md" style={{ opacity: 1 - i * 0.12 }} />
+            ))}
+          </div>
+        </div>
+        {/* Editor (hero) */}
+        <div className="flex flex-1 flex-col">
+          <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
+            <Skeleton className="h-6 w-24 rounded" />
+            <Skeleton className="h-6 w-24 rounded" />
+            <div className="ml-auto flex gap-2">
+              <Skeleton className="h-8 w-24 rounded-md" />
+              <Skeleton className="h-8 w-24 rounded-md" />
+            </div>
+          </div>
+          <div className="flex-1 space-y-2.5 p-4">
+            {Array.from({ length: 14 }).map((_, i) => (
+              <Skeleton key={i} className="h-3.5 rounded" style={{ width: `${35 + ((i * 37) % 55)}%` }} />
+            ))}
+          </div>
+        </div>
+        {/* Right panel */}
+        <div className="hidden w-[28%] flex-col gap-4 border-l border-border p-3 lg:flex">
+          <Skeleton className="h-8 w-32 rounded-md" />
+          <Skeleton className="h-24 w-full rounded-lg" />
+          <Skeleton className="h-40 w-full rounded-lg" />
+        </div>
+      </div>
+      {/* Status bar */}
+      <div className="h-7 border-t border-border" />
+    </div>
+  )
+}
+
 function IDEPageContent() {
   const [project, setProject] = useState<Project | null>(null)
   const [activeFile, setActiveFile] = useState<ProjectFile | null>(null)
@@ -62,10 +119,13 @@ function IDEPageContent() {
   const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(false)
   const [isCommandOpen, setIsCommandOpen] = useState(false)
   const [usage, setUsage] = useState<any>(null)
+  const [cursor, setCursor] = useState({ line: 1, col: 1 })
+  const [isRightPanelOpen, setIsRightPanelOpen] = useState(true)
+  const [diagnostics, setDiagnostics] = useState<any[]>([])
   const currentJobIdRef = useRef<string | null>(null)
 
   const { user, loading: authLoading, isAuthenticated, refreshUser } = useAuth()
-  const { address, connect } = useWalletKit()
+  const { address } = useWalletKit()
   const searchParams = useSearchParams()
   const router = useRouter()
 
@@ -90,7 +150,10 @@ function IDEPageContent() {
         setIsLoading(false)
       } else {
         loadUsage()
-        setIsLoading(false)
+        // Keep isLoading true here — loadInitialProject() owns turning it
+        // off once the project is actually fetched. Clearing it now would
+        // briefly show the "No project loaded" screen while the project
+        // request is still in flight.
       }
     }
   }, [authLoading, isAuthenticated])
@@ -428,6 +491,7 @@ mod tests {
 
     setIsCompiling(true);
     setIsBottomPanelOpen(true);
+    setDiagnostics([]);
 
     // Clear previous logs and start fresh
     setLogs([{
@@ -478,7 +542,10 @@ mod tests {
               // Unsubscribe when job completes
               socketService.unsubscribeFromJob(result.jobId);
               currentJobIdRef.current = null;
-              
+
+              // Structured compiler diagnostics -> editor gutter markers.
+              if (Array.isArray(result.diagnostics)) setDiagnostics(result.diagnostics);
+
               if (status === 'completed') {
                 setLogs(prev => [...prev, {
                   type: "success",
@@ -986,7 +1053,7 @@ mod tests {
     }
   };
 
-  const handleTemplateSelect = async (template: Template) => {
+  const handleTemplateSelect = async (_template: Template) => {
     // Template selection is now handled by ProjectSelector with name modal
     // This function is kept for backward compatibility but project creation
     // happens in ProjectSelector after user enters the project name
@@ -1233,11 +1300,6 @@ impl From<Error> for soroban_sdk::Error {
     }
   };
 
-  const handleRightPanelClose = () => {
-    // This could be used to hide the right panel if needed
-    console.log("Right panel close requested");
-  };
-
   // Show login prompt if not authenticated
   if (!authLoading && !isAuthenticated) {
     return (
@@ -1262,7 +1324,7 @@ impl From<Error> for soroban_sdk::Error {
   }
 
   if (isLoading) {
-    return <IDELoading />;
+    return <IDESkeleton />;
   }
 
   if (!project || !activeFile) {
@@ -1272,6 +1334,14 @@ impl From<Error> for soroban_sdk::Error {
       </div>
     );
   }
+
+  const editorLanguage = activeFile.name.endsWith('.rs')
+    ? 'Rust'
+    : activeFile.name.endsWith('.toml')
+    ? 'TOML'
+    : activeFile.name.endsWith('.json')
+    ? 'JSON'
+    : 'Plain Text'
 
   const paletteCommands: PaletteCommand[] = [
     { id: 'compile', group: 'Actions', label: 'Compile project', hint: '⌘B', icon: Hammer, disabled: isCompiling, perform: () => handleCompile() },
@@ -1312,49 +1382,6 @@ impl From<Error> for soroban_sdk::Error {
         }
       />
       
-      {/* Usage Limit Warnings */}
-      {usage && (
-        <div className="border-b border-border bg-card/40 px-4 py-1.5 backdrop-blur-sm">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4 font-mono text-xs">
-              <span className="flex items-center gap-2 text-muted-foreground">
-                <span className="h-1.5 w-1.5 rounded-full bg-brand" />
-                Deploys
-                <span className="font-mono-tnum text-foreground">
-                  {usage.deployments.count}
-                  <span className="text-muted-foreground">
-                    /{usage.deployments.limit === -1 ? '∞' : usage.deployments.limit}
-                  </span>
-                </span>
-              </span>
-              <span className="h-3 w-px bg-border" />
-              <span className="flex items-center gap-2 text-muted-foreground">
-                <span className="h-1.5 w-1.5 rounded-full bg-cosmic" />
-                Tests
-                <span className="font-mono-tnum text-foreground">
-                  {usage.functionTests.count}
-                  <span className="text-muted-foreground">
-                    /{usage.functionTests.limit === -1 ? '∞' : usage.functionTests.limit}
-                  </span>
-                </span>
-              </span>
-            </div>
-            {(typeof usage.deployments.remaining === 'number' && usage.deployments.remaining <= 2) ||
-             (typeof usage.functionTests.remaining === 'number' && usage.functionTests.remaining <= 1) ? (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setIsSubscriptionModalOpen(true)}
-                className="h-7 border-warning/40 text-xs text-warning hover:bg-warning/10"
-              >
-                <Zap className="mr-1 h-3 w-3" />
-                Upgrade
-              </Button>
-            ) : null}
-          </div>
-        </div>
-      )}
-      
       {/* Modals */}
       <LoginModal
         open={isLoginModalOpen}
@@ -1375,58 +1402,84 @@ impl From<Error> for soroban_sdk::Error {
         onOpenChange={setIsHowItWorksOpen}
       />
       
-      <div className="flex-1 flex">
-        <ResizablePanelGroup direction="vertical">
-          <ResizablePanel defaultSize={isBottomPanelOpen ? 70 : 100}>
-            <ResizablePanelGroup direction="horizontal">
-              <ResizablePanel defaultSize={20} minSize={15}>
-                <Sidebar 
-                  project={project}
-                  activeFile={activeFile}
-                  onFileSelect={handleFileSelect}
-                  onProjectNameChange={handleProjectNameChange}
-                  onNewFile={handleNewFile}
-                  onSaveProject={handleSaveProject}
-                  onDeleteFile={handleDeleteFile}
-                />
-              </ResizablePanel>
-              
-              <ResizableHandle />
-              
-              <ResizablePanel defaultSize={50}>
-                <EditorPanel 
-                  activeFile={activeFile}
-                  files={project.files}
-                  onFileSelect={handleFileSelect}
-                  onFileContentChange={handleFileContentChange}
-                  onCompile={handleCompile}
-                  onDeploy={handleDeploy}
-                  isCompiling={isCompiling}
-                  isDeploying={isDeploying}
-                />
-              </ResizablePanel>
-              
-              <ResizableHandle />
-              
-              <ResizablePanel defaultSize={30} minSize={20}>
-                <RightPanel project={project} onClose={handleRightPanelClose} />
-              </ResizablePanel>
-            </ResizablePanelGroup>
-          </ResizablePanel>
-          
-          {isBottomPanelOpen && (
-            <>
-              <ResizableHandle />
-              <ResizablePanel defaultSize={30} minSize={20}>
-                <BottomPanel 
-                  logs={logs} 
-                  onClose={() => setIsBottomPanelOpen(false)} 
-                  onClear={handleClearLogs}
-                />
-              </ResizablePanel>
-            </>
-          )}
-        </ResizablePanelGroup>
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="min-h-0 flex-1">
+          <ResizablePanelGroup direction="vertical">
+            <ResizablePanel defaultSize={isBottomPanelOpen ? 70 : 100}>
+              <ResizablePanelGroup direction="horizontal">
+                <ResizablePanel defaultSize={20} minSize={14} maxSize={32}>
+                  <Sidebar
+                    project={project}
+                    activeFile={activeFile}
+                    onFileSelect={handleFileSelect}
+                    onProjectNameChange={handleProjectNameChange}
+                    onNewFile={handleNewFile}
+                    onSaveProject={handleSaveProject}
+                    onDeleteFile={handleDeleteFile}
+                  />
+                </ResizablePanel>
+
+                <ResizableHandle />
+
+                {/* Editor — the hero */}
+                <ResizablePanel defaultSize={isRightPanelOpen ? 52 : 80} minSize={30}>
+                  <EditorPanel
+                    activeFile={activeFile}
+                    files={project.files}
+                    onFileSelect={handleFileSelect}
+                    onFileContentChange={handleFileContentChange}
+                    onCompile={handleCompile}
+                    onDeploy={handleDeploy}
+                    isCompiling={isCompiling}
+                    isDeploying={isDeploying}
+                    onCursorChange={setCursor}
+                    diagnostics={diagnostics}
+                  />
+                </ResizablePanel>
+
+                {isRightPanelOpen && (
+                  <>
+                    <ResizableHandle />
+                    <ResizablePanel defaultSize={28} minSize={20} maxSize={40}>
+                      <RightPanel
+                        project={project}
+                        onClose={() => setIsRightPanelOpen(false)}
+                        walletAddress={address || user?.walletAddress}
+                      />
+                    </ResizablePanel>
+                  </>
+                )}
+              </ResizablePanelGroup>
+            </ResizablePanel>
+
+            {isBottomPanelOpen && (
+              <>
+                <ResizableHandle />
+                <ResizablePanel defaultSize={30} minSize={15}>
+                  <BottomPanel
+                    logs={logs}
+                    onClose={() => setIsBottomPanelOpen(false)}
+                    onClear={handleClearLogs}
+                  />
+                </ResizablePanel>
+              </>
+            )}
+          </ResizablePanelGroup>
+        </div>
+
+        {/* Single full-width status bar */}
+        <StatusBar
+          language={editorLanguage}
+          cursor={cursor}
+          charCount={(activeFile.content || '').length}
+          lineCount={(activeFile.content || '').split('\n').length}
+          errors={logs.filter((l) => l.type === 'error').length}
+          warnings={logs.filter((l) => l.type === 'warning').length}
+          consoleOpen={isBottomPanelOpen}
+          onToggleConsole={() => setIsBottomPanelOpen((v) => !v)}
+          rightPanelOpen={isRightPanelOpen}
+          onToggleRightPanel={() => setIsRightPanelOpen((v) => !v)}
+        />
       </div>
     </div>
   );

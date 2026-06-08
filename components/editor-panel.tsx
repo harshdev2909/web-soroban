@@ -1,8 +1,9 @@
 "use client"
 
-import { useRef } from "react"
+import { useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Loader2, Hammer, Rocket } from "lucide-react"
+import { motion } from "framer-motion"
 import dynamic from "next/dynamic"
 
 // Dynamically import Monaco Editor to avoid SSR issues
@@ -17,6 +18,15 @@ const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
 
 import { ProjectFile } from "@/lib/api"
 
+export interface CompileDiagnostic {
+  level: "error" | "warning"
+  code?: string
+  message: string
+  file?: string
+  line?: number
+  column?: number
+}
+
 interface EditorPanelProps {
   activeFile: ProjectFile
   files: ProjectFile[]
@@ -26,6 +36,8 @@ interface EditorPanelProps {
   onDeploy: () => void
   isCompiling: boolean
   isDeploying: boolean
+  onCursorChange?: (pos: { line: number; col: number }) => void
+  diagnostics?: CompileDiagnostic[]
 }
 
 export function EditorPanel({
@@ -37,14 +49,43 @@ export function EditorPanel({
   onDeploy,
   isCompiling,
   isDeploying,
+  onCursorChange,
+  diagnostics = [],
 }: EditorPanelProps) {
   const editorRef = useRef<any>(null)
+  const monacoRef = useRef<any>(null)
 
   const handleEditorDidMount = (editor: any, monaco: any) => {
     editorRef.current = editor
+    monacoRef.current = monaco
     monaco.editor.setTheme("vs-dark")
     monaco.languages.register({ id: "rust" })
+    editor.onDidChangeCursorPosition((e: any) => {
+      onCursorChange?.({ line: e.position.lineNumber, col: e.position.column })
+    })
   }
+
+  // Reflect compiler diagnostics as gutter markers on the active file's model.
+  useEffect(() => {
+    const monaco = monacoRef.current
+    const editor = editorRef.current
+    if (!monaco || !editor) return
+    const model = editor.getModel()
+    if (!model) return
+
+    const base = (p?: string) => (p ? p.split("/").pop() : undefined)
+    const markers = diagnostics
+      .filter((d) => !d.file || base(d.file) === activeFile.name)
+      .map((d) => ({
+        severity: d.level === "error" ? monaco.MarkerSeverity.Error : monaco.MarkerSeverity.Warning,
+        message: d.code ? `[${d.code}] ${d.message}` : d.message,
+        startLineNumber: d.line || 1,
+        startColumn: d.column || 1,
+        endLineNumber: d.line || 1,
+        endColumn: (d.column || 1) + 1,
+      }))
+    monaco.editor.setModelMarkers(model, "soroban", markers)
+  }, [diagnostics, activeFile])
 
   const getLanguage = (fileName: string) => {
     if (fileName.endsWith(".rs")) return "rust"
@@ -55,7 +96,7 @@ export function EditorPanel({
   return (
     <div className="flex h-full flex-col bg-background">
       {/* File tabs + actions */}
-      <div className="flex items-center border-b border-border bg-card/40">
+      <div className="flex items-center border-b border-border bg-card/30">
         <div className="flex min-w-0 flex-1 overflow-x-auto">
           {files.map((file) => {
             const isActive = activeFile.name === file.name
@@ -67,17 +108,24 @@ export function EditorPanel({
                 className={`group relative flex items-center gap-2 whitespace-nowrap px-4 py-2.5 font-mono text-xs transition-colors ${
                   isActive
                     ? "bg-background text-foreground"
-                    : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+                    : "text-muted-foreground hover:bg-accent/40 hover:text-foreground"
                 }`}
               >
-                <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-brand" : "bg-border"}`} />
+                <span className={`h-1.5 w-1.5 rounded-full transition-colors ${isActive ? "bg-brand" : "bg-border group-hover:bg-muted-foreground"}`} />
                 {file.name}
-                {isActive && <span className="pointer-events-none absolute inset-x-0 bottom-0 h-0.5 bg-brand" />}
+                {isActive && (
+                  <motion.span
+                    layoutId="editor-tab-underline"
+                    className="pointer-events-none absolute inset-x-0 bottom-0 h-0.5 bg-brand"
+                    transition={{ type: "spring", stiffness: 500, damping: 40 }}
+                  />
+                )}
               </button>
             )
           })}
         </div>
 
+        {/* Action cluster: Deploy is the single primary; Compile is secondary */}
         <div className="ml-auto flex flex-shrink-0 items-center gap-2 border-l border-border px-3 py-1.5">
           <Button onClick={onCompile} disabled={isCompiling} size="sm" variant="outline" className="h-8 gap-1.5">
             {isCompiling ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Hammer className="h-3.5 w-3.5" />}
@@ -102,6 +150,7 @@ export function EditorPanel({
           options={{
             minimap: { enabled: true, renderCharacters: false },
             fontSize: 13.5,
+            lineHeight: 21,
             lineNumbers: "on",
             roundedSelection: false,
             scrollBeyondLastLine: false,
@@ -118,25 +167,6 @@ export function EditorPanel({
             padding: { top: 14, bottom: 14 },
           }}
         />
-      </div>
-
-      {/* Status bar */}
-      <div className="flex items-center justify-between border-t border-border bg-card/40 px-4 py-1.5 font-mono text-[10px] text-muted-foreground">
-        <div className="flex items-center gap-2.5">
-          <span className="flex items-center gap-1.5 text-foreground">
-            <span className="h-1.5 w-1.5 rounded-full bg-brand" />
-            {getLanguage(activeFile.name).toUpperCase()}
-          </span>
-          <span className="opacity-40">·</span>
-          <span>UTF-8</span>
-          <span className="opacity-40">·</span>
-          <span>Spaces: 4</span>
-        </div>
-        <div className="flex items-center gap-2.5">
-          <span className="font-mono-tnum">{(activeFile.content || "").length.toLocaleString()} chars</span>
-          <span className="opacity-40">·</span>
-          <span className="font-mono-tnum">{(activeFile.content || "").split("\n").length} lines</span>
-        </div>
       </div>
     </div>
   )

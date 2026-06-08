@@ -32,6 +32,8 @@
     --success-foreground: 0 0% 100%;
     --warning: 35 92% 48%;
     --warning-foreground: 30 40% 10%;
+    --info: 205 88% 45%;
+    --info-foreground: 0 0% 100%;
 
     --brand: 250 80% 58%;
     --brand-foreground: 0 0% 100%;
@@ -86,6 +88,8 @@
     --success-foreground: 150 40% 6%;
     --warning: 38 94% 60%;
     --warning-foreground: 30 50% 8%;
+    --info: 200 90% 62%;
+    --info-foreground: 205 60% 8%;
 
     --brand: 250 86% 66%;
     --brand-foreground: 0 0% 100%;

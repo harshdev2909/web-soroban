@@ -26,6 +26,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { WalletWidget } from './wallet-widget'
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
 import { useAuth } from '@/contexts/AuthContext'
 import { User } from '@/lib/api'
 
@@ -121,12 +122,45 @@ export function Navbar({
         {user ? (
           <>
             {plan && (
-              <button onClick={onSubscriptionClick} title="Manage subscription">
-                <Badge variant="outline" className={`gap-1 px-2.5 py-1 font-medium ${plan.className}`}>
-                  {plan.icon && <Crown className="h-3 w-3" />}
-                  {plan.label}
-                </Badge>
-              </button>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button title="Plan & usage" aria-label="Plan and usage">
+                    <Badge variant="outline" className={`gap-1 px-2.5 py-1 font-medium ${plan.className}`}>
+                      {plan.icon && <Crown className="h-3 w-3" />}
+                      {plan.label}
+                    </Badge>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-64 p-3">
+                  <div className="mb-3 flex items-center justify-between">
+                    <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Plan</span>
+                    <span className="text-xs font-medium text-foreground">{plan.label}</span>
+                  </div>
+                  <UsageMeter
+                    label="Deploys"
+                    count={user.usage.deployments.count}
+                    limit={user.usage.deployments.limit}
+                    tint="bg-brand"
+                  />
+                  <div className="h-3" />
+                  <UsageMeter
+                    label="Function tests"
+                    count={user.usage.functionTests.count}
+                    limit={user.usage.functionTests.limit}
+                    tint="bg-cosmic"
+                  />
+                  {onSubscriptionClick && user.subscription.plan === 'free' && (
+                    <Button size="sm" className="mt-3 w-full" onClick={onSubscriptionClick}>
+                      <Crown className="mr-1.5 h-3.5 w-3.5" /> Upgrade plan
+                    </Button>
+                  )}
+                  {onSubscriptionClick && user.subscription.plan !== 'free' && (
+                    <Button size="sm" variant="outline" className="mt-3 w-full" onClick={onSubscriptionClick}>
+                      Manage subscription
+                    </Button>
+                  )}
+                </PopoverContent>
+              </Popover>
             )}
             <WalletWidget />
             <DropdownMenu>
@@ -179,7 +213,7 @@ export function Navbar({
       </div>
 
       {mobileOpen && (
-        <div className="absolute inset-x-0 top-14 border-b border-border bg-background/95 p-3 backdrop-blur-xl md:hidden">
+        <div className="absolute inset-x-0 top-14 z-40 border-b border-border bg-background/95 p-3 backdrop-blur-xl md:hidden">
           <div className="flex flex-col gap-1">
             {onHowItWorksClick && (
               <Button variant="ghost" className="justify-start" onClick={() => { setMobileOpen(false); onHowItWorksClick() }}>
@@ -195,5 +229,28 @@ export function Navbar({
         </div>
       )}
     </header>
+  )
+}
+
+function UsageMeter({ label, count, limit, tint }: { label: string; count: number; limit: number; tint: string }) {
+  const unlimited = limit === -1
+  const pct = unlimited ? 8 : limit > 0 ? Math.min(100, Math.round((count / limit) * 100)) : 0
+  const nearLimit = !unlimited && limit > 0 && count / limit >= 0.8
+  return (
+    <div>
+      <div className="mb-1.5 flex items-center justify-between font-mono text-[11px]">
+        <span className="text-muted-foreground">{label}</span>
+        <span className="font-mono-tnum text-foreground/90">
+          {count}
+          <span className="text-muted-foreground">/{unlimited ? '∞' : limit}</span>
+        </span>
+      </div>
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+        <div
+          className={`h-full rounded-full transition-all ${nearLimit ? 'bg-warning' : tint} ${unlimited ? 'opacity-40' : ''}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
   )
 }

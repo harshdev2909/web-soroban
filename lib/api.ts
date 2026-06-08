@@ -1039,37 +1039,131 @@ export const systemApi = {
   },
 };
 
-// Contract API
-export interface InvokeResponse {
+// Contract API — spec-driven, type-aware invoke pipeline.
+export interface SpecInput {
+  name: string;
+  type: string;
+}
+export interface SpecFunction {
+  name: string;
+  doc: string;
+  inputs: SpecInput[];
+  outputs: string[];
+}
+export interface ContractSpecResponse {
   success: boolean;
-  output?: any;
-  contractAddress?: string;
-  functionName?: string;
-  args?: any[];
-  usage?: {
-    count: number;
-    limit: number;
-    remaining: number | string;
-  };
+  contractId?: string;
+  functions?: SpecFunction[];
   error?: string;
 }
 
+export interface InvokeResponse {
+  success: boolean;
+  readOnly: boolean;
+  status: 'simulated' | 'submitted' | 'success' | 'failed';
+  result?: any;
+  returnValue?: any;
+  txHash?: string;
+  resourceFee?: string;
+  cost?: any;
+  latestLedger?: number;
+  events?: any[];
+  error?: string;
+  invocationId?: string;
+}
+
+export interface FunctionTestCase {
+  id: string;
+  contractId: string;
+  functionName: string;
+  name: string;
+  args: Record<string, any>;
+  expected?: { mode: 'success' | 'equals' | 'contains'; value?: any } | null;
+  createdAt: string;
+}
+
+export interface RunTestsResponse {
+  success: boolean;
+  total: number;
+  passed: number;
+  results: Array<{
+    testId: string;
+    name: string;
+    functionName: string;
+    status: 'pass' | 'fail';
+    actual: any;
+    expected: any;
+    error?: string | null;
+  }>;
+}
+
+function authHeaders(): Record<string, string> {
+  const token = authApi.getToken();
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
+
 export const contractApi = {
-  // Invoke contract function
-  async invoke(contractAddress: string, functionName: string, args: any[] = [], network = 'testnet'): Promise<InvokeResponse> {
-    const token = authApi.getToken();
-    const response = await fetch(`${API_BASE_URL}/contracts/${contractAddress}/invoke`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ functionName, args, network }),
+  // Fetch the parsed function list for the type-aware invoke form.
+  async getSpec(contractId: string): Promise<ContractSpecResponse> {
+    const response = await fetch(`${API_BASE_URL}/contracts/${contractId}/spec`, {
+      headers: authHeaders(),
     });
-    if (!response.ok) {
-      const data = await response.json();
-      throw new Error(data.error || 'Failed to invoke contract');
-    }
+    return response.json();
+  },
+
+  // Invoke a function. Pass an args object keyed by parameter name. Set
+  // execute=true to sign + submit a state-changing call (otherwise simulate).
+  async invoke(
+    contractId: string,
+    functionName: string,
+    args: Record<string, any> = {},
+    opts: { execute?: boolean; clientRef?: string } = {}
+  ): Promise<InvokeResponse> {
+    const response = await fetch(`${API_BASE_URL}/contracts/${contractId}/invoke`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ functionName, args, execute: opts.execute ?? false, clientRef: opts.clientRef ?? null }),
+    });
+    const data = await response.json();
+    if (!response.ok && data.error) throw new Error(data.error);
+    return data;
+  },
+
+  // --- Saved function tests ---
+  async listTests(contractId: string): Promise<{ success: boolean; tests: FunctionTestCase[] }> {
+    const response = await fetch(`${API_BASE_URL}/contracts/${contractId}/tests`, { headers: authHeaders() });
+    return response.json();
+  },
+
+  async saveTest(
+    contractId: string,
+    test: { functionName: string; name: string; args: Record<string, any>; expected?: any }
+  ): Promise<{ success: boolean; test: FunctionTestCase }> {
+    const response = await fetch(`${API_BASE_URL}/contracts/${contractId}/tests`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify(test),
+    });
+    return response.json();
+  },
+
+  async deleteTest(contractId: string, testId: string): Promise<{ success: boolean }> {
+    const response = await fetch(`${API_BASE_URL}/contracts/${contractId}/tests/${testId}`, {
+      method: 'DELETE',
+      headers: authHeaders(),
+    });
+    return response.json();
+  },
+
+  async runTests(contractId: string, functionName?: string): Promise<RunTestsResponse> {
+    const response = await fetch(`${API_BASE_URL}/contracts/${contractId}/tests/run`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify(functionName ? { functionName } : {}),
+    });
     return response.json();
   },
 };

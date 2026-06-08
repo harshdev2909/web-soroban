@@ -27,8 +27,12 @@ use the semantic classes.
 | `--border` / `--input` | `border-border` | Hairlines, inputs |
 | `--primary` / `--brand` | `bg-primary` / `text-brand` | The electric-iris accent (same hue) |
 | `--cosmic` | `text-cosmic` | Secondary accent — **gradients only**, never solo CTAs |
-| `--success` / `--warning` / `--destructive` | `text-success` … | Semantic status |
+| `--success` / `--warning` / `--destructive` / `--info` | `text-success` … | Semantic status |
 | `--ring` | `ring-ring` | Focus ring (matches brand) |
+
+Semantic colors each pair with a muted badge variant via opacity (e.g.
+`bg-success/12 text-success`, `bg-warning/15 text-warning`). Use these for
+badges/pills — never a raw fill behind body text.
 
 Dark brand hue: `hsl(250 86% 66%)`. Light: `hsl(250 80% 58%)`. White text on the
 brand fill is used for primary buttons (large/medium semibold labels — meets AA at
@@ -74,8 +78,40 @@ Display scale lives in `tailwind.config.ts`: `text-display-lg`, `text-display`,
 - **WalletWidget** (`components/wallet-widget.tsx`): the per-user testnet wallet —
   public key (copyable), balance, funded status, faucet. Never renders the secret.
 - **CommandPalette** (`components/command-palette.tsx`): Cmd/Ctrl-K; pass grouped
-  `PaletteCommand[]`. Registers its own shortcut.
+  `PaletteCommand[]`. Registers its own shortcut. Raised surface with a blurred
+  backdrop (the shared `DialogOverlay` now has `backdrop-blur-sm`), grouped results
+  with iconified rows, `kbd` hints per item, and a keyboard-hint footer.
 - **Reveal**: scroll-in wrapper for landing/marketing sections.
+
+### IDE screen conventions (`/ide`)
+
+The IDE is a three-zone layout with one focal point and one accent action:
+
+- **Hierarchy by weight, not borders.** Panels are flat surfaces separated by a
+  single hairline + background tint (`bg-sidebar`, `bg-card/40`). Reserve
+  `shadow-md`/`shadow-lg` for genuinely raised things (palette, popovers).
+- **One accent action per view:** **Deploy** is the only brand-filled button on
+  screen. Compile is `outline`; right-panel actions are `outline`/ghost; quiet
+  actions (New file, Save, Clear results) are icon buttons or ghost text.
+- **Left rail** (`components/sidebar.tsx`): Explorer is the primary content. Stats
+  are a single slim row (`N files · N deploys · edited …`), not tiles. File rows
+  use a consistent Lucide icon set by extension (`.rs` brand, `.toml` warning,
+  `.json` info) with a sliding `motion` active bar (`layoutId="file-active-bar"`).
+- **Editor** (`components/editor-panel.tsx`): the hero. Tabs use a shared-layout
+  `motion` underline (`layoutId="editor-tab-underline"`). It owns no status chips —
+  it reports cursor position up via `onCursorChange`.
+- **Right panel** (`components/right-panel.tsx`): collapsible (toggle in the status
+  bar / panel header), never equal weight. Metadata + Network are consolidated into
+  one **Info** block (Created · Last deployed · RPC · Deploy wallet · Contract ID).
+  Empty states are explicit ("No tests run yet", "No deploys yet", "Never").
+- **Status bar** (`components/status-bar.tsx`): one slim full-width bar. Left =
+  console toggle + language/encoding/EOL/indent; right = `Ln/Col`, char/line
+  counts, problems (errors/warnings, click → console), network pill, version,
+  panel toggle. This replaces all previously scattered status chips.
+- **Plan & usage:** a popover from the navbar plan badge with two thin meters
+  (deploys, function tests) + upgrade — there is no separate usage sub-bar.
+- **Loading:** `IDESkeleton` renders the three-zone shell with `Skeleton` blocks
+  (explorer rows, editor lines, panel cards) instead of a bare spinner.
 
 ## Accessibility (non-negotiable)
 
