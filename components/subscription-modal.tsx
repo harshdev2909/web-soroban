@@ -7,7 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { subscriptionApi, paymentApi, SubscriptionPlan } from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
 import { useWalletKit } from '@/contexts/WalletKitContext'
-import { WalletNetwork } from '@creit.tech/stellar-wallets-kit'
+import { payWithWallet } from '@/lib/pay'
 import { toast } from 'sonner'
 import { Loader2, Check, Crown, Zap, Wallet, X, CheckCircle2, Sparkles } from 'lucide-react'
 import { Input } from '@/components/ui/input'
@@ -29,7 +29,7 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
   const [paymentSuccess, setPaymentSuccess] = useState(false)
   const [successDetails, setSuccessDetails] = useState<any>(null)
   const { user, refreshUser } = useAuth()
-  const { address, signTransaction, openWalletModal, isInitialized, network, disconnect } = useWalletKit()
+  const { address, signTransaction, openWalletModal, isInitialized, disconnect } = useWalletKit()
 
   useEffect(() => {
     if (open) {
@@ -78,74 +78,32 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
       return
     }
 
-    if (!address) {
-      // Open wallet modal to connect
-      await openWalletModal()
-      if (!address) {
-        toast.error('Please connect a wallet first')
+    // Resolve a LIVE payer address — connect on the spot if needed (reading the
+    // `address` state right after openWalletModal() would be stale).
+    let payerAddress = address
+    if (!payerAddress) {
+      payerAddress = await openWalletModal()
+      if (!payerAddress) {
+        toast.error('Connect a wallet to continue')
         return
       }
     }
 
     try {
       setIsPaying(true)
-
-      // Import Stellar SDK to build payment transaction
-      const StellarSdk = await import('@stellar/stellar-sdk')
-      const { Asset, Networks, TransactionBuilder, Operation, Memo } = StellarSdk
-
-      // Determine network (WalletNetwork is an enum/string)
-      const isTestnet = network === WalletNetwork.TESTNET || network === 'TESTNET'
-      const horizonUrl = isTestnet 
-        ? 'https://horizon-testnet.stellar.org' 
-        : 'https://horizon.stellar.org'
-      const networkPassphrase = isTestnet ? Networks.TESTNET : Networks.PUBLIC
-
-      // Get account info
-      const Server = StellarSdk.Horizon?.Server || StellarSdk.Server
-      const server = new Server(horizonUrl)
-      
-      const account = await server.loadAccount(address)
-      
-      // Build payment transaction
-      const paymentAmount = paymentInfo.amount.toString()
-      const destination = paymentInfo.address
-      const memo = paymentInfo.memo
-
-      const transaction = new TransactionBuilder(account, {
-        fee: '100',
-        networkPassphrase: networkPassphrase
+      const { hash } = await payWithWallet({
+        signTransaction,
+        payerAddress,
+        destination: paymentInfo.address,
+        amount: paymentInfo.amount,
+        memo: paymentInfo.memo,
+        network: paymentInfo.network,
       })
-        .addOperation(
-          Operation.payment({
-            destination,
-            asset: Asset.native(),
-            amount: paymentAmount,
-          })
-        )
-        .addMemo(Memo.text(memo))
-        .setTimeout(30)
-        .build()
-
-      // Sign transaction with wallet
-      const signedXdr = await signTransaction(transaction.toXDR(), networkPassphrase)
-      
-      // Submit transaction
-      const signedTx = TransactionBuilder.fromXDR(signedXdr, networkPassphrase)
-      const result = await server.submitTransaction(signedTx)
-      
-      if (result.successful) {
-        const txHash = result.hash
-        setTxHash(txHash)
-        
-        // Automatically verify payment
-        toast.success('Payment sent! Verifying...')
-        await handleVerifyPayment(txHash)
-      } else {
-        throw new Error('Transaction submission failed')
-      }
+      setTxHash(hash)
+      toast.success('Payment sent — verifying…')
+      await handleVerifyPayment(hash)
     } catch (error: any) {
-      console.error('Payment error:', error)
+      console.error('Subscription payment error:', error)
       toast.error(error.message || 'Failed to send payment')
     } finally {
       setIsPaying(false)

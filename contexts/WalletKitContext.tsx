@@ -28,15 +28,23 @@ interface WalletKitContextType {
   disconnect: () => void
   signMessage: (message: string) => Promise<string>
   signTransaction: (xdr: string, networkPassphrase?: string) => Promise<string>
-  openWalletModal: (onWalletSelected?: (wallet: ISupportedWallet) => void) => Promise<void>
+  /** Opens the wallet picker and resolves with the connected address (or null if cancelled). */
+  openWalletModal: (onWalletSelected?: (wallet: ISupportedWallet) => void) => Promise<string | null>
 }
 
 const WalletKitContext = createContext<WalletKitContextType | undefined>(undefined)
+
+// Persist the selected wallet + address so a page reload keeps the connection
+// and the kit still knows which wallet module to sign with (otherwise the kit
+// throws code -3 "Please set the wallet first").
+const LS_WALLET_ID = 'sw_wallet_id'
+const LS_ADDRESS = 'sw_address'
 
 export function WalletKitProvider({ children }: { children: ReactNode }) {
   const [kit, setKit] = useState<StellarWalletsKit | null>(null)
   const [isInitialized, setIsInitialized] = useState(false)
   const [selectedWallet, setSelectedWallet] = useState<ISupportedWallet | null>(null)
+  const [selectedWalletId, setSelectedWalletId] = useState<string | null>(null)
   const [address, setAddress] = useState<string | null>(null)
   const [network, setNetwork] = useState<WalletNetwork>(WalletNetwork.TESTNET)
 
@@ -58,6 +66,21 @@ export function WalletKitProvider({ children }: { children: ReactNode }) {
             new KleverModule(),
           ],
         })
+
+        // Restore a previously connected wallet so the kit knows which module to
+        // use for signing after a reload (does NOT pop the extension — we only
+        // re-select the module and rehydrate the cached address).
+        try {
+          const savedId = window.localStorage.getItem(LS_WALLET_ID)
+          const savedAddress = window.localStorage.getItem(LS_ADDRESS)
+          if (savedId) {
+            walletKit.setWallet(savedId)
+            setSelectedWalletId(savedId)
+          }
+          if (savedAddress) setAddress(savedAddress)
+        } catch {
+          /* ignore restore errors */
+        }
 
         setKit(walletKit)
         setIsInitialized(true)
@@ -94,15 +117,16 @@ export function WalletKitProvider({ children }: { children: ReactNode }) {
       // Open modal to let user select wallet
       await kit.openModal({
         onWalletSelected: async (wallet: ISupportedWallet) => {
-          console.log('Wallet selected:', wallet.id, wallet.name)
           kit.setWallet(wallet.id)
           setSelectedWallet(wallet)
-          
+          setSelectedWalletId(wallet.id)
+          persistWallet(wallet.id)
+
           // Get address
           const addressResult = await kit.getAddress()
           if (addressResult?.address) {
             setAddress(addressResult.address)
-            console.log('Wallet connected:', addressResult.address, 'Type:', wallet.id)
+            persistAddress(addressResult.address)
           }
         },
         onClosed: (err) => {
@@ -118,9 +142,21 @@ export function WalletKitProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const persistWallet = (id: string) => {
+    try { window.localStorage.setItem(LS_WALLET_ID, id) } catch {}
+  }
+  const persistAddress = (addr: string) => {
+    try { window.localStorage.setItem(LS_ADDRESS, addr) } catch {}
+  }
+
   const disconnect = () => {
     setAddress(null)
     setSelectedWallet(null)
+    setSelectedWalletId(null)
+    try {
+      window.localStorage.removeItem(LS_WALLET_ID)
+      window.localStorage.removeItem(LS_ADDRESS)
+    } catch {}
     if (kit) {
       // Reset wallet selection
       kit.setWallet(FREIGHTER_ID)
@@ -187,61 +223,108 @@ export function WalletKitProvider({ children }: { children: ReactNode }) {
   }
 
   const signTransaction = async (xdr: string, networkPassphrase?: string): Promise<string> => {
-    if (!kit || !address) {
-      throw new Error('Wallet not connected')
+    if (!kit) {
+      throw new Error('Wallet not initialized')
+    }
+
+    // Make sure the kit knows which wallet module to use (survives reloads where
+    // only the cached id is available). Without this the kit throws code -3.
+    const walletId = selectedWalletId || (typeof window !== 'undefined' ? window.localStorage.getItem(LS_WALLET_ID) : null)
+    if (walletId) {
+      try { kit.setWallet(walletId) } catch {}
+    }
+
+    // Resolve the signer address — re-read from the wallet if state is empty.
+    let signer = address
+    if (!signer) {
+      try {
+        const res = await kit.getAddress()
+        signer = res?.address || null
+        if (signer) {
+          setAddress(signer)
+          persistAddress(signer)
+        }
+      } catch {
+        /* fall through to the explicit error below */
+      }
+    }
+    if (!signer) {
+      throw new Error('Connect a wallet before signing.')
+    }
+
+    // Resolve the network passphrase (default to the kit's network).
+    let passphrase = networkPassphrase
+    if (!passphrase) {
+      const { Networks } = await import('@stellar/stellar-sdk')
+      passphrase = network === WalletNetwork.TESTNET ? Networks.TESTNET : Networks.PUBLIC
     }
 
     try {
-      // Convert network passphrase to string if it's a Networks enum
-      let passphrase: string
-      if (networkPassphrase) {
-        passphrase = networkPassphrase
-      } else {
-        // Default to testnet
-        const { Networks } = await import('@stellar/stellar-sdk')
-        passphrase = network === WalletNetwork.TESTNET ? Networks.TESTNET : Networks.PUBLIC
-      }
-
-      // Sign transaction with the kit
-      // The kit should use the currently connected address
+      // Pass `address` so the wallet signs with the connected account (critical
+      // for Freighter, which otherwise signs with whatever account is active).
       const result = await kit.signTransaction(xdr, {
+        address: signer,
         networkPassphrase: passphrase,
       })
-
-      // The result should be an object with signedTxXdr
-      if (!result || !result.signedTxXdr) {
-        throw new Error('Transaction signing failed - no signed transaction returned')
+      if (!result?.signedTxXdr) {
+        throw new Error('The wallet returned no signed transaction.')
       }
-
       return result.signedTxXdr
     } catch (error: any) {
+      const code = error?.code
+      const msg = error?.message || error?.toString?.() || ''
       console.error('Failed to sign transaction:', error)
-      throw error
+      if (code === -3 || /set the wallet|wallet first/i.test(msg)) {
+        throw new Error('Wallet disconnected — please reconnect and try again.')
+      }
+      if (/reject|denied|declin|cancel/i.test(msg)) {
+        throw new Error('You cancelled the signing request.')
+      }
+      if (/different account|account.*not|mismatch/i.test(msg)) {
+        throw new Error('The wallet is on a different account. Switch to the connected account and retry.')
+      }
+      throw new Error(msg || 'Failed to sign transaction.')
     }
   }
 
-  const openWalletModal = async (onWalletSelected?: (wallet: ISupportedWallet) => void) => {
+  const openWalletModal = async (
+    onWalletSelected?: (wallet: ISupportedWallet) => void
+  ): Promise<string | null> => {
     if (!kit) {
       throw new Error('Wallet kit not initialized')
     }
 
-    await kit.openModal({
-      onWalletSelected: async (wallet: ISupportedWallet) => {
-        console.log('Wallet selected in modal:', wallet.id, wallet.name)
-        kit.setWallet(wallet.id)
-        setSelectedWallet(wallet)
-        
-        const addressResult = await kit.getAddress()
-        if (addressResult?.address) {
-          setAddress(addressResult.address)
-          console.log('Wallet address set:', addressResult.address)
-        }
-        
-        if (onWalletSelected) {
-          onWalletSelected(wallet)
-        }
-      },
-      modalTitle: 'Select Stellar Wallet',
+    // Resolve with the freshly connected address so callers don't read stale
+    // React state (setAddress only reflects on the next render).
+    return new Promise<string | null>((resolve) => {
+      let settled = false
+      kit.openModal({
+        onWalletSelected: async (wallet: ISupportedWallet) => {
+          try {
+            kit.setWallet(wallet.id)
+            setSelectedWallet(wallet)
+            setSelectedWalletId(wallet.id)
+            persistWallet(wallet.id)
+            const addressResult = await kit.getAddress()
+            const addr = addressResult?.address || null
+            if (addr) {
+              setAddress(addr)
+              persistAddress(addr)
+            }
+            onWalletSelected?.(wallet)
+            settled = true
+            resolve(addr)
+          } catch (error) {
+            console.error('Failed to read wallet address:', error)
+            settled = true
+            resolve(null)
+          }
+        },
+        onClosed: () => {
+          if (!settled) resolve(null)
+        },
+        modalTitle: 'Select Stellar Wallet',
+      })
     })
   }
 

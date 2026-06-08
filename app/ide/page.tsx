@@ -496,7 +496,7 @@ mod tests {
     // Clear previous logs and start fresh
     setLogs([{
       type: "info",
-      message: "🔨 Starting compilation...",
+      message: "Starting compilation…",
       timestamp: new Date().toISOString()
     }]);
 
@@ -516,7 +516,7 @@ mod tests {
         
         setLogs(prev => [...prev, {
           type: "info",
-          message: "⏳ Waiting for compilation to complete...",
+          message: "Waiting for compilation to complete…",
           timestamp: new Date().toISOString()
         }]);
         
@@ -549,7 +549,7 @@ mod tests {
               if (status === 'completed') {
                 setLogs(prev => [...prev, {
                   type: "success",
-                  message: "Compilation successful! WASM file generated.",
+                  message: "Compilation complete. WASM generated.",
                   timestamp: new Date().toISOString()
                 }]);
                 
@@ -557,12 +557,12 @@ mod tests {
                   const wasmSize = Math.round(result.wasmBase64.length * 0.75);
                   setLogs(prev => [...prev, {
                     type: "info",
-                    message: `📦 WASM file size: ~${wasmSize} bytes`,
+                    message: `WASM size: ~${wasmSize} bytes`,
                     timestamp: new Date().toISOString()
                   }]);
                 }
                 
-                toast.success("Compilation successful!");
+                toast.success("Compilation complete");
               } else {
                 setLogs(prev => [...prev, {
                   type: "error",
@@ -602,23 +602,23 @@ mod tests {
         
         // Show success/failure message if not already shown
         if (finalResult.success) {
-          if (!logs.some(log => log.message.includes('Compilation successful'))) {
+          if (!logs.some(log => log.message.includes('Compilation complete'))) {
             setLogs(prev => [...prev, {
               type: "success",
-              message: "Compilation successful! WASM file generated.",
+              message: "Compilation complete. WASM generated.",
               timestamp: new Date().toISOString()
             }]);
             
-            if (finalResult.wasmBase64 && !logs.some(log => log.message.includes('WASM file size'))) {
+            if (finalResult.wasmBase64 && !logs.some(log => log.message.includes('WASM size'))) {
               const wasmSize = Math.round(finalResult.wasmBase64.length * 0.75);
               setLogs(prev => [...prev, {
                 type: "info",
-                message: `📦 WASM file size: ~${wasmSize} bytes`,
+                message: `WASM size: ~${wasmSize} bytes`,
                 timestamp: new Date().toISOString()
               }]);
             }
             
-            toast.success("Compilation successful!");
+            toast.success("Compilation complete");
           }
         } else {
           if (!logs.some(log => log.message.includes('Compilation failed'))) {
@@ -635,7 +635,7 @@ mod tests {
         if (result.success) {
           setLogs(prev => [...prev, {
             type: "success",
-            message: "Compilation successful! WASM file generated.",
+            message: "Compilation complete. WASM generated.",
             timestamp: new Date().toISOString()
           }]);
           
@@ -643,12 +643,12 @@ mod tests {
             const wasmSize = Math.round(result.wasmBase64.length * 0.75);
             setLogs(prev => [...prev, {
               type: "info",
-              message: `📦 WASM file size: ~${wasmSize} bytes`,
+              message: `WASM size: ~${wasmSize} bytes`,
               timestamp: new Date().toISOString()
             }]);
           }
           
-          toast.success("Compilation successful!");
+          toast.success("Compilation complete");
         } else {
           setLogs(prev => [...prev, {
             type: "error",
@@ -707,7 +707,7 @@ mod tests {
       if (compileResult.jobId) {
         setLogs(prev => [...prev, {
           type: "info",
-          message: "⏳ Waiting for compilation to complete...",
+          message: "Waiting for compilation to complete…",
           timestamp: new Date().toISOString()
         }]);
         
@@ -748,7 +748,7 @@ mod tests {
 
       setLogs(prev => [...prev, {
         type: "success",
-        message: "Compilation successful! WASM generated.",
+        message: "Compilation complete. WASM generated.",
         timestamp: new Date().toISOString()
       }]);
 
@@ -778,7 +778,7 @@ mod tests {
         
         setLogs(prev => [...prev, {
           type: "info",
-          message: "⏳ Waiting for deployment to complete...",
+          message: "Waiting for deployment to complete…",
           timestamp: new Date().toISOString()
         }]);
         
@@ -802,7 +802,7 @@ mod tests {
               if (status === 'completed' && result.contractAddress) {
                 setLogs(prev => [...prev, {
                   type: "success",
-                  message: `🎉 Deployment successful! Contract deployed at: ${result.contractAddress}`,
+                  message: `Contract deployed: ${result.contractAddress}`,
                   timestamp: new Date().toISOString()
                 }]);
                 
@@ -891,11 +891,11 @@ mod tests {
           if (!logs.some(log => log.message.includes('Deployment successful'))) {
             setLogs(prev => [...prev, {
               type: "success",
-              message: `🎉 Deployment successful! Contract deployed at: ${finalDeployResult.contractAddress}`,
+              message: `Contract deployed: ${finalDeployResult.contractAddress}`,
               timestamp: new Date().toISOString()
             }]);
             
-            toast.success(`Deployment successful! Contract: ${finalDeployResult.contractAddress}`);
+            toast.success(`Contract deployed: ${finalDeployResult.contractAddress}`);
             
             // Update project
             try {
@@ -928,11 +928,11 @@ mod tests {
         if (finalDeployResult.success && finalDeployResult.contractAddress) {
           setLogs(prev => [...prev, {
             type: "success",
-            message: `🎉 Deployment successful! Contract deployed at: ${finalDeployResult.contractAddress}`,
+            message: `Contract deployed: ${finalDeployResult.contractAddress}`,
             timestamp: new Date().toISOString()
           }]);
           
-          toast.success(`Deployment successful! Contract: ${finalDeployResult.contractAddress}`);
+          toast.success(`Contract deployed: ${finalDeployResult.contractAddress}`);
           
           // Update project
           try {

@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label'
 import { templatesApi, TemplateDoc } from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
 import { useWalletKit } from '@/contexts/WalletKitContext'
-import { WalletNetwork } from '@creit.tech/stellar-wallets-kit'
+import { payWithWallet } from '@/lib/pay'
 import { toast } from 'sonner'
 import { Loader2, CheckCircle2, Wallet, X, FileCode, LogIn } from 'lucide-react'
 
@@ -47,7 +47,7 @@ export function TemplatePurchaseModal({
   const [paymentSuccess, setPaymentSuccess] = useState(false)
   const [sessionExpired, setSessionExpired] = useState(false)
   const { refreshUser, login } = useAuth()
-  const { address, signTransaction, openWalletModal, isInitialized, network, disconnect } = useWalletKit()
+  const { address, signTransaction, openWalletModal, isInitialized, disconnect } = useWalletKit()
 
   useEffect(() => {
     if (open) setSessionExpired(false)
@@ -88,54 +88,37 @@ export function TemplatePurchaseModal({
   const handlePayWithWallet = async () => {
     if (!paymentInfo || !template) return
     if (!isInitialized) {
-      toast.error('Wallet kit is initializing, please wait...')
+      toast.error('Wallet is initializing, please wait a moment…')
       return
     }
-    if (!address) {
-      await openWalletModal()
-      if (!address) {
-        toast.error('Please connect a wallet first')
+
+    // Resolve a LIVE payer address — connect on the spot if needed. Reading the
+    // `address` state right after openWalletModal() would be stale, so we use the
+    // value the modal resolves with.
+    let payerAddress = address
+    if (!payerAddress) {
+      payerAddress = await openWalletModal()
+      if (!payerAddress) {
+        toast.error('Connect a wallet to continue')
         return
       }
     }
+
     try {
       setIsPaying(true)
-      const StellarSdk = await import('@stellar/stellar-sdk')
-      const { Asset, Networks, TransactionBuilder, Operation, Memo } = StellarSdk
-      const isTestnet = network === WalletNetwork.TESTNET || network === 'TESTNET'
-      const horizonUrl = isTestnet
-        ? 'https://horizon-testnet.stellar.org'
-        : 'https://horizon.stellar.org'
-      const networkPassphrase = isTestnet ? Networks.TESTNET : Networks.PUBLIC
-      const Server = StellarSdk.Horizon?.Server || StellarSdk.Server
-      const server = new Server(horizonUrl)
-      const account = await server.loadAccount(address!)
-      const transaction = new TransactionBuilder(account, {
-        fee: '100',
-        networkPassphrase,
+      const { hash } = await payWithWallet({
+        signTransaction,
+        payerAddress,
+        destination: paymentInfo.address,
+        amount: paymentInfo.amount,
+        memo: paymentInfo.memo,
+        network: paymentInfo.network,
       })
-        .addOperation(
-          Operation.payment({
-            destination: paymentInfo.address,
-            asset: Asset.native(),
-            amount: paymentInfo.amount.toString(),
-          })
-        )
-        .addMemo(Memo.text(paymentInfo.memo))
-        .setTimeout(30)
-        .build()
-      const signedXdr = await signTransaction(transaction.toXDR(), networkPassphrase)
-      const signedTx = TransactionBuilder.fromXDR(signedXdr, networkPassphrase)
-      const result = await server.submitTransaction(signedTx)
-      if (result.successful) {
-        setTxHash(result.hash)
-        toast.success('Payment sent! Verifying...')
-        await handleVerify(result.hash)
-      } else {
-        throw new Error('Transaction submission failed')
-      }
+      setTxHash(hash)
+      toast.success('Payment sent — verifying…')
+      await handleVerify(hash)
     } catch (e: any) {
-      console.error(e)
+      console.error('Template payment error:', e)
       toast.error(e.message || 'Payment failed')
     } finally {
       setIsPaying(false)
