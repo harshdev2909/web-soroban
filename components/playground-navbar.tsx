@@ -16,7 +16,6 @@ interface PlaygroundNavbarProps {
 const links = [
   { href: '/marketplace', label: 'Templates' },
   { href: '/docs', label: 'Docs' },
-  { href: '/analytics', label: 'Analytics' },
 ]
 
 export default function PlaygroundNavbar({ onSignInClick }: PlaygroundNavbarProps = {}) {

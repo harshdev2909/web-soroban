@@ -14,7 +14,6 @@ const columns = [
     links: [
       { label: 'IDE', href: '/ide' },
       { label: 'Templates', href: '/marketplace' },
-      { label: 'Analytics', href: '/analytics' },
     ],
   },
   {

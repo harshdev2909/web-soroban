@@ -9,25 +9,36 @@ import {
   ActivityLogEntry,
   PlatformPaymentItem,
 } from "@/lib/api"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import PlaygroundNavbar from "@/components/playground-navbar"
+import PlaygroundFooter from "@/components/playground-footer"
+import { LoginModal } from "@/components/login-modal"
+import { Reveal } from "@/components/reveal"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, BarChart3, Server, Receipt, ListTodo, ExternalLink, Copy, Check } from "lucide-react"
 import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Legend,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
+  BarChart3, Server, Receipt, ListTodo, ExternalLink, Copy, Check,
+  Activity, Hammer, Rocket, FlaskConical, Users, Zap,
+} from "lucide-react"
+import {
+  Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts"
+import { cn } from "@/lib/utils"
 
 interface DailyUsagePoint {
   date: string
   compile: number
   deploy: number
   function_test: number
+}
+
+// Brand-aligned chart colors (literal hsl — recharts needs concrete values).
+const CHART = {
+  compile: "hsl(200 90% 62%)", // info
+  deploy: "hsl(152 58% 48%)", // success
+  function_test: "hsl(280 78% 66%)", // cosmic
+  grid: "hsl(233 16% 16%)",
+  axis: "hsl(224 12% 62%)",
+  surface: "hsl(233 28% 9%)",
 }
 
 export default function AnalyticsPage() {
@@ -38,6 +49,7 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [loginOpen, setLoginOpen] = useState(false)
 
   const copyContractAddress = (address: string, id: string) => {
     void navigator.clipboard.writeText(address)
@@ -50,14 +62,12 @@ export default function AnalyticsPage() {
       try {
         setLoading(true)
         setError(null)
-
         const [usageResponse, healthResponse, activityRes, transactionsRes] = await Promise.all([
           analyticsApi.getUsageSummary(),
           systemApi.getHealth(),
           analyticsApi.getActivityLogs(50),
           analyticsApi.getAllTransactions(50),
         ])
-
         setSummary(usageResponse)
         setHealth(healthResponse)
         setActivityLogs(activityRes.success ? activityRes.logs : [])
@@ -69,7 +79,6 @@ export default function AnalyticsPage() {
         setLoading(false)
       }
     }
-
     void loadData()
   }, [])
 
@@ -81,330 +90,220 @@ export default function AnalyticsPage() {
       function_test: d.function_test,
     })) ?? []
 
-  if (loading) {
-    return (
-      <div className="flex h-[calc(100vh-80px)] items-center justify-center">
-        <div className="flex items-center gap-3 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          <span>Loading analytics...</span>
-        </div>
-      </div>
-    )
-  }
+  const totals = summary?.summary?.totals
+  const kpis = [
+    { label: "Total events", value: summary?.summary?.totalEvents ?? 0, hint: "last 30 days", icon: Zap, tint: "text-brand" },
+    { label: "Unique users", value: summary?.summary?.uniqueUsers ?? 0, hint: "active", icon: Users, tint: "text-cosmic" },
+    { label: "Deployments", value: totals?.deploy ?? 0, hint: "to testnet", icon: Rocket, tint: "text-success" },
+    { label: "Compilations", value: totals?.compile ?? 0, hint: "builds", icon: Hammer, tint: "text-info" },
+    { label: "Function tests", value: totals?.function_test ?? 0, hint: "invocations", icon: FlaskConical, tint: "text-warning" },
+  ]
+
+  const healthy = health?.status === "healthy"
 
   return (
-    <div className="min-h-[calc(100vh-80px)] bg-gradient-to-b from-background via-background to-background/80 px-6 py-10">
-      <div className="mx-auto w-full max-w-6xl space-y-8">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight">Analytics</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Platform-wide stats for WebSoroban: usage, backend health, transaction history, and user activity.
+    <div className="relative min-h-screen bg-background">
+      <div className="pointer-events-none fixed inset-0 -z-10 bg-radial-fade" aria-hidden />
+      <PlaygroundNavbar onSignInClick={() => setLoginOpen(true)} />
+
+      <main className="mx-auto max-w-6xl px-4 sm:px-6">
+        {/* Hero */}
+        <section className="pb-8 pt-12 sm:pt-16">
+          <Reveal>
+            <p className="eyebrow">Admin · Platform analytics</p>
+            <h1 className="mt-3 font-display text-title font-semibold tracking-tight">
+              WebSoroban <span className="text-gradient-brand">at a glance</span>
+            </h1>
+            <p className="lead mt-3 max-w-2xl text-[15px]">
+              Platform-wide usage, backend health, transactions, and activity across all users.
             </p>
-          </div>
-          {/* <Button
-            variant="outline"
-            size="sm"
-            asChild
-          >
-            <a
-              href="https://vercel.com/analytics"
-              target="_blank"
-              rel="noreferrer"
-            >
-              <Activity className="mr-2 h-4 w-4" />
-              Open Vercel Analytics
-            </a>
-          </Button> */}
-        </div>
+          </Reveal>
+        </section>
 
         {error && (
-          <Alert variant="destructive">
+          <Alert variant="destructive" className="mb-6">
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
 
-        <div className="grid gap-6 md:grid-cols-3">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <BarChart3 className="h-4 w-4 text-blue-500" />
-                Project usage
-              </CardTitle>
-              <CardDescription>Aggregate activity across all users in the last 30 days.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-3 gap-4 text-sm">
-                <div>
-                  <div className="text-xs font-medium uppercase text-muted-foreground">
-                    Total events
-                  </div>
-                  <div className="mt-1 text-lg font-semibold">
-                    {summary?.summary?.totalEvents ?? 0}
-                  </div>
-                  <div className="mt-1 text-xs text-muted-foreground">
-                    Unique users: {summary?.summary?.uniqueUsers ?? 0}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-xs font-medium uppercase text-muted-foreground">
-                    Deployments
-                  </div>
-                  <div className="mt-1 text-lg font-semibold">
-                    {summary?.summary?.totals?.deploy ?? 0}
-                  </div>
-                  <div className="mt-1 text-xs text-muted-foreground">
-                    In the last 30 days
-                  </div>
-                </div>
-                <div>
-                  <div className="text-xs font-medium uppercase text-muted-foreground">
-                    Compilations
-                  </div>
-                  <div className="mt-1 text-lg font-semibold">
-                    {summary?.summary?.totals?.compile ?? 0}
-                  </div>
-                  <div className="mt-1 text-xs text-muted-foreground">
-                    Function tests:{" "}
-                    {summary?.summary?.totals?.function_test ?? 0}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {/* KPI tiles */}
+        <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          {loading
+            ? Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)
+            : kpis.map((k, i) => {
+                const Icon = k.icon
+                return (
+                  <Reveal key={k.label} delay={Math.min(i * 0.04, 0.2)}>
+                    <div className="rounded-xl border border-border bg-card/40 p-4">
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{k.label}</span>
+                        <Icon className={cn("h-3.5 w-3.5", k.tint)} />
+                      </div>
+                      <div className="mt-2 font-mono-tnum text-2xl font-semibold text-foreground">
+                        {k.value.toLocaleString()}
+                      </div>
+                      <div className="mt-0.5 text-[11px] text-muted-foreground">{k.hint}</div>
+                    </div>
+                  </Reveal>
+                )
+              })}
+        </section>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Server className="h-4 w-4 text-emerald-500" />
-                Backend API health
-              </CardTitle>
-              <CardDescription>Live status from the backend health endpoint.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Status</span>
-                <span
-                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                    health?.status === "healthy"
-                      ? "bg-emerald-500/10 text-emerald-500"
-                      : "bg-red-500/10 text-red-500"
-                  }`}
-                >
-                  {health?.status ?? "unknown"}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Database</span>
-                <span className="text-xs font-medium">
-                  {health?.database ?? "unknown"}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Last check</span>
-                <span className="text-xs">
-                  {health?.timestamp
-                    ? new Date(health.timestamp).toLocaleString()
-                    : "—"}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card className="mt-4">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <BarChart3 className="h-4 w-4 text-sky-500" />
-              Backend usage timeline
-            </CardTitle>
-            <CardDescription>
-              Recent compile, deploy, and function test activity over time.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {dailyUsage.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No usage data available yet. Run a compile, deploy, or contract
-                test in the IDE to start populating this chart.
-              </p>
+        {/* Health + chart */}
+        <section className="mt-6 grid gap-5 lg:grid-cols-[1fr_320px]">
+          {/* Usage timeline */}
+          <Panel icon={BarChart3} title="Usage timeline" subtitle="Compile, deploy, and function-test activity over time.">
+            {loading ? (
+              <Skeleton className="h-72 w-full rounded-lg" />
+            ) : dailyUsage.length === 0 ? (
+              <EmptyHint>No usage data yet. Compile, deploy, or test a contract in the IDE to populate this chart.</EmptyHint>
             ) : (
-              <div className="h-80">
+              <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={dailyUsage}>
-                    <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
-                    <XAxis dataKey="date" />
-                    <YAxis allowDecimals={false} />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="compile" stackId="a" fill="#38bdf8" name="Compile" />
-                    <Bar dataKey="deploy" stackId="a" fill="#22c55e" name="Deploy" />
-                    <Bar
-                      dataKey="function_test"
-                      stackId="a"
-                      fill="#a855f7"
-                      name="Function tests"
+                  <BarChart data={dailyUsage} margin={{ top: 8, right: 8, bottom: 0, left: -16 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={CHART.grid} />
+                    <XAxis dataKey="date" tick={{ fill: CHART.axis, fontSize: 11 }} stroke={CHART.grid} />
+                    <YAxis allowDecimals={false} tick={{ fill: CHART.axis, fontSize: 11 }} stroke={CHART.grid} />
+                    <Tooltip
+                      cursor={{ fill: "hsl(233 20% 16% / 0.4)" }}
+                      contentStyle={{
+                        background: CHART.surface,
+                        border: `1px solid ${CHART.grid}`,
+                        borderRadius: 8,
+                        fontSize: 12,
+                        color: "hsl(220 18% 96%)",
+                      }}
+                      labelStyle={{ color: CHART.axis }}
                     />
+                    <Bar dataKey="compile" stackId="a" fill={CHART.compile} name="Compile" radius={[0, 0, 0, 0]} />
+                    <Bar dataKey="deploy" stackId="a" fill={CHART.deploy} name="Deploy" />
+                    <Bar dataKey="function_test" stackId="a" fill={CHART.function_test} name="Function tests" radius={[3, 3, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             )}
-          </CardContent>
-        </Card>
+            {!loading && dailyUsage.length > 0 && (
+              <div className="mt-3 flex items-center gap-4 font-mono text-[11px] text-muted-foreground">
+                <Legend color={CHART.compile} label="Compile" />
+                <Legend color={CHART.deploy} label="Deploy" />
+                <Legend color={CHART.function_test} label="Function tests" />
+              </div>
+            )}
+          </Panel>
 
-        {/* Transaction history (all users) */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Receipt className="h-4 w-4 text-amber-500" />
-              Transaction history
-            </CardTitle>
-            <CardDescription>
-              Recent payment transactions (XLM) across all users for subscription upgrades.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {transactionHistory.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No transactions yet.
-              </p>
+          {/* Backend health */}
+          <Panel icon={Server} title="Backend health" subtitle="Live status from the API.">
+            {loading ? (
+              <div className="space-y-3">
+                <Skeleton className="h-5 w-full" />
+                <Skeleton className="h-5 w-2/3" />
+              </div>
             ) : (
-              <div className="space-y-2 max-h-[360px] overflow-y-auto">
+              <dl className="space-y-3 text-sm">
+                <div className="flex items-center justify-between">
+                  <dt className="text-muted-foreground">Status</dt>
+                  <dd>
+                    <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-mono text-[10px]", healthy ? "bg-success/12 text-success" : "bg-destructive/12 text-destructive")}>
+                      <span className={cn("h-1.5 w-1.5 rounded-full", healthy ? "bg-success" : "bg-destructive")} />
+                      {health?.status ?? "unknown"}
+                    </span>
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between">
+                  <dt className="text-muted-foreground">Database</dt>
+                  <dd className="font-mono text-xs text-foreground/90">{health?.database ?? "unknown"}</dd>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <dt className="text-muted-foreground">Last check</dt>
+                  <dd className="truncate font-mono-tnum text-xs text-muted-foreground">
+                    {health?.timestamp ? new Date(health.timestamp).toLocaleString() : "—"}
+                  </dd>
+                </div>
+              </dl>
+            )}
+          </Panel>
+        </section>
+
+        {/* Transactions */}
+        <section className="mt-6">
+          <Panel icon={Receipt} title="Transaction history" subtitle="Recent XLM payments across all users.">
+            {loading ? (
+              <ListSkeleton />
+            ) : transactionHistory.length === 0 ? (
+              <EmptyHint>No transactions yet.</EmptyHint>
+            ) : (
+              <div className="max-h-[360px] space-y-1.5 overflow-y-auto">
                 {transactionHistory.map((tx) => (
-                  <div
-                    key={tx._id}
-                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-muted/30 px-3 py-2 text-sm"
-                  >
-                    <div className="flex flex-col gap-0.5 min-w-0">
-                      <span className="font-medium">
+                  <div key={tx._id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/60 bg-card/40 px-3 py-2 text-sm">
+                    <div className="flex min-w-0 flex-col gap-0.5">
+                      <span className="font-medium text-foreground">
                         {tx.plan === "plan2" ? "Pro" : "Team"} · {tx.amount} {tx.currency}
                       </span>
-                      {tx.user?.email && (
-                        <span className="text-xs text-muted-foreground truncate">
-                          {tx.user.email}
-                        </span>
-                      )}
-                      <span className="text-xs text-muted-foreground font-mono truncate max-w-[220px]">
-                        {tx.txHash}
-                      </span>
+                      {tx.user?.email && <span className="truncate text-xs text-muted-foreground">{tx.user.email}</span>}
+                      <span className="max-w-[220px] truncate font-mono text-[11px] text-muted-foreground">{tx.txHash}</span>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                          tx.status === "confirmed"
-                            ? "bg-emerald-500/10 text-emerald-500"
-                            : tx.status === "pending"
-                              ? "bg-amber-500/10 text-amber-500"
-                              : "bg-red-500/10 text-red-500"
-                        }`}
-                      >
-                        {tx.status}
-                      </span>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <StatusBadge status={tx.status} />
                       <a
                         href={`https://stellar.expert/explorer/${tx.network}/tx/${tx.txHash}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-muted-foreground hover:text-foreground"
+                        target="_blank" rel="noreferrer"
+                        className="text-muted-foreground transition-colors hover:text-brand"
                         title="View on Stellar Expert"
                       >
                         <ExternalLink className="h-3.5 w-3.5" />
                       </a>
                     </div>
-                    <div className="w-full text-xs text-muted-foreground">
-                      {tx.createdAt
-                        ? new Date(tx.createdAt).toLocaleString()
-                        : "—"}
+                    <div className="w-full font-mono-tnum text-[11px] text-muted-foreground/70">
+                      {tx.createdAt ? new Date(tx.createdAt).toLocaleString() : "—"}
                     </div>
                   </div>
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </Panel>
+        </section>
 
-        {/* User activity log (all users) */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <ListTodo className="h-4 w-4 text-indigo-500" />
-              User activity log
-            </CardTitle>
-            <CardDescription>
-              Recent compile, deploy, and function test activity across all users.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {activityLogs.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No activity yet. Use the IDE to compile, deploy, or run function tests.
-              </p>
+        {/* Activity log */}
+        <section className="mb-16 mt-6">
+          <Panel icon={ListTodo} title="User activity" subtitle="Recent compile, deploy, and test activity across all users.">
+            {loading ? (
+              <ListSkeleton />
+            ) : activityLogs.length === 0 ? (
+              <EmptyHint>No activity yet.</EmptyHint>
             ) : (
-              <div className="space-y-2 max-h-[360px] overflow-y-auto">
+              <div className="max-h-[420px] space-y-1.5 overflow-y-auto">
                 {activityLogs.map((log, idx) => (
-                  <div
-                    key={log._id ?? idx}
-                    className="flex flex-col gap-2 rounded-lg border bg-muted/30 px-3 py-2 text-sm"
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2 min-w-0">
-                      <div className="flex flex-wrap items-center gap-2 min-w-0">
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-xs font-medium uppercase shrink-0 ${
-                            log.action === "deploy"
-                              ? "bg-emerald-500/10 text-emerald-500"
-                              : log.action === "compile"
-                                ? "bg-sky-500/10 text-sky-500"
-                                : "bg-violet-500/10 text-violet-500"
-                          }`}
-                        >
-                          {log.action.replace("_", " ")}
+                  <div key={log._id ?? idx} className="flex flex-col gap-2 rounded-lg border border-border/60 bg-card/40 px-3 py-2 text-sm">
+                    <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+                      <div className="flex min-w-0 flex-wrap items-center gap-2">
+                        <ActionBadge action={log.action} />
+                        <span className={cn("text-xs", log.success ? "text-success" : "text-destructive")}>
+                          {log.success ? "Success" : "Failed"}
                         </span>
-                        {log.success ? (
-                          <span className="text-emerald-500 text-xs shrink-0">Success</span>
-                        ) : (
-                          <span className="text-red-500 text-xs shrink-0">Failed</span>
-                        )}
-                        {log.user?.email && (
-                          <span className="text-xs text-muted-foreground truncate max-w-[140px]">
-                            {log.user.email}
-                          </span>
-                        )}
-                        {log.functionName && (
-                          <span className="text-xs text-muted-foreground">
-                            {log.functionName}()
-                          </span>
-                        )}
+                        {log.user?.email && <span className="max-w-[160px] truncate text-xs text-muted-foreground">{log.user.email}</span>}
+                        {log.functionName && <span className="font-mono text-xs text-muted-foreground">{log.functionName}()</span>}
                       </div>
-                      <span className="text-xs text-muted-foreground shrink-0">
-                        {log.createdAt
-                          ? new Date(log.createdAt).toLocaleString()
-                          : "—"}
+                      <span className="shrink-0 font-mono-tnum text-[11px] text-muted-foreground/70">
+                        {log.createdAt ? new Date(log.createdAt).toLocaleString() : "—"}
                       </span>
                     </div>
                     {log.contractAddress && (
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-medium text-muted-foreground shrink-0">
-                          Contract:
-                        </span>
-                        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded break-all min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <code className="min-w-0 break-all rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-foreground/80">
                           {log.contractAddress}
                         </code>
                         <button
                           type="button"
                           onClick={() => copyContractAddress(log.contractAddress!, log._id)}
-                          className="shrink-0 p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+                          className="shrink-0 rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                           title="Copy address"
                         >
-                          {copiedId === log._id ? (
-                            <Check className="h-3.5 w-3.5 text-emerald-500" />
-                          ) : (
-                            <Copy className="h-3.5 w-3.5" />
-                          )}
+                          {copiedId === log._id ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
                         </button>
                         <a
                           href={`https://stellar.expert/explorer/testnet/contract/${log.contractAddress}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="shrink-0 p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+                          target="_blank" rel="noreferrer"
+                          className="shrink-0 rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-brand"
                           title="View on Stellar Expert"
                         >
                           <ExternalLink className="h-3.5 w-3.5" />
@@ -415,10 +314,83 @@ export default function AnalyticsPage() {
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
-      </div>
+          </Panel>
+        </section>
+      </main>
+
+      <PlaygroundFooter />
+      <LoginModal open={loginOpen} onOpenChange={setLoginOpen} />
     </div>
   )
 }
 
+/* ---- small presentational helpers ---- */
+
+function Panel({ icon: Icon, title, subtitle, children }: { icon: any; title: string; subtitle?: string; children: React.ReactNode }) {
+  return (
+    <section className="rounded-xl border border-border bg-card/40 p-5">
+      <div className="mb-4 flex items-center gap-2.5">
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-brand/12 text-brand">
+          <Icon className="h-4 w-4" />
+        </span>
+        <div>
+          <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+          {subtitle && <p className="text-[11px] text-muted-foreground">{subtitle}</p>}
+        </div>
+      </div>
+      {children}
+    </section>
+  )
+}
+
+function EmptyHint({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-2 rounded-lg border border-dashed border-border/70 px-4 py-6 text-[13px] text-muted-foreground">
+      <Activity className="h-4 w-4 shrink-0 text-muted-foreground/50" />
+      {children}
+    </div>
+  )
+}
+
+function ListSkeleton() {
+  return (
+    <div className="space-y-1.5">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <Skeleton key={i} className="h-12 w-full rounded-lg" />
+      ))}
+    </div>
+  )
+}
+
+function Legend({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="flex items-center gap-1.5">
+      <span className="h-2 w-2 rounded-[3px]" style={{ background: color }} />
+      {label}
+    </span>
+  )
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const cls =
+    status === "confirmed"
+      ? "bg-success/12 text-success"
+      : status === "pending"
+      ? "bg-warning/12 text-warning"
+      : "bg-destructive/12 text-destructive"
+  return <span className={cn("rounded-full px-2 py-0.5 font-mono text-[10px]", cls)}>{status}</span>
+}
+
+function ActionBadge({ action }: { action: string }) {
+  const cls =
+    action === "deploy"
+      ? "bg-success/12 text-success"
+      : action === "compile"
+      ? "bg-info/12 text-info"
+      : "bg-cosmic/12 text-cosmic"
+  return (
+    <span className={cn("shrink-0 rounded-full px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider", cls)}>
+      {action.replace("_", " ")}
+    </span>
+  )
+}
