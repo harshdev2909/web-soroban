@@ -69,25 +69,22 @@ export async function payWithWallet({
   const Server = StellarSdk.Horizon?.Server || StellarSdk.Server
   const server = new Server(horizonUrl)
 
-  // Load the source account (clear message if unfunded on this network).
-  let account: any
-  try {
-    account = await server.loadAccount(payerAddress)
-  } catch {
-    throw new Error(
-      `Your wallet (${payerAddress.slice(0, 6)}…) is not funded on ${testnet ? 'testnet' : 'mainnet'}. ` +
-        'Fund it first, then retry.',
-    )
-  }
-
-  // Use the current network base fee (with a safe floor) instead of a hardcoded 100.
-  let fee = '1000'
-  try {
-    const base = await server.fetchBaseFee()
-    fee = String(Math.max(1000, Number(base) || 100))
-  } catch {
-    /* fall back to the floor */
-  }
+  // Load the source account and the current base fee concurrently — they're
+  // independent Horizon round-trips, so there's no reason to serialize them.
+  const [account, fee] = await Promise.all([
+    // Source account (clear message if unfunded on this network).
+    server.loadAccount(payerAddress).catch(() => {
+      throw new Error(
+        `Your wallet (${payerAddress.slice(0, 6)}…) is not funded on ${testnet ? 'testnet' : 'mainnet'}. ` +
+          'Fund it first, then retry.',
+      )
+    }),
+    // Current network base fee with a safe floor (falls back if Horizon errors).
+    server
+      .fetchBaseFee()
+      .then((base: any) => String(Math.max(1000, Number(base) || 100)))
+      .catch(() => '1000'),
+  ])
 
   const tx = new TransactionBuilder(account, { fee, networkPassphrase })
     .addOperation(Operation.payment({ destination, asset: Asset.native(), amount: String(amount) }))
