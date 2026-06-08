@@ -4,8 +4,8 @@ import Link from 'next/link'
 import { Github, Twitter, ArrowUpRight, ArrowUp } from 'lucide-react'
 
 export const socials = [
-  { href: 'https://github.com', icon: <Github className="h-4 w-4" />, name: 'GitHub' },
-  { href: 'https://twitter.com', icon: <Twitter className="h-4 w-4" />, name: 'Twitter' },
+  { href: 'https://github.com/WebSoroban', icon: <Github className="h-4 w-4" />, name: 'GitHub' },
+  { href: 'https://x.com/WebSoroban', icon: <Twitter className="h-4 w-4" />, name: 'Twitter' },
 ]
 
 const columns = [
