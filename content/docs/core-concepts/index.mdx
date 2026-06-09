@@ -1,0 +1,92 @@
+---
+title: Core concepts
+description: Soroban and testnet in plain terms, the per-user wallet model, projects vs files, and what each action does.
+---
+
+WebSoroban hides the toolchain, not the model. Five ideas explain everything the
+IDE does.
+
+## Soroban and the Stellar testnet
+
+Soroban is Stellar's smart-contract platform. You write a contract in Rust, using
+the [`soroban-sdk`](https://docs.rs/soroban-sdk) crate, and compile it to a
+WebAssembly (Wasm) binary. That Wasm runs on Stellar validators.
+
+A contract goes live in two steps:
+
+1. **Upload** the Wasm to the network. The network stores it and identifies it by
+   its **Wasm hash** (the SHA-256 of the binary).
+2. **Instantiate** a contract from that hash. This creates a contract instance
+   with its own address — a **contract id** that starts with `C`.
+
+Many contract instances can share one uploaded Wasm hash. WebSoroban runs every
+operation against the Stellar **testnet** (`https://soroban-testnet.stellar.org`).
+Testnet XLM is free and worthless; use it to experiment.
+
+## The per-user wallet
+
+Every signed action on Stellar needs an account to sign and pay the fee. When you
+sign in, WebSoroban provisions one Stellar **testnet wallet** for your account and
+funds it from friendbot.
+
+How keys are handled:
+
+- The keypair is generated server-side. The **secret key is encrypted at rest**.
+- It is **decrypted in memory only at sign time** — when you deploy or send a
+  write — then discarded. It is never returned to the browser, never logged.
+- The browser only ever sees the **public key** (`G…`) and the balance.
+
+You fund the wallet again any time from the faucet if the balance runs low. See
+[Wallets & faucet](/docs/wallets).
+
+<Callout type="warning" title="One wallet, testnet">
+  You sign with your own funded testnet wallet — not a shared key. If the balance
+  hits zero, deploys and writes fail until you refund from the faucet.
+</Callout>
+
+## Projects and files
+
+A **project** is one Cargo crate (or workspace). It owns a set of **files**, each
+addressed by a project-relative path:
+
+```text
+src/lib.rs
+src/storage.rs
+tests/integration.rs
+Cargo.toml
+.cargo/config.toml
+```
+
+Files are stored by `path`, not by a flat name, so `src/mod.rs` and
+`src/admin/mod.rs` are distinct. Folders are derived from the path — there is no
+separate "folder" object. The project records which `Cargo.toml` drives the build
+(`manifestPath`, default `Cargo.toml`) and, for workspaces, which crate to deploy
+(`deployTarget`). Edits autosave; your project is there when you refresh. See
+[The IDE](/docs/ide) for multi-file layout and module rules.
+
+## What each action does
+
+| Action | What runs | Signs? |
+| --- | --- | --- |
+| **Compile** | `stellar contract build` over your crate, producing a `wasm32v1-none` binary, then size optimization | No |
+| **Deploy** | Upload the Wasm hash, then instantiate a contract id | Yes — your wallet |
+| **Invoke** (read) | Simulate the call against testnet and decode the return value | No |
+| **Invoke** (write) | Simulate, then sign and submit a transaction | Yes — your wallet |
+| **Test** | `cargo test` over `src/` and `tests/`, plus saved function tests run by simulation | No (tests simulate) |
+
+[Compile](/docs/compile) and [Test](/docs/test) never touch your wallet.
+[Deploy](/docs/deploy) and a write [Invoke](/docs/invoke) do — they're the only
+actions that sign.
+
+## Contract spec
+
+When you deploy, WebSoroban extracts the contract's **spec** (its function names,
+argument types, and return types) from the Wasm and stores it. The
+[Invoke](/docs/invoke) panel uses the spec to render a typed form for each
+function, so you enter a `u32` as a number and an `Address` as a `G…`/`C…` string
+without hand-encoding anything.
+
+## Next
+
+Build something multi-file in [The IDE](/docs/ide), or go straight to
+[Compile](/docs/compile).

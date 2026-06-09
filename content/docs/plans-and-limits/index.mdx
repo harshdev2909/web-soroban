@@ -1,0 +1,94 @@
+---
+title: Plans and limits
+description: What each plan allows for deploys and function tests, how the monthly counters reset, and what happens when you hit a cap.
+---
+
+Two actions count against a quota: **deploys** and **function-test runs**. Everything
+else — compile, read invokes, `cargo test` — is unlimited on every plan.
+
+## The plans
+
+| | Free | Pro | Premium |
+| --- | --- | --- | --- |
+| Deploys / month | 5 | unlimited | unlimited |
+| Function-test runs / month | 2 | 5 | unlimited |
+| Compiles | unlimited | unlimited | unlimited |
+| Read invokes | unlimited | unlimited | unlimited |
+| `cargo test` runs | unlimited | unlimited | unlimited |
+| Price | free | 50 XLM / month | 100 XLM / month |
+
+## What counts as one unit
+
+- **One deploy = one unit.** A deploy uploads the Wasm and instantiates a contract id.
+  The counter increments per deploy job.
+- **One function-test run = one unit.** Clicking **Run all** in the
+  [Invoke](/docs/invoke) panel replays every saved function test by simulation and
+  counts as a single unit, no matter how many cases run. An empty test list burns
+  nothing.
+
+Compile is logged for analytics but never capped. Read invokes and `cargo test` are
+not metered at all.
+
+## How counters reset
+
+Both counters reset together roughly 30 days after the last reset. The reset is
+lazy: the next deploy or function-test run after the 30-day mark zeroes both counts
+before checking the limit. There is no fixed calendar date — the clock starts from
+your last reset.
+
+## At the limit
+
+A deploy or function-test run over the cap returns HTTP `403` with
+`upgradeRequired: true`:
+
+```json title="403 — deploy over the free limit"
+{
+  "success": false,
+  "error": "Deployment limit reached",
+  "current": 5,
+  "limit": 5,
+  "upgradeRequired": true
+}
+```
+
+```json title="403 — function-test run over the free limit"
+{
+  "success": false,
+  "error": "Function test limit reached",
+  "current": 2,
+  "limit": 2,
+  "upgradeRequired": true
+}
+```
+
+The IDE surfaces this as an upgrade prompt. Compiling, reading, and running
+`cargo test` keep working at the cap — only the metered action is blocked.
+
+## Usage meters
+
+The plan badge in the navbar opens a popover with two meters — deploys and
+function tests — each showing used against your limit (`unlimited` where the cap
+is lifted) and an upgrade action. The same numbers come from `GET /api/usage`:
+
+```json title="GET /api/usage"
+{
+  "usage": {
+    "deployments":  { "count": 2, "limit": 5, "remaining": 3 },
+    "functionTests": { "count": 1, "limit": 2, "remaining": 1 }
+  }
+}
+```
+
+On unlimited plans, `remaining` is the string `"unlimited"`.
+
+## Upgrading
+
+Pick Pro or Premium from the upgrade action. You pay in testnet XLM to the address
+shown, with your user id as the transaction memo. Once the payment confirms, your
+plan switches and the deploy and function-test limits lift immediately; the current
+counts carry over.
+
+## Next
+
+- [Deploy](/docs/deploy) — what one deploy unit does.
+- [Test](/docs/test) — saving and running function tests.

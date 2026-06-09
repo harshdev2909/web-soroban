@@ -498,6 +498,20 @@ mod tests {
     return currentProject;
   };
 
+  // Console helpers — append one line, or merge a batch from a job result
+  // (deduped by message so socket + poll never double-print).
+  const appendLog = (type: LogEntry['type'], message: string) =>
+    setLogs((prev) => [...prev, { type, message, timestamp: new Date().toISOString() }]);
+
+  const mergeLogs = (incoming?: LogEntry[]) => {
+    if (!Array.isArray(incoming) || incoming.length === 0) return;
+    setLogs((prev) => {
+      const seen = new Set(prev.map((l) => l.message));
+      const fresh = incoming.filter((l) => !seen.has(l.message));
+      return fresh.length ? [...prev, ...fresh] : prev;
+    });
+  };
+
   const handleCompile = async () => {
     if (!project || !activeFile) return;
 
@@ -750,6 +764,19 @@ mod tests {
     }
   };
 
+  // Refresh the project after a successful deploy so the contract id + spec are
+  // available immediately (the Contract Control panel can invoke right away).
+  const refreshAfterDeploy = async (id: string, contractAddress: string) => {
+    try {
+      setProject(await projectApi.getProject(id));
+    } catch {
+      setProject((prev) =>
+        prev ? { ...prev, contractAddress, lastDeployed: new Date().toISOString() } : prev,
+      );
+    }
+    setIsRightPanelOpen(true);
+  };
+
   const handleDeploy = async () => {
     if (!project) return;
 
@@ -757,337 +784,71 @@ mod tests {
     setIsBottomPanelOpen(true);
 
     try {
-      // Check deployment limit before proceeding
-      if (usage && typeof usage.deployments.remaining === 'number' && usage.deployments.remaining <= 0) {
-        toast.error('Deployment limit reached. Please upgrade your plan.')
-        setIsSubscriptionModalOpen(true)
-        setIsDeploying(false)
-        return
+      if (usage && typeof usage.deployments?.remaining === 'number' && usage.deployments.remaining <= 0) {
+        toast.error('Deployment limit reached. Please upgrade your plan.');
+        setIsSubscriptionModalOpen(true);
+        return;
       }
 
-      // Ensure project is saved to DB if it's a local project
+      // Persist edits, then ensure the project exists server-side.
+      await flushSave();
       const projectToDeploy = await ensureProjectSaved(project);
 
-      // Workspace with multiple deployable contracts: the user must pick which
-      // crate to deploy before we compile/deploy (the wasm is target-specific).
+      // Workspace with >1 deployable contract: pick the crate before building
+      // (the wasm is target-specific). build-info is best-effort.
       try {
         const info = await projectApi.getBuildInfo(projectToDeploy._id);
         if (info.requiresTargetSelection) {
           setDeployTargetChoices(info.deployableCrates);
-          setIsDeploying(false);
           return;
         }
-      } catch {
-        // build-info is best-effort; fall through to a normal deploy.
-      }
+      } catch { /* fall through to a normal deploy */ }
 
-      // Step 1: Compile the project to get WASM
-      setLogs([{
-        type: "info",
-        message: "Starting deployment process...",
-        timestamp: new Date().toISOString()
-      }]);
-      
-      toast.info("Compiling contract...");
-      const compileResult = await compileApi.compile(projectToDeploy._id, projectToDeploy.files);
-      const compileLogsArray = Array.isArray(compileResult.logs) ? compileResult.logs : [];
-      setLogs(prev => [...prev, ...compileLogsArray]);
-      
-      let finalCompileResult = compileResult;
-      
-      // If we got a jobId, poll for the compilation result
-      if (compileResult.jobId) {
-        setLogs(prev => [...prev, {
-          type: "info",
-          message: "Waiting for compilation to complete…",
-          timestamp: new Date().toISOString()
-        }]);
-        
-        // Poll for compilation results with progress updates
-        finalCompileResult = await compileApi.pollJobResult(compileResult.jobId, (progressResult) => {
-          // Update logs as we get progress updates
-          const progressLogs = Array.isArray(progressResult.logs) ? progressResult.logs : [];
-          if (progressLogs.length > 0) {
-            setLogs(prev => {
-              const existingMessages = new Set(prev.map(log => log.message));
-              const newLogs = progressLogs.filter(log => !existingMessages.has(log.message));
-              return [...prev, ...newLogs];
-            });
-          }
-        });
-        
-        // Add final compilation logs
-        const finalCompileLogs = Array.isArray(finalCompileResult.logs) ? finalCompileResult.logs : [];
-        setLogs(prev => {
-          const existingMessages = new Set(prev.map(log => log.message));
-          const newLogs = finalCompileLogs.filter(log => !existingMessages.has(log.message));
-          return [...prev, ...newLogs];
-        });
-      }
-      
-      if (!finalCompileResult.success || !finalCompileResult.wasmBase64) {
-        // Add error message if compilation failed
-        const errorMessage = finalCompileResult.error || "Compilation failed";
-        setLogs(prev => [...prev, {
-          type: "error",
-          message: `Compilation failed: ${errorMessage}`,
-          timestamp: new Date().toISOString()
-        }]);
-        toast.error("Compilation failed, cannot deploy");
-        setIsDeploying(false);
+      // 1. Compile to wasm.
+      setLogs([{ type: 'info', message: 'Compiling contract…', timestamp: new Date().toISOString() }]);
+      const started = await compileApi.compile(projectToDeploy._id, projectToDeploy.files);
+      mergeLogs(started.logs);
+      const compiled = started.jobId
+        ? await compileApi.pollJobResult(started.jobId, (p) => mergeLogs(p.logs))
+        : started;
+      mergeLogs(compiled.logs);
+
+      if (!compiled.success || !compiled.wasmBase64) {
+        appendLog('error', `Compilation failed: ${compiled.error || 'unknown error'}`);
+        toast.error('Compilation failed — cannot deploy');
         return;
       }
+      appendLog('success', 'Compiled. WASM ready.');
 
-      setLogs(prev => [...prev, {
-        type: "success",
-        message: "Compilation complete. WASM generated.",
-        timestamp: new Date().toISOString()
-      }]);
+      // 2. Deploy (single source of truth: poll the job; it streams logs + the
+      // final result, so no parallel socket handler is needed).
+      appendLog('info', 'Deploying to Stellar testnet…');
+      const startedDeploy = await deployApi.deploy(projectToDeploy._id, compiled.wasmBase64, 'testnet');
+      mergeLogs(startedDeploy.logs);
+      const deployed = startedDeploy.jobId
+        ? await deployApi.pollDeployJobResult(startedDeploy.jobId, (p) => mergeLogs(p.logs))
+        : startedDeploy;
+      mergeLogs(deployed.logs);
 
-      // Step 2: Deploy directly using the simplified service
-      setLogs(prev => [...prev, {
-        type: "info",
-        message: "Deploying to Stellar testnet...",
-        timestamp: new Date().toISOString()
-      }]);
-      
-      toast.info("Deploying contract...");
-      const deployResult = await deployApi.deploy(projectToDeploy._id, finalCompileResult.wasmBase64, 'testnet');
-      
-      // Add initial deployment logs (ensure logs is an array)
-      const deployLogsArray = Array.isArray(deployResult.logs) ? deployResult.logs : [];
-      setLogs(prev => [...prev, ...deployLogsArray]);
-      
-      let finalDeployResult = deployResult;
-      
-      // If we got a jobId, subscribe to WebSocket updates
-      if (deployResult.jobId) {
-        // Unsubscribe from previous job if any
-        if (currentJobIdRef.current) {
-          socketService.unsubscribeFromJob(currentJobIdRef.current);
-        }
-        currentJobIdRef.current = deployResult.jobId;
-        
-        setLogs(prev => [...prev, {
-          type: "info",
-          message: "Waiting for deployment to complete…",
-          timestamp: new Date().toISOString()
-        }]);
-        
-        // Subscribe to WebSocket for real-time logs
-        socketService.subscribeToJob(deployResult.jobId, {
-          onLog: (logEntry) => {
-            setLogs(prev => {
-              // Avoid duplicates by checking message and timestamp
-              const exists = prev.some(log => 
-                log.message === logEntry.message && log.timestamp === logEntry.timestamp
-              );
-              return exists ? prev : [...prev, logEntry];
-            });
-          },
-          onStatus: async (status, result) => {
-            if (status === 'completed' || status === 'failed') {
-              // Unsubscribe when job completes
-              socketService.unsubscribeFromJob(result.jobId || deployResult.jobId);
-              currentJobIdRef.current = null;
-              
-              if (status === 'completed' && result.contractAddress) {
-                setLogs(prev => [...prev, {
-                  type: "success",
-                  message: `Contract deployed: ${result.contractAddress}`,
-                  timestamp: new Date().toISOString()
-                }]);
-                
-                if (result.network) {
-                  setLogs(prev => [...prev, {
-                    type: "info",
-                    message: `Network: ${result.network}`,
-                    timestamp: new Date().toISOString()
-                  }]);
-                }
-                
-                if (result.walletAddress) {
-                  setLogs(prev => [...prev, {
-                    type: "info",
-                    message: `👛 Deployed by: ${result.walletAddress}`,
-                    timestamp: new Date().toISOString()
-                  }]);
-                }
-                
-                toast.success('Deployment successful', { description: `Contract ${result.contractAddress}` });
-
-                // Inline result — contract id is shown in the logs/console and the
-                // Contract Control panel (no external explorer hop).
-                if (result.contractAddress) {
-                  setLogs(prev => [...prev, {
-                    type: "success",
-                    message: `Contract ID: ${result.contractAddress}`,
-                    timestamp: new Date().toISOString()
-                  }]);
-                }
-
-                // Update project
-                try {
-                  const updatedProject = await projectApi.getProject(projectToDeploy._id);
-                  setProject(updatedProject);
-                } catch (fetchError) {
-                  console.warn('Failed to fetch updated project:', fetchError);
-                  if (projectToDeploy) {
-                    setProject({
-                      ...projectToDeploy,
-                      contractAddress: result.contractAddress,
-                      lastDeployed: new Date().toISOString()
-                    });
-                  }
-                }
-              } else {
-                const errorMessage = result.error || 'Deployment failed';
-                setLogs(prev => [...prev, {
-                  type: "error",
-                  message: `Deployment failed: ${errorMessage}`,
-                  timestamp: new Date().toISOString()
-                }]);
-                toast.error(`Deployment failed: ${errorMessage}`);
-              }
-            }
-          }
-        });
-        
-        // Fallback: Also poll as backup (in case WebSocket fails)
-        // Poll with progress updates to show logs even if WebSocket fails
-        finalDeployResult = await deployApi.pollDeployJobResult(deployResult.jobId, (progressResult) => {
-          // Update logs as we get progress updates from polling
-          const progressLogs = Array.isArray(progressResult.logs) ? progressResult.logs : [];
-          if (progressLogs.length > 0) {
-            setLogs(prev => {
-              const existingMessages = new Set(prev.map(log => log.message));
-              const newLogs = progressLogs.filter(log => !existingMessages.has(log.message));
-              if (newLogs.length > 0) {
-                console.log('[Frontend] Adding deployment logs from polling:', newLogs.length, 'new logs');
-              }
-              return [...prev, ...newLogs];
-            });
-          }
-        });
-        
-        // Add final logs if not already shown
-        const finalDeployLogs = Array.isArray(finalDeployResult.logs) ? finalDeployResult.logs : [];
-        setLogs(prev => {
-          const existingMessages = new Set(prev.map(log => log.message));
-          const newLogs = finalDeployLogs.filter(log => !existingMessages.has(log.message));
-          return [...prev, ...newLogs];
-        });
-        
-        // Show success/failure message if not already shown
-        if (finalDeployResult.success && finalDeployResult.contractAddress) {
-          if (!logs.some(log => log.message.includes('Deployment successful'))) {
-            setLogs(prev => [...prev, {
-              type: "success",
-              message: `Contract deployed: ${finalDeployResult.contractAddress}`,
-              timestamp: new Date().toISOString()
-            }]);
-            
-            toast.success(`Contract deployed: ${finalDeployResult.contractAddress}`);
-            
-            // Update project
-            try {
-              const updatedProject = await projectApi.getProject(projectToDeploy._id);
-              setProject(updatedProject);
-            } catch (fetchError) {
-              console.warn('Failed to fetch updated project:', fetchError);
-              if (projectToDeploy) {
-                setProject({
-                  ...projectToDeploy,
-                  contractAddress: finalDeployResult.contractAddress,
-                  lastDeployed: new Date().toISOString()
-                });
-              }
-            }
-          }
-        } else if (!finalDeployResult.success) {
-          if (!logs.some(log => log.message.includes('Deployment failed'))) {
-            const errorMessage = finalDeployResult.error || "Deployment failed";
-            setLogs(prev => [...prev, {
-              type: "error",
-              message: `Deployment failed: ${errorMessage}`,
-              timestamp: new Date().toISOString()
-            }]);
-            toast.error(`Deployment failed: ${errorMessage}`);
-          }
-        }
+      if (deployed.success && deployed.contractAddress) {
+        appendLog('success', `Contract deployed · ${deployed.contractAddress}`);
+        toast.success('Deployment successful', { description: deployed.contractAddress });
+        await refreshAfterDeploy(projectToDeploy._id, deployed.contractAddress);
       } else {
-        // Handle immediate result (non-async deployment)
-        if (finalDeployResult.success && finalDeployResult.contractAddress) {
-          setLogs(prev => [...prev, {
-            type: "success",
-            message: `Contract deployed: ${finalDeployResult.contractAddress}`,
-            timestamp: new Date().toISOString()
-          }]);
-          
-          toast.success(`Contract deployed: ${finalDeployResult.contractAddress}`);
-          
-          // Update project
-          try {
-            const updatedProject = await projectApi.getProject(projectToDeploy._id);
-            setProject(updatedProject);
-            
-            // Save to localStorage
-            if (typeof window !== 'undefined') {
-              localStorage.setItem('lastProjectId', updatedProject._id);
-              if (activeFile) {
-                localStorage.setItem('lastActiveFileName', activeFile.name);
-              }
-            }
-          } catch (fetchError) {
-            console.warn('Failed to fetch updated project:', fetchError);
-            if (projectToDeploy) {
-              const updatedProject = {
-                ...projectToDeploy,
-                contractAddress: finalDeployResult.contractAddress,
-                lastDeployed: new Date().toISOString()
-              };
-              setProject(updatedProject);
-              
-              // Save to localStorage
-              if (typeof window !== 'undefined') {
-                localStorage.setItem('lastProjectId', updatedProject._id);
-                if (activeFile) {
-                  localStorage.setItem('lastActiveFileName', activeFile.name);
-                }
-              }
-            }
-          }
-        } else {
-          const errorMessage = finalDeployResult.error || "Deployment failed";
-          setLogs(prev => [...prev, {
-            type: "error",
-            message: `Deployment failed: ${errorMessage}`,
-            timestamp: new Date().toISOString()
-          }]);
-          toast.error(`Deployment failed: ${errorMessage}`);
-        }
+        appendLog('error', `Deployment failed: ${deployed.error || 'unknown error'}`);
+        toast.error(deployed.error || 'Deployment failed');
       }
     } catch (error: any) {
-      console.error("Deployment error:", error);
-      
-      // Check if it's a deployment limit error
-      if (error.message === 'DEPLOYMENT_LIMIT_REACHED' || error.message?.includes('limit')) {
-        toast.error('Deployment limit reached. Please upgrade your plan.')
-        setIsSubscriptionModalOpen(true)
+      if (error?.message === 'DEPLOYMENT_LIMIT_REACHED' || error?.message?.includes('limit')) {
+        toast.error('Deployment limit reached. Please upgrade your plan.');
+        setIsSubscriptionModalOpen(true);
       } else {
-        setLogs(prev => [...prev, {
-          type: "error",
-          message: `Deployment failed: ${error.message}`,
-          timestamp: new Date().toISOString()
-        }]);
-        toast.error("Deployment failed");
+        appendLog('error', `Deployment failed: ${error?.message || 'unknown error'}`);
+        toast.error('Deployment failed');
       }
     } finally {
       setIsDeploying(false);
-      // Refresh usage after deployment attempt
-      if (isAuthenticated) {
-        loadUsage()
-      }
+      if (isAuthenticated) loadUsage();
     }
   };
 

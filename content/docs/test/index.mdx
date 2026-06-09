@@ -1,0 +1,147 @@
+---
+title: Test
+description: Run cargo test in the IDE, read per-file results, and replay saved function tests by simulation.
+---
+
+WebSoroban runs your crate's Rust tests on the server and maps each result back to
+the file it lives in. Click **Run tests** and the IDE runs `cargo test
+--no-fail-fast` across the whole crate, so one failure never hides the rest.
+
+Tests run locally in the build container. They never sign and never touch the
+network — `Env::default()` gives each test its own in-memory ledger.
+
+## Unit tests vs integration tests
+
+`cargo test` discovers both kinds, and WebSoroban shows each against the right
+file.
+
+- **Unit tests** live in a `#[cfg(test)]` module anywhere under `src/`. They can
+  reach private functions in the same module. A test in `src/storage.rs` shows up
+  against `src/storage.rs`.
+- **Integration tests** live in files under `tests/`. They depend on your crate
+  like an external caller and drive it through the generated client (e.g.
+  `CounterContractClient`). A test in `tests/counter.rs` shows up against that
+  file.
+
+Integration tests can depend on the crate because contract crates compile with
+`crate-type = ["cdylib", "rlib"]`. The `rlib` output is what `tests/` links
+against.
+
+## A test that runs
+
+This unit test registers the contract in a fresh `Env`, enters its storage
+context, and asserts the counter persists. It lives inside `src/storage.rs`, next
+to the code it covers:
+
+```rust title="src/storage.rs"
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use soroban_sdk::Env;
+
+    #[test]
+    fn defaults_to_zero_then_persists() {
+        let env = Env::default();
+        let contract = env.register_contract(None, crate::CounterContract);
+        env.as_contract(&contract, || {
+            assert_eq!(get_count(&env), 0);
+            set_count(&env, 5);
+            assert_eq!(get_count(&env), 5);
+        });
+    }
+}
+```
+
+An integration test drives the same contract through its generated client
+instead of calling internals directly:
+
+```rust title="tests/counter.rs"
+use counter_mf::{CounterContract, CounterContractClient};
+use soroban_sdk::Env;
+
+#[test]
+fn increments_and_decrements() {
+    let env = Env::default();
+    let id = env.register_contract(None, CounterContract);
+    let client = CounterContractClient::new(&env, &id);
+
+    assert_eq!(client.get(), 0);
+    assert_eq!(client.increment(), 1);
+    assert_eq!(client.increment(), 2);
+    assert_eq!(client.decrement(), 1);
+    client.reset();
+    assert_eq!(client.get(), 0);
+}
+```
+
+The [`counter-mf` template](/docs/templates) ships with both.
+
+## Reading the results
+
+Each test reports `{ file, name, passed, durationMs }`, and the IDE lists them
+under their source file. The header shows **Tests N/M** — `N` passed of `M`
+discovered — counting every test across `src/` and `tests/`.
+
+A failing test keeps its panic or assertion output, attached to the test so you
+can read what broke without re-running:
+
+```text
+test result: ok. 3 passed; 0 failed; 0 ignored
+```
+
+```text
+---- storage::tests::defaults_to_zero_then_persists stdout ----
+assertion `left == right` failed
+  left: 0
+ right: 5
+```
+
+## Compile failure vs test failure
+
+These are different states, and WebSoroban keeps them apart.
+
+- **Tests ran and one failed.** The test binary compiled, the run produced
+  results, and at least one assertion failed. You get per-test output and a
+  **Tests N/M** count where `N < M`.
+- **Tests failed to compile.** The test binary never built — a type error or
+  missing import in a test file. No tests run, so there's nothing to count. This
+  surfaces as per-file diagnostics in the editor gutter, the same way a compile
+  error does.
+
+<Callout type="note" title="How the distinction is made">
+  A non-zero exit with zero parsed tests means the binary didn't compile. A
+  non-zero exit with parsed results means tests ran and some failed.
+</Callout>
+
+## Function tests
+
+A **function test** is different from a Rust test: it's a saved invocation with an
+expected result, replayed against your deployed contract.
+
+In the [Invoke](/docs/invoke) panel, run a call, then **Save as test case**. The
+saved test stores `{ functionName, name, args, expected }`. The `expected` field
+has three modes:
+
+| Mode | Passes when |
+| --- | --- |
+| `success` | the call succeeds (no return-value check) |
+| `equals` | the return value equals a given value |
+| `contains` | the return value contains a given value |
+
+Click **Run all** to replay every saved test. Each one runs by **simulation**
+(`execute: false`) — nothing is signed or submitted — and the panel reports
+`passed` of `total`:
+
+```json
+{ "total": 3, "passed": 3 }
+```
+
+<Callout type="warning" title="Function tests count against your quota">
+  Each **Run all** counts as one function test against your plan's quota — the
+  free tier allows 2. See [Plans and limits](/docs/plans-and-limits).
+</Callout>
+
+## Next
+
+- Save tests from the [Invoke](/docs/invoke) panel.
+- Check quotas in [Plans and limits](/docs/plans-and-limits).

@@ -1,0 +1,3 @@
+{
+  "pages": ["index", "getting-started", "core-concepts", "ide", "compile", "deploy", "invoke", "test", "templates", "wallets", "plans-and-limits", "troubleshooting", "reference"]
+}

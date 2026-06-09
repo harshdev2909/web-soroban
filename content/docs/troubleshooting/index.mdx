@@ -1,0 +1,117 @@
+---
+title: Troubleshooting
+description: The errors you hit compiling, deploying, and invoking on WebSoroban — what each message means and the fix.
+---
+
+Every error below quotes the real message WebSoroban shows. Find your message, then
+apply the fix.
+
+<Accordion>
+
+<FaqItem question="Compile hangs, then fails with a timeout">
+The build ran past the container's time limit and was killed. Nothing was produced.
+
+Trim what the build has to do: drop unused dependencies from `Cargo.toml`, remove
+heavy crates you pulled in for one helper, and keep the crate to a single contract.
+A clean Soroban crate compiles well inside the limit; a timeout almost always means
+the dependency graph is too large. Recompile after trimming.
+</FaqItem>
+
+<FaqItem question="Insufficient balance to cover the resource fee. Fund the wallet via the faucet and retry.">
+A signed write needs a resource fee in stroops, and your testnet wallet is too low
+to pay it.
+
+[Fund the wallet from the faucet](/docs/wallets), then retry the deploy or write.
+Testnet XLM is free.
+</FaqItem>
+
+<FaqItem question="Source account not found on testnet. Fund the wallet via the faucet first.">
+The network has no record of your wallet's account, so it can't be the source of a
+transaction. This happens before any account is funded.
+
+[Fund the wallet from the faucet](/docs/wallets). Friendbot creates and funds the
+account in one step; retry afterward.
+</FaqItem>
+
+<FaqItem question="The contract storage footprint is expired/archived and must be restored before this call.">
+A ledger entry the call reads or writes has expired and been archived. Soroban
+state has a time-to-live, and an archived entry must be restored before it can be
+touched again.
+
+Restore the entry, then retry the [invoke](/docs/invoke). For contract state you
+own, redeploying creates a fresh instance with live storage.
+</FaqItem>
+
+<FaqItem question="every mod NAME; must resolve to NAME.rs or NAME/mod.rs">
+A `mod x;` declaration in your source has no matching file. Pre-flight validation
+catches this before the build starts.
+
+For each `mod x;`, add either `x.rs` or `x/mod.rs` in the same directory — for
+`mod storage;` in `src/lib.rs`, create `src/storage.rs` or `src/storage/mod.rs`.
+Remove the `mod` line if you don't need that module.
+</FaqItem>
+
+<FaqItem question="Compile succeeds but there is no contract to deploy / no #[contract] entrypoint">
+The crate built to Wasm but exposes no `#[contract]` type, so there is no contract
+to instantiate.
+
+Annotate your contract struct with `#[contract]` and its `impl` block with
+`#[contractimpl]`:
+
+```rust title="src/lib.rs"
+use soroban_sdk::{contract, contractimpl, Env};
+
+#[contract]
+pub struct Counter;
+
+#[contractimpl]
+impl Counter {
+    pub fn get(env: Env) -> u32 { /* ... */ 0 }
+}
+```
+</FaqItem>
+
+<FaqItem question="This workspace has multiple deployable contracts. Choose a deploy target first.">
+The deploy returned `400` with code `DEPLOY_TARGET_REQUIRED`. Your project is a
+Cargo workspace with more than one deployable crate, so WebSoroban can't tell which
+Wasm to upload.
+
+Set the project's deploy target to the crate you want, then deploy. The response
+lists the candidate crates in `choices` (each `{ name, dir }`) so you know the
+options. See [Deploy](/docs/deploy).
+</FaqItem>
+
+<FaqItem question="Authorization failed — the call requires a signature this wallet did not provide.">
+The function requires authorization from an account that didn't sign — for example
+a `transfer(from, …)` where `from` is not your wallet, or a call missing a
+`require_auth` signature.
+
+Invoke with the account the contract expects to sign. If the function authorizes
+`from`, that address must be your wallet's `G…` key. See [Invoke](/docs/invoke).
+</FaqItem>
+
+<FaqItem question="Invalid arguments for <fn>: …">
+A value you entered doesn't match the argument's Soroban type. The encoder rejected
+it before the call ran.
+
+Re-check the field against its `ScType`. Common mismatches: a non-numeric string in
+a `u32`/`i64` field, odd-length hex for `Bytes`, a wrong-length `BytesN<32>`, or
+malformed JSON for a `Vec`/`Map`/struct. The [Invoke type table](/docs/invoke#entering-each-soroban-type)
+shows exactly what to type for each type.
+</FaqItem>
+
+<FaqItem question="Contract returned error #N">
+The contract ran and returned its own error code — this is the contract's logic
+rejecting the call, not a WebSoroban or network fault.
+
+Look up code `N` in your contract's error enum to see what condition failed (a
+`panic_with_error!` or a returned `Err`), then adjust the inputs or contract state
+to satisfy it.
+</FaqItem>
+
+</Accordion>
+
+## Next
+
+- [Invoke](/docs/invoke) — typed inputs and how results and errors are decoded.
+- [Wallets & faucet](/docs/wallets) — funding the wallet that pays write fees.

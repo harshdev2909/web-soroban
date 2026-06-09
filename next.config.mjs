@@ -1,3 +1,5 @@
+import { createMDX } from 'fumadocs-mdx/next';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
@@ -9,6 +11,11 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // Allow .md/.mdx page extensions for the fumadocs docs source. Existing app
+  // routes (.ts/.tsx) are unaffected.
+  pageExtensions: ['ts', 'tsx', 'js', 'jsx', 'md', 'mdx'],
 }
 
-export default nextConfig
+const withMDX = createMDX()
+
+export default withMDX(nextConfig)

@@ -1189,6 +1189,11 @@ export interface RunTestsResponse {
     expected: any;
     error?: string | null;
   }>;
+  // Present when the plan's function-test quota is exceeded (HTTP 403).
+  error?: string;
+  upgradeRequired?: boolean;
+  limit?: number;
+  current?: number;
 }
 
 function authHeaders(): Record<string, string> {

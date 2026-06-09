@@ -1,0 +1,73 @@
+---
+title: Wallets & faucet
+description: Your per-user testnet wallet — where it comes from, what the browser sees, and how to refund it from the faucet.
+---
+
+Every account has one Stellar <Badge tone="testnet">testnet</Badge> wallet. It's
+created and funded the first time you sign in, and it signs every deploy and
+write Invoke. There's nothing to connect or import.
+
+## What you see
+
+Open the wallet widget in the top bar. It shows:
+
+- The **public key** (`G…`). Click it to copy.
+- The **XLM balance**.
+- A **funded** / **unfunded** status pill.
+
+A dot on the widget turns amber when the balance is low (under 10 XLM) to remind
+you to top up before deploying.
+
+## Funding from the faucet
+
+The wallet is funded from [friendbot](https://friendbot.stellar.org) on first
+sign-in. Refund it any time the balance runs low.
+
+<Steps>
+
+<Step title="Open the wallet widget">
+Click the wallet button in the top bar to open the panel.
+</Step>
+
+<Step title="Request a top-up">
+Click **Fund via faucet**. This sends `POST /api/wallet/fund`, which re-runs
+friendbot when the balance is below 10 XLM and returns the updated wallet:
+
+```json
+{ "success": true, "publicKey": "G…", "funded": true, "balance": 10000 }
+```
+</Step>
+
+<Step title="Confirm the new balance">
+The panel updates with the refreshed balance and funded status. If the balance
+was already above 10 XLM, the faucet leaves it as-is.
+</Step>
+
+</Steps>
+
+## What's stored, and what never leaves the server
+
+The keypair is generated on the server when your wallet is created. The handling
+of each half differs:
+
+- The **secret key is AES-256-GCM encrypted at rest** in the database.
+- It is **decrypted in memory only at sign time** — when you deploy or send a
+  write Invoke — then used to sign and discarded.
+- The secret is **never returned by any API response and never written to
+  logs**.
+- The browser only ever receives the **public key and balance**. The
+  `GET /api/wallet/me` and `POST /api/wallet/fund` responses carry
+  `{ publicKey, funded, balance }` and nothing else.
+
+<Callout type="danger" title="Testnet only">
+  This is a Stellar testnet wallet. Testnet XLM is free and worthless — never
+  send it real funds, and never treat the public key as a mainnet address. There
+  is no mainnet code path. If the balance hits zero, deploys and write Invokes
+  fail until you refund from the faucet.
+</Callout>
+
+## Next
+
+- [Deploy](/docs/deploy) a contract signed by this wallet.
+- See what a free testnet account includes in
+  [Plans & limits](/docs/plans-and-limits).

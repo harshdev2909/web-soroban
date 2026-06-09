@@ -1,0 +1,140 @@
+---
+title: Templates
+description: Scaffold a complete contract project from a verified bundle that builds and tests out of the box.
+---
+
+A template is a **bundle**: the full source tree for a working contract, defined
+as `{ name, description, files, manifestPath, deployTarget?, defaultTests }`.
+Click **Use template** and WebSoroban scaffolds the entire tree into a new
+project — every file, the `Cargo.toml`, and `.cargo/config.toml`.
+
+Every bundle here compiles to Wasm and passes `cargo test` unchanged. Deploy it as
+is, or edit it into your own contract.
+
+## Single-file vs multi-file
+
+A single-file template (like **Counter**) is a one-file bundle: just `src/lib.rs`
+plus its manifest. A multi-file template spans modules — `src/lib.rs` declares
+`mod storage;`, the build resolves that to `src/storage.rs`, and the whole tree
+compiles to one contract Wasm. See [module resolution](/docs/ide) for the rules.
+
+## Multi-file templates
+
+<CardGrid>
+
+<Card title="counter-mf" icon="layers">
+  A counter split across `src/lib.rs`, `src/storage.rs`, and `src/events.rs`.
+  Ships with a unit test in `storage.rs` and an integration test in
+  `tests/counter.rs`. The clean starting point for a real multi-file project.
+</Card>
+
+<Card title="access-control-mf" icon="wallet">
+  An admin module gating state changes. `init` sets the admin once; `set_value`
+  and `transfer_admin` call `require_admin`, so only the admin can write or hand
+  off the role. Ships with `tests/access.rs`.
+</Card>
+
+<Card title="token-mf" icon="layers">
+  A SEP-41-style token split into `storage`, `admin`, `balance`, `allowance`, and
+  `metadata` modules — `initialize`, `mint`, `transfer`, `approve`,
+  `transfer_from`, and metadata. Ships with `tests/token.rs`.
+</Card>
+
+<Card title="workspace-factory" icon="hammer">
+  A Cargo workspace with two deployable contracts: a `child` counter and a
+  `factory` that calls it via a cross-contract call (`ChildClient`). Default
+  deploy target is `factory`. Ships with `contracts/factory/tests/cross.rs`.
+</Card>
+
+</CardGrid>
+
+<Callout type="note" title="Workspace needs a deploy target">
+  `workspace-factory` has two deployable members, so deploy prompts you to pick
+  one. The bundle defaults to `factory`. See [Deploy](/docs/deploy) for how
+  workspace targets are chosen.
+</Callout>
+
+## A multi-file layout
+
+`counter-mf` keeps the entrypoint in `src/lib.rs`, storage in `src/storage.rs`,
+and the manifest at the root. `lib.rs` declares the submodules; the build picks
+them up from the file tree.
+
+<CodeGroup>
+
+```rust title="src/lib.rs"
+#![no_std]
+use soroban_sdk::{contract, contractimpl, Env};
+
+mod events;
+mod storage;
+
+#[contract]
+pub struct CounterContract;
+
+#[contractimpl]
+impl CounterContract {
+    /// Increment the counter and return the new value.
+    pub fn increment(env: Env) -> u32 {
+        let next = storage::get_count(&env) + 1;
+        storage::set_count(&env, next);
+        events::counter_changed(&env, next);
+        next
+    }
+
+    /// Read the current counter value.
+    pub fn get(env: Env) -> u32 {
+        storage::get_count(&env)
+    }
+
+    /// Reset the counter to zero.
+    pub fn reset(env: Env) {
+        storage::set_count(&env, 0);
+        events::counter_changed(&env, 0);
+    }
+}
+```
+
+```rust title="src/storage.rs"
+use soroban_sdk::{symbol_short, Env, Symbol};
+
+const COUNT: Symbol = symbol_short!("COUNT");
+
+pub fn get_count(env: &Env) -> u32 {
+    env.storage().instance().get(&COUNT).unwrap_or(0)
+}
+
+pub fn set_count(env: &Env, value: u32) {
+    env.storage().instance().set(&COUNT, &value);
+}
+```
+
+```toml title="Cargo.toml"
+[package]
+name = "counter-mf"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+soroban-sdk = "22.0.0"
+
+[dev-dependencies]
+soroban-sdk = { version = "22.0.0", features = ["testutils"] }
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[profile.release]
+opt-level = "z"
+overflow-checks = true
+```
+
+</CodeGroup>
+
+The `rlib` in `crate-type` is what lets `tests/counter.rs` depend on the crate as
+`counter_mf` and drive the generated client.
+
+## Next
+
+- Pick a target and ship it in [Deploy](/docs/deploy).
+- Run the bundled tests in [Test](/docs/test).

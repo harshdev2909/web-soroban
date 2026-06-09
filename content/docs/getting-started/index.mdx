@@ -1,0 +1,54 @@
+---
+title: Overview
+description: What WebSoroban is, how signing in provisions your testnet wallet, and the edit-compile-deploy-invoke loop.
+---
+
+WebSoroban is a browser IDE for [Soroban](/docs/core-concepts) smart contracts on
+the Stellar **testnet**. You write Rust, compile it to Wasm, deploy it, and call
+its functions — without installing the Rust toolchain, the Stellar CLI, or
+managing a keypair.
+
+Everything runs against testnet. There is no mainnet path, so you can experiment
+without risking real funds.
+
+## Sign in, get a wallet
+
+Sign in with Google, GitHub, or Discord. On your first sign-in, WebSoroban
+creates a Stellar testnet wallet for you and funds it from the friendbot faucet.
+You never paste a secret key or run a faucet command — the wallet exists the
+moment your account does.
+
+The wallet's secret key is encrypted and stored on the server. It is decrypted in
+memory only at the instant a transaction is signed, and it is never sent to the
+browser or written to logs. See [Wallets & faucet](/docs/wallets) for what is
+stored and what never leaves the server.
+
+<Callout type="note" title="Testnet only">
+  WebSoroban talks to `https://soroban-testnet.stellar.org`. There is no mainnet
+  deploy. Test XLM has no value.
+</Callout>
+
+## The loop
+
+Four actions move a contract from source to a live, callable program:
+
+<CardGrid>
+  <Card title="Compile" href="/docs/compile" icon="hammer">
+    Build your crate to a Wasm binary and read diagnostics inline.
+  </Card>
+  <Card title="Deploy" href="/docs/deploy" icon="upload">
+    Upload the Wasm and instantiate a contract, signed by your wallet.
+  </Card>
+  <Card title="Invoke" href="/docs/invoke" icon="play">
+    Call functions with typed inputs; simulate reads, sign writes.
+  </Card>
+  <Card title="Test" href="/docs/test" icon="flask">
+    Run `cargo test` and save function-level assertions against a deployment.
+  </Card>
+</CardGrid>
+
+## Next
+
+Deploy a working contract end to end in the [Quickstart](/docs/getting-started/quickstart),
+or read [Core concepts](/docs/core-concepts) for how the wallet, projects, and
+each action work under the hood.

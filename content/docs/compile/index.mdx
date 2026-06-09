@@ -1,0 +1,196 @@
+---
+title: Compile
+description: Build your crate to a wasm32v1-none binary, read per-file diagnostics, and fix pre-flight validation errors.
+---
+
+Compile runs `stellar contract build` over your crate, produces a `wasm32v1-none`
+Wasm binary, optimizes it, and reports its size. Compile before you
+[deploy](/docs/deploy) and any time you want to check that your code builds.
+
+Compile never signs and never touches your [wallet](/docs/wallets). Run it as
+often as you like.
+
+## What the build does
+
+1. **Validate** the project before invoking cargo (see [pre-flight](#pre-flight-validation)).
+2. **Build** with `stellar contract build` from the directory of your
+   [`manifestPath`](/docs/core-concepts#projects-and-files). The whole crate — every
+   module and, for a workspace, every member — is picked up from the files on
+   disk.
+3. **Optimize** the resulting Wasm and report the final byte size.
+4. **Extract the spec** from the Wasm (function names, argument types, return
+   types) so the [Invoke](/docs/invoke) panel can render typed forms.
+
+A successful build ends with the produced Wasm and its size:
+
+```text title="Compile output"
+Compiling contract…
+Running stellar contract build…
+Compiling soroban-sdk v22.0.0
+Compiling counter v0.1.0
+Finished `release` profile [optimized] target(s)
+Generated counter.wasm (1284 bytes).
+Build complete.
+```
+
+The crate name in the filename uses underscores: a crate named `my-counter`
+produces `my_counter.wasm`.
+
+## Reading diagnostics
+
+Compiler errors and warnings are parsed out of the cargo output and routed to the
+file they came from. Each diagnostic carries a level, an optional code, a message,
+and a `file:line:column` location, so the error lands on the right line in the
+editor gutter — not in one opaque log blob.
+
+Take this `lib.rs`:
+
+```rust title="src/lib.rs"
+#![no_std]
+use soroban_sdk::{contract, contractimpl, Env};
+
+#[contract]
+pub struct Counter;
+
+#[contractimpl]
+impl Counter {
+    pub fn increment(env: Env) -> u32 {
+        let count: u32 = env.storage().instance().get(&COUNT).unwrap_or(0); // [!code highlight]
+        count + 1
+    }
+}
+```
+
+`COUNT` is never defined. The build fails and produces this diagnostic:
+
+```text title="Diagnostic"
+error[E0425]: cannot find value `COUNT` in this scope
+  --> src/lib.rs:10:62
+```
+
+Which is parsed into:
+
+```json title="Parsed diagnostic"
+{
+  "level": "error",
+  "code": "E0425",
+  "message": "cannot find value `COUNT` in this scope",
+  "file": "src/lib.rs",
+  "line": 10,
+  "column": 62
+}
+```
+
+Errors stop the build; warnings do not. A multi-file project reports each
+diagnostic against its own file by full path, so an error in `src/storage.rs`
+highlights `storage.rs`, never the wrong `mod.rs`.
+
+## The build cache
+
+A successful build is cached by a hash of your **entire file tree** — every path
+and its content. Re-running Compile with no edits returns the cached Wasm
+instantly:
+
+```text title="Cached build"
+Source unchanged — reusing cached build.
+Compilation successful (cached).
+```
+
+Editing *any* file — `lib.rs`, `Cargo.toml`, a test, `.cargo/config.toml` — busts
+the cache and triggers a real build. You never compile a stale tree.
+
+## Pre-flight validation
+
+Compile validates the project before cargo runs, so you get a clear,
+file-attributed error instead of a cryptic compiler failure. Three checks fail
+fast.
+
+<Accordion>
+  <FaqItem question="Manifest not found">
+    The build needs a `Cargo.toml` at the project's `manifestPath` (default
+    `Cargo.toml`).
+
+    ```text
+    Manifest not found: Cargo.toml (a Cargo.toml is required to build).
+    ```
+
+    Add a `Cargo.toml` at that path, or point `manifestPath` at the manifest you
+    do have.
+  </FaqItem>
+  <FaqItem question="`mod NAME;` has no matching file">
+    Every module declaration must resolve to a file. `lib.rs`, `main.rs`, and
+    `mod.rs` declare modules in their own directory; any other `foo.rs` declares
+    them in a `foo/` subdirectory.
+
+    ```text
+    src/lib.rs: `mod storage;` has no matching file (expected src/storage.rs or src/storage/mod.rs)
+    ```
+
+    Create `src/storage.rs` (or `src/storage/mod.rs`), or remove the `mod storage;`
+    line.
+  </FaqItem>
+  <FaqItem question="No #[contract] entrypoint found">
+    A deployable contract needs a type marked `#[contract]` somewhere under the
+    crate's `src/`.
+
+    ```text
+    No #[contract] entrypoint found under src. A deployable contract needs a #[contract] type.
+    ```
+
+    Add the attribute to your contract type:
+
+    ```rust title="src/lib.rs"
+    #[contract] // [!code highlight]
+    pub struct Counter;
+    ```
+  </FaqItem>
+</Accordion>
+
+A workspace also fails validation if `[package] name` is missing on a member, if a
+listed member has no `Cargo.toml`, or if no member is a deployable contract
+(a `cdylib` crate with a `#[contract]` entrypoint).
+
+## The project files
+
+A single-file template ships with this `Cargo.toml`:
+
+```toml title="Cargo.toml"
+[package]
+name = "counter"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+soroban-sdk = "22.0.0"
+
+[dev-dependencies]
+soroban-sdk = { version = "22.0.0", features = ["testutils"] }
+
+[lib]
+crate-type = ["cdylib"]
+
+[profile.release]
+opt-level = "z"
+overflow-checks = true
+```
+
+Multi-file and workspace crates use `crate-type = ["cdylib", "rlib"]` instead. The
+`rlib` lets integration tests under `tests/` depend on the crate; the Stellar CLI
+still builds the `cdylib` for Wasm.
+
+The target flags live in `.cargo/config.toml`:
+
+```toml title=".cargo/config.toml"
+[target.wasm32v1-none]
+rustflags = ["-C", "target-feature=-crt-static", "-C", "link-arg=--no-entry"]
+```
+
+<Callout type="note" title="Compile then deploy">
+  Deploy takes the Wasm Compile produced. A green build is the prerequisite for
+  every deploy — there's no separate "build for deploy" step.
+</Callout>
+
+## Next
+
+- [Deploy](/docs/deploy) the Wasm to testnet.
+- Run unit and integration tests in [Test](/docs/test).

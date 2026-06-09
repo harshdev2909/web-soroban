@@ -1,0 +1,130 @@
+---
+title: Invoke
+description: Call contract functions with typed inputs — the full ScType entry reference, read vs signed writes, and how to read results.
+---
+
+Invoke calls a function on a deployed contract. WebSoroban reads the contract's
+[spec](/docs/core-concepts#contract-spec) and renders a typed form: one field per
+argument, each validated for its Soroban type. You enter plain values — `123`,
+`true`, a `G…` address — and WebSoroban encodes them to `ScVal` for you.
+
+Open the Invoke panel (the contract console) on a deployed contract, pick a
+function, fill the fields, and run.
+
+## Read vs write
+
+Every call is simulated first. What happens next depends on whether the function
+changes state.
+
+- <Badge tone="read-only">read-only</Badge> A function that only reads storage is
+  a **read**. Click **Run (simulate)**. Nothing is signed or submitted; the return
+  value comes back immediately and costs nothing.
+- <Badge tone="signed">signed</Badge> A function that writes storage or requires
+  authorization is a **write**. WebSoroban shows the simulated result first, then
+  you click **Invoke & sign** to sign with your [wallet](/docs/wallets) and submit
+  the transaction.
+
+WebSoroban decides read vs write from the simulation's footprint and auth — you
+don't mark a function as one or the other.
+
+<Callout type="note" title="Writes cost a fee">
+  A signed write pays a resource fee in stroops from your testnet wallet. If the
+  balance is too low the call fails; refund from the faucet and retry.
+</Callout>
+
+## Entering each Soroban type
+
+The form picks an input control from the argument's `ScType`. Enter values exactly
+as below — WebSoroban converts the string you type into the right `ScVal`.
+
+| ScType | Control | What you type | Example |
+| --- | --- | --- | --- |
+| `bool` | toggle | on / off | `true` |
+| `u32`, `i32` | number | an integer | `123` |
+| `u64`, `i64`, `u128`, `i128`, `u256`, `i256` | number | an integer (sent as a big integer) | `1000000000` |
+| `Timepoint`, `Duration` | number | an integer (seconds) | `1700000000` |
+| `Symbol` | text | up to 32 chars, `[a-zA-Z0-9_]` | `increment` |
+| `String` | text | any UTF-8 text | `hello world` |
+| `Address` | text | a `G…` account or `C…` contract id | `GADTEST…` / `CDLZ…` |
+| `Bytes` | text | hex, even length, optional `0x` | `deadbeef` |
+| `BytesN<32>` | text | hex of exactly N bytes (2N hex chars) | a 64-char hex string |
+| `Option<T>` | field for `T` | leave empty for `None`, else enter `T` | empty → `None` |
+| `Vec<T>` | text | a JSON array | `[1, 2, 3]` |
+| `Map<K,V>` | text | a JSON object | `{ "a": 1 }` |
+| tuple / struct / enum | text | JSON matching the shape | `{ "Active": {} }` |
+
+Rules that catch people out:
+
+- **Integers go in as digits**, never quoted. `u32` becomes a JS number; 64-bit and
+  wider types become big integers. Non-numeric input for a number field is
+  rejected before the call.
+- **`Address` accepts both** a `G…` account and a `C…` contract id — both are
+  valid Soroban addresses.
+- **`Bytes` must be even-length hex.** `BytesN<32>` must be exactly 32 bytes
+  (64 hex chars); the field tells you if the length is wrong.
+- **`Option<T>` left empty is `None`.** Type a value to send `Some(value)`.
+- **Composite types are JSON.** A `Vec<u32>` is `[1, 2, 3]`; an enum variant is its
+  JSON object form.
+
+### Worked example
+
+A `transfer(from: Address, to: Address, amount: i128)` on a token contract:
+
+```text title="Invoke form"
+from    GADTEST...XYZ        (Address)
+to      GBQRST...UVW         (Address)
+amount  500000000           (i128)
+```
+
+`transfer` requires the sender's authorization, so it's a write. Click
+**Invoke & sign**; the wallet signs and the transaction submits.
+
+## Reading the result
+
+The result panel shows:
+
+- **status** — `simulated` for a read, `success` for a confirmed write.
+- **return value** — decoded to JSON using the contract spec. A `u32` comes back as
+  a number, an `Address` as its string form, a struct as an object.
+- **resource fee** — the fee paid, in stroops (writes only).
+- **tx hash** — for a confirmed write, with a link to stellar.expert. Reads have no
+  hash.
+- **events** — any contract events emitted, decoded.
+
+```json title="get() → read"
+{ "status": "simulated", "returnValue": 2 }
+```
+
+```json title="increment() → signed write"
+{
+  "status": "success",
+  "returnValue": 3,
+  "resourceFee": "00",
+  "txHash": "a1b2c3…"
+}
+```
+
+## When it fails
+
+Errors are returned in plain language, not raw XDR:
+
+| Message | Cause | Fix |
+| --- | --- | --- |
+| `Contract returned error #N` | The contract's own error enum | Check that error code in your contract |
+| Authorization failed | A write needs a signature it didn't get | Confirm the call signs with the right account |
+| Insufficient balance to cover the resource fee | Wallet too low | [Fund from the faucet](/docs/wallets) and retry |
+| Storage footprint is expired/archived | Contract state needs restoring | Restore the entry, then retry |
+| `Invalid arguments for <fn>: …` | A field doesn't match its `ScType` | Re-check the type in the table above |
+
+A failed read or write is saved to your invocation history with the humanized
+error, so you can see what happened without re-running it.
+
+## Saved function tests
+
+Any call you run can be saved as a **function test** with an expected result —
+WebSoroban replays it by simulation and checks the return. See [Test](/docs/test#function-tests).
+
+## Next
+
+- Run unit and integration tests in [Test](/docs/test).
+- See the full type glossary in [Reference](/docs/reference#glossary).

@@ -220,6 +220,12 @@ export function InvokePanel({ contractId }: InvokePanelProps) {
     setTestResults({})
     try {
       const res = await contractApi.runTests(contractId)
+      if (!res.success || !Array.isArray(res.results)) {
+        toast.error(res.error || "Failed to run tests", {
+          description: res.upgradeRequired ? "Function-test limit reached — upgrade your plan." : undefined,
+        })
+        return
+      }
       const map: Record<string, { status: string; error?: string | null }> = {}
       for (const r of res.results) map[r.testId] = { status: r.status, error: r.error }
       setTestResults(map)

@@ -1,0 +1,165 @@
+---
+title: API reference
+description: The public WebSoroban backend endpoints — request bodies, responses, and which ones sign with your wallet.
+---
+
+Every endpoint is under the base path `/api` and requires a `Bearer` token unless
+marked otherwise. All operations run against the Stellar **testnet** — mainnet is
+never used.
+
+<Callout type="note" title="Reading the badges">
+  <Badge tone="read-only">read-only</Badge> never signs.
+  <Badge tone="signed">signed</Badge> signs with your testnet wallet and pays a fee.
+  <Badge tone="neutral">queued</Badge> returns a `jobId`; poll the job for the result.
+</Callout>
+
+## Compile
+
+### POST /api/compile
+
+<Badge tone="neutral">queued</Badge>
+
+Queue a build of a project to Wasm. Does not sign. Unlimited on every plan.
+
+<ParamField name="projectId" type="string" required>The project to compile.</ParamField>
+<ParamField name="files" type="object" required>The project's files to materialize in the build container.</ParamField>
+
+<ResponseField name="success" type="boolean">`true` when the job is queued (HTTP `202`).</ResponseField>
+<ResponseField name="jobId" type="string">Id of the compile job to poll.</ResponseField>
+<ResponseField name="logs" type="array">Initial status log entries.</ResponseField>
+
+## Deploy
+
+### POST /api/deploy
+
+<Badge tone="signed">signed</Badge> <Badge tone="neutral">queued</Badge>
+
+Queue a deploy: upload the Wasm hash, then instantiate a contract id. The worker
+signs with your wallet. Counts one deploy against your quota.
+
+<ParamField name="projectId" type="string" required>The project to deploy.</ParamField>
+<ParamField name="wasmBase64" type="string" required>The compiled Wasm binary, base64-encoded.</ParamField>
+
+<ResponseField name="success" type="boolean">`true` when the job is queued (HTTP `202`).</ResponseField>
+<ResponseField name="jobId" type="string">Id of the deploy job to poll for the contract id.</ResponseField>
+<ResponseField name="logs" type="array">Initial status log entries.</ResponseField>
+
+The network is fixed to `testnet` server-side. Two non-`202` cases:
+
+- **Over the plan limit** — HTTP `403` with `{ error, current, limit, upgradeRequired: true }`.
+  See [Plans and limits](/docs/plans-and-limits).
+- **Workspace needs a target** — HTTP `400` with `{ code: "DEPLOY_TARGET_REQUIRED", choices }`
+  when the workspace has more than one deployable crate. See [Troubleshooting](/docs/troubleshooting).
+
+## Invoke
+
+### GET /api/contracts/:contractId/spec
+
+<Badge tone="read-only">read-only</Badge>
+
+Return the parsed function list used to render the typed Invoke form. Auth is
+optional.
+
+<ResponseField name="success" type="boolean">`true` on success.</ResponseField>
+<ResponseField name="contractId" type="string">The queried contract id.</ResponseField>
+<ResponseField name="functions" type="array">Each function with its `name`, `inputs` (name + type), and return type.</ResponseField>
+
+Returns `404` if no spec is stored or recoverable from chain.
+
+### POST /api/contracts/:contractId/invoke
+
+<Badge tone="read-only">read-only</Badge> <Badge tone="signed">signed</Badge>
+
+Invoke a function. Always simulates first. A read returns immediately; a write
+submits a signed transaction only when `execute` is `true`.
+
+<ParamField name="functionName" type="string" required>The function to invoke.</ParamField>
+<ParamField name="args" type="object">Arguments keyed by parameter name. Plain values; WebSoroban encodes them to `ScVal`.</ParamField>
+<ParamField name="execute" type="boolean">`false` (default) simulates only. `true` signs and submits a state-changing call.</ParamField>
+<ParamField name="clientRef" type="string">Socket room id for live `submitted → pending → confirmed` status.</ParamField>
+
+<ResponseField name="success" type="boolean">`true` on success, `false` with a humanized `error` on failure.</ResponseField>
+<ResponseField name="readOnly" type="boolean">Whether the call was a read (no footprint writes or auth).</ResponseField>
+<ResponseField name="status" type="string">`simulated`, `submitted`, `success`, or `failed`.</ResponseField>
+<ResponseField name="returnValue" type="any">The decoded return value.</ResponseField>
+<ResponseField name="resourceFee" type="string">The fee in stroops (writes).</ResponseField>
+<ResponseField name="txHash" type="string">The transaction hash (confirmed writes only).</ResponseField>
+<ResponseField name="events" type="array">Decoded contract events (confirmed writes).</ResponseField>
+<ResponseField name="invocationId" type="string">Id of the saved invocation history entry.</ResponseField>
+
+## Test
+
+### POST /api/test
+
+<Badge tone="neutral">queued</Badge>
+
+Queue `cargo test` over the project. Does not sign and does not touch the network.
+Unlimited on every plan.
+
+<ParamField name="projectId" type="string" required>The project to test.</ParamField>
+<ParamField name="files" type="object" required>The project's files to materialize in the build container.</ParamField>
+
+<ResponseField name="success" type="boolean">`true` when the job is queued (HTTP `202`).</ResponseField>
+<ResponseField name="jobId" type="string">Id of the test job to poll for results.</ResponseField>
+<ResponseField name="logs" type="array">Initial status log entries.</ResponseField>
+
+### POST /api/contracts/:contractId/tests/run
+
+<Badge tone="read-only">read-only</Badge>
+
+Replay the requesting user's saved function tests by simulation and assert each
+expected return. Counts one function-test run against your quota when at least one
+test runs.
+
+<ParamField name="functionName" type="string">Optional. Restrict the run to tests for one function.</ParamField>
+
+<ResponseField name="success" type="boolean">`true` on completion.</ResponseField>
+<ResponseField name="total" type="number">Number of tests run.</ResponseField>
+<ResponseField name="passed" type="number">Number that passed.</ResponseField>
+<ResponseField name="results" type="array">Per-case `{ testId, name, functionName, status, actual, expected, error }`.</ResponseField>
+
+Returns `403` with `upgradeRequired: true` when over the function-test limit. See
+[Plans and limits](/docs/plans-and-limits).
+
+## Wallet
+
+### POST /api/wallet/fund
+
+<Badge tone="neutral">queued</Badge>
+
+Top up your testnet wallet from Friendbot if its balance is low. No body.
+
+<ResponseField name="success" type="boolean">`true` on success.</ResponseField>
+<ResponseField name="publicKey" type="string">The wallet's public key (`G…`).</ResponseField>
+<ResponseField name="funded" type="boolean">Whether the wallet is funded after the call.</ResponseField>
+<ResponseField name="balance" type="string">The wallet's testnet XLM balance.</ResponseField>
+
+### GET /api/wallet/me
+
+<Badge tone="read-only">read-only</Badge>
+
+Return the public details of your server-managed wallet. The secret key is never
+returned.
+
+<ResponseField name="success" type="boolean">`true` on success.</ResponseField>
+<ResponseField name="publicKey" type="string">The wallet's public key (`G…`).</ResponseField>
+<ResponseField name="funded" type="boolean">Whether the account exists and is funded.</ResponseField>
+<ResponseField name="balance" type="string">The wallet's testnet XLM balance.</ResponseField>
+
+## Usage
+
+### GET /api/usage
+
+<Badge tone="read-only">read-only</Badge>
+
+Return your current usage and limits, plus recent activity. No body.
+
+<ResponseField name="success" type="boolean">`true` on success.</ResponseField>
+<ResponseField name="usage" type="object">`deployments` and `functionTests`, each `{ count, limit, remaining, lastResetDate }`. `limit` is `-1` and `remaining` is `"unlimited"` on uncapped plans.</ResponseField>
+<ResponseField name="statistics" type="object">30-day totals (total / successful / failed) for deployments, compilations, and function tests.</ResponseField>
+<ResponseField name="logs" type="array">The most recent usage-log entries.</ResponseField>
+
+## Next
+
+- [Glossary](/docs/reference) — terms used across these docs.
+- [Plans and limits](/docs/plans-and-limits) — what the quotas mean.

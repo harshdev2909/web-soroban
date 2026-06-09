@@ -1,0 +1,138 @@
+---
+title: Deploy
+description: Upload your Wasm and instantiate a contract on testnet, signed with your per-user wallet.
+---
+
+Deploy puts a compiled contract on the Stellar <Badge tone="testnet">testnet</Badge>
+in two phases: it uploads the Wasm to the network, then instantiates a contract
+instance from it. The deploy transaction is <Badge tone="signed">signed</Badge>
+with your per-user testnet [wallet](/docs/wallets).
+
+Deploy is testnet only (`https://soroban-testnet.stellar.org`). There is no
+mainnet path.
+
+## Upload then instantiate
+
+A contract goes live in two phases:
+
+1. **Upload** the Wasm. The network stores the binary and identifies it by its
+   **Wasm hash** — the SHA-256 of the bytes.
+2. **Instantiate** a contract instance from that hash. This creates a new
+   **contract id** that starts with `C`, for example
+   `CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC`.
+
+Many contract instances can share one uploaded Wasm hash. The upload is
+content-addressed by hash, so re-uploading identical Wasm is deduped by the
+network — but each instantiate yields a fresh contract id.
+
+## The signing wallet
+
+Deploy signs with your own funded testnet wallet, not a shared key. The wallet's
+secret is decrypted in memory only at sign time and is never sent to the browser
+or logged. WebSoroban records each deploy as a `Deployment` row with the
+`contractAddress`, your `deployerPublicKey` (the `G…` address that signed), the
+`network`, the `wasmHash`, and — for workspaces — the `deployTarget`.
+
+<Callout type="danger" title="Deploy spends testnet XLM">
+  A deploy pays a network fee from your testnet wallet. If the balance is too low
+  the deploy fails — [fund from the faucet](/docs/wallets) and retry. Testnet XLM
+  is free and worthless.
+</Callout>
+
+## Deploy a contract
+
+<Steps>
+  <Step title="Compile">
+    [Compile](/docs/compile) the project to a green Wasm build. Deploy uses that
+    binary; a failed build has nothing to deploy.
+  </Step>
+  <Step title="Pick a deploy target (workspace only)">
+    A single-crate project skips this. A workspace with more than one deployable
+    contract prompts you to choose which one to deploy — see
+    [Workspace deploy target](#workspace-deploy-target).
+  </Step>
+  <Step title="Deploy">
+    Click **Deploy**. WebSoroban uploads the Wasm, signs the instantiate
+    transaction with your wallet, and waits for confirmation.
+  </Step>
+  <Step title="Invoke">
+    On success you get a contract id. Open the [Invoke](/docs/invoke) panel to
+    call its functions.
+  </Step>
+</Steps>
+
+## Single-crate deploy
+
+For a single crate, Wasm discovery is path-agnostic: WebSoroban finds
+`target/wasm32-unknown-unknown/release/<crate>.wasm` by crate name (hyphens become
+underscores), wherever the manifest sits. You don't configure a Wasm path.
+
+Success looks like this:
+
+```text title="Deploy output"
+Starting deployment to testnet...
+Deploying with user wallet: GADTEST4QXVQ2K7Y6ZJ3FHBWPXW5LF2J6QK3VN5R7TUWXYZ
+WASM file written: 1284 bytes
+WASM validation passed: size=1284 bytes
+Deploying contract...
+Contract deployed: CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC
+```
+
+The contract id (`CDLZ…`) is your deployed instance. It's saved on the project,
+along with the Wasm hash and the extracted [spec](/docs/core-concepts#contract-spec).
+
+## Workspace deploy target
+
+A workspace (a `[workspace]` manifest) can hold more than one deployable contract
+— a member that is both a `cdylib` and has a `#[contract]` entrypoint. When there's
+more than one and you haven't chosen a target, Deploy returns a `400` and asks you
+to pick:
+
+```json title="DEPLOY_TARGET_REQUIRED"
+{
+  "success": false,
+  "error": "This workspace has multiple deployable contracts. Choose a deploy target first.",
+  "code": "DEPLOY_TARGET_REQUIRED",
+  "choices": [
+    { "name": "factory", "dir": "factory" },
+    { "name": "child", "dir": "child" }
+  ]
+}
+```
+
+Pick one in the IDE. WebSoroban persists it on the project as `deployTarget` and
+uses it for both compile (so the Wasm is that member's) and deploy. Each deploy
+records its member on the `Deployment` row's `deployTarget`, so the members are
+tracked separately and you can deploy each in turn.
+
+`GET /api/projects/:id/build-info` reports the workspace state:
+
+```json title="build-info"
+{
+  "isWorkspace": true,
+  "deployableCrates": [
+    { "name": "factory", "dir": "factory" },
+    { "name": "child", "dir": "child" }
+  ],
+  "deployTarget": "factory",
+  "requiresTargetSelection": false
+}
+```
+
+## When it fails
+
+| Message | Cause | Fix |
+| --- | --- | --- |
+| Insufficient balance / underfunded account | Wallet too low to pay the fee | [Fund from the faucet](/docs/wallets) and retry |
+| Stellar CLI not installed / not available | The build host has no CLI | Retry; contact support if it persists |
+| Invalid WASM file | The Wasm failed format validation | [Recompile](/docs/compile) — don't deploy a stale or partial binary |
+| `DEPLOY_TARGET_REQUIRED` | Workspace with multiple deployable contracts | [Pick a deploy target](#workspace-deploy-target) |
+| Project not found / no permission | Deploying a project that isn't yours | Deploy from your own project |
+
+If Compile never succeeded, there's no Wasm to deploy — fix the
+[build](/docs/compile) first.
+
+## Next
+
+- [Invoke](/docs/invoke) functions on your deployed contract.
+- Manage and refund your signing key in [Wallets & faucet](/docs/wallets).

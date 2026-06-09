@@ -1,0 +1,53 @@
+# WebSoroban docs
+
+> Write, compile, deploy, and call Soroban smart contracts from the browser — no local toolchain.
+
+## Getting started
+
+- [Overview](/docs/getting-started): What WebSoroban is, how signing in provisions your testnet wallet, and the edit-compile-deploy-invoke loop.
+- [Quickstart](/docs/getting-started/quickstart): Deploy a counter contract to testnet and call it — start to finish in about a minute.
+
+## Core concepts
+
+- [Core concepts](/docs/core-concepts): Soroban and testnet in plain terms, the per-user wallet model, projects vs files, and what each action does.
+
+## The IDE
+
+- [The IDE](/docs/ide): The three-zone layout, the file tree, multi-file projects and module resolution, the command palette, and autosave.
+
+## Compile
+
+- [Compile](/docs/compile): Build your crate to a wasm32v1-none binary, read per-file diagnostics, and fix pre-flight validation errors.
+
+## Deploy
+
+- [Deploy](/docs/deploy): Upload your Wasm and instantiate a contract on testnet, signed with your per-user wallet.
+
+## Invoke
+
+- [Invoke](/docs/invoke): Call contract functions with typed inputs — the full ScType entry reference, read vs signed writes, and how to read results.
+
+## Test
+
+- [Test](/docs/test): Run cargo test in the IDE, read per-file results, and replay saved function tests by simulation.
+
+## Templates
+
+- [Templates](/docs/templates): Scaffold a complete contract project from a verified bundle that builds and tests out of the box.
+
+## Wallets & faucet
+
+- [Wallets & faucet](/docs/wallets): Your per-user testnet wallet — where it comes from, what the browser sees, and how to refund it from the faucet.
+
+## Plans & limits
+
+- [Plans and limits](/docs/plans-and-limits): What each plan allows for deploys and function tests, how the monthly counters reset, and what happens when you hit a cap.
+
+## Troubleshooting
+
+- [Troubleshooting](/docs/troubleshooting): The errors you hit compiling, deploying, and invoking on WebSoroban — what each message means and the fix.
+
+## Reference
+
+- [Glossary](/docs/reference): The Soroban and WebSoroban terms used across these docs, defined precisely.
+- [API reference](/docs/reference/api): The public WebSoroban backend endpoints — request bodies, responses, and which ones sign with your wallet.
