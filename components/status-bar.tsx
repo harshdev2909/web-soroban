@@ -1,6 +1,6 @@
 "use client"
 
-import { AlertCircle, AlertTriangle, Check, Terminal, PanelRightOpen, PanelRightClose } from "lucide-react"
+import { AlertCircle, AlertTriangle, Check, Terminal, PanelRightOpen, PanelRightClose, Cloud, CloudOff, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface StatusBarProps {
@@ -12,6 +12,7 @@ interface StatusBarProps {
   warnings: number
   network?: string
   version?: string
+  saveStatus?: 'idle' | 'saving' | 'saved' | 'error'
   consoleOpen: boolean
   onToggleConsole: () => void
   rightPanelOpen: boolean
@@ -32,6 +33,7 @@ export function StatusBar({
   warnings,
   network = "Testnet",
   version = "v1.0.0",
+  saveStatus = 'idle',
   consoleOpen,
   onToggleConsole,
   rightPanelOpen,
@@ -66,6 +68,29 @@ export function StatusBar({
         <span className="hidden md:inline">LF</span>
         <span className="hidden lg:inline-flex"><Sep /></span>
         <span className="hidden lg:inline">Spaces: 4</span>
+        {saveStatus !== 'idle' && (
+          <>
+            <Sep />
+            {saveStatus === 'saving' && (
+              <span className="flex items-center gap-1.5 text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                <span className="hidden sm:inline">Saving…</span>
+              </span>
+            )}
+            {saveStatus === 'saved' && (
+              <span className="flex items-center gap-1.5 text-success">
+                <Cloud className="h-3 w-3" />
+                <span className="hidden sm:inline">Saved</span>
+              </span>
+            )}
+            {saveStatus === 'error' && (
+              <span className="flex items-center gap-1.5 text-destructive">
+                <CloudOff className="h-3 w-3" />
+                <span className="hidden sm:inline">Save failed</span>
+              </span>
+            )}
+          </>
+        )}
       </div>
 
       {/* Right: position, metrics, problems, network */}

@@ -5,112 +5,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { Plus, Folder, Clock, Trash2 } from "lucide-react"
-import { projectApi, Project, Template, ProjectFile } from "@/lib/api"
+import { Plus, FolderClosed, Clock, Trash2, Loader2 } from "lucide-react"
+import { projectApi, Project, Template } from "@/lib/api"
 import { TemplateSelector } from "./template-selector"
 import { toast } from "sonner"
-
-// Helper function to create project files locally without saving to DB
-const createLocalProjectFiles = (projectName: string, templateId?: string): ProjectFile[] => {
-  // Convert project name to a valid crate name
-  const crateName = projectName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') || 'contract';
-  
-  if (templateId === 'blank' || templateId === 'empty' || !templateId) {
-    // Create blank project files
-    return [
-      {
-        name: 'lib.rs',
-        type: 'rust',
-        content: ''
-      },
-      {
-        name: 'Cargo.toml',
-        type: 'toml',
-        content: `[package]
-name = "${crateName}"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-soroban-sdk = "22.0.0"
-
-[dev-dependencies]
-soroban-sdk = { version = "22.0.0", features = ["testutils"] }
-
-[lib]
-crate-type = ["cdylib"]
-
-[profile.release]
-opt-level = "z"
-overflow-checks = true`
-      },
-      {
-        name: '.cargo/config.toml',
-        type: 'toml',
-        content: `[target.wasm32v1-none]
-rustflags = [
-    "-C", "target-feature=-crt-static",
-    "-C", "link-arg=--no-entry"
-]`
-      }
-    ];
-  }
-  
-  // For templates, we'll need to fetch from backend or create locally
-  // For now, return blank files - templates will need backend call for file contents
-  // But we won't save the project to DB
-  return [
-    {
-      name: 'lib.rs',
-      type: 'rust',
-      content: ''
-    },
-    {
-      name: 'Cargo.toml',
-      type: 'toml',
-      content: `[package]
-name = "${crateName}"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-soroban-sdk = "22.0.0"
-
-[dev-dependencies]
-soroban-sdk = { version = "22.0.0", features = ["testutils"] }
-
-[lib]
-crate-type = ["cdylib"]
-
-[profile.release]
-opt-level = "z"
-overflow-checks = true`
-    },
-    {
-      name: '.cargo/config.toml',
-      type: 'toml',
-      content: `[target.wasm32v1-none]
-rustflags = [
-    "-C", "target-feature=-crt-static",
-    "-C", "link-arg=--no-entry"
-]`
-    }
-  ];
-}
-
-// Helper function to create a local project object
-const createLocalProject = (name: string, templateId?: string): Project => {
-  const now = new Date().toISOString();
-  const files = createLocalProjectFiles(name, templateId);
-  
-  return {
-    _id: `local-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-    name,
-    files,
-    createdAt: now,
-    updatedAt: now
-  };
-}
 
 interface ProjectSelectorProps {
   currentProject: Project | null
@@ -119,7 +17,7 @@ interface ProjectSelectorProps {
   onTemplateSelect: (template: Template) => void
 }
 
-export function ProjectSelector({ currentProject, onProjectSelect, onProjectCreate, onTemplateSelect }: ProjectSelectorProps) {
+export function ProjectSelector({ currentProject, onProjectSelect, onProjectCreate }: ProjectSelectorProps) {
   const [projects, setProjects] = useState<Project[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -127,10 +25,25 @@ export function ProjectSelector({ currentProject, onProjectSelect, onProjectCrea
   const [isNameModalOpen, setIsNameModalOpen] = useState(false)
   const [pendingAction, setPendingAction] = useState<{ type: 'blank' | 'template', template?: Template } | null>(null)
   const [projectNameInput, setProjectNameInput] = useState("")
+  // Guards against double-submits that would create duplicate projects.
+  const [isCreating, setIsCreating] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   useEffect(() => {
     loadProjects()
   }, [])
+
+  // Keep the list in sync when a project is created/renamed elsewhere.
+  useEffect(() => {
+    if (!currentProject) return
+    setProjects((prev) => {
+      const idx = prev.findIndex((p) => p._id === currentProject._id)
+      if (idx === -1) return [currentProject, ...prev]
+      const next = [...prev]
+      next[idx] = { ...next[idx], name: currentProject.name, updatedAt: currentProject.updatedAt }
+      return next
+    })
+  }, [currentProject?._id, currentProject?.name, currentProject?.updatedAt])
 
   const loadProjects = async () => {
     setIsLoading(true)
@@ -144,20 +57,31 @@ export function ProjectSelector({ currentProject, onProjectSelect, onProjectCrea
     }
   }
 
-  const handleCreateProject = async () => {
-    if (!newProjectName.trim()) return
-
+  // Persist a brand-new project to the DB so it survives refresh and appears in
+  // the list. Returns the saved project (with its real _id) or null on failure.
+  const persistNewProject = async (name: string, template?: string): Promise<Project | null> => {
     try {
-      // Create project locally without saving to DB
-      const newProject = createLocalProject(newProjectName)
-      setProjects(prev => [newProject, ...prev])
-      onProjectCreate(newProject)
-      setNewProjectName("")
-      setIsDialogOpen(false)
-      toast.success(`Project "${newProjectName}" created successfully!`)
+      const saved = await projectApi.createProject(name, undefined, template)
+      setProjects((prev) => [saved, ...prev])
+      onProjectCreate(saved)
+      return saved
     } catch (error) {
       console.error("Failed to create project:", error)
       toast.error(`Failed to create project: ${(error as Error).message}`)
+      return null
+    }
+  }
+
+  const handleCreateProject = async () => {
+    const name = newProjectName.trim()
+    if (!name || isCreating) return
+    setIsCreating(true)
+    const saved = await persistNewProject(name)
+    setIsCreating(false)
+    if (saved) {
+      setNewProjectName("")
+      setIsDialogOpen(false)
+      toast.success(`Project "${name}" created`)
     }
   }
 
@@ -174,218 +98,224 @@ export function ProjectSelector({ currentProject, onProjectSelect, onProjectCrea
   }
 
   const handleConfirmProjectCreation = async () => {
-    if (!pendingAction) return
-
+    if (!pendingAction || isCreating) return
     const projectName = projectNameInput.trim() || "Untitled Project"
 
-    try {
-      let newProject: Project
+    setIsCreating(true)
+    const templateId = pendingAction.type === 'template' ? pendingAction.template?.id : 'blank'
+    const saved = await persistNewProject(projectName, templateId)
+    setIsCreating(false)
 
-      if (pendingAction.type === 'blank') {
-        // Create blank project locally without saving to DB
-        newProject = createLocalProject(projectName, 'blank')
-        toast.success(`Blank project "${projectName}" created successfully!`)
-      } else if (pendingAction.template) {
-        // For templates, fetch files by creating a temporary project, then delete it
-        // This is a workaround until we have a template files endpoint
-        try {
-          const tempProject = await projectApi.createProject(projectName, undefined, pendingAction.template.id)
-          // Create local project with the same files but local ID
-          newProject = {
-            ...tempProject,
-            _id: `local-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-          }
-          // Immediately delete the temporary project from DB
-          await projectApi.deleteProject(tempProject._id).catch(err => {
-            console.warn("Failed to delete temp project:", err)
-          })
-          toast.success(`Project "${projectName}" created from ${pendingAction.template.name} template!`)
-        } catch (templateError) {
-          // If template fetch fails, create blank project
-          console.warn("Failed to fetch template, creating blank project:", templateError)
-          newProject = createLocalProject(projectName, 'blank')
-          toast.success(`Project "${projectName}" created (template unavailable, using blank)!`)
-        }
-      } else {
-        return
-      }
-
-      setProjects(prev => [newProject, ...prev])
-      onProjectCreate(newProject)
+    if (saved) {
+      const via = pendingAction.type === 'template' ? ` from ${pendingAction.template?.name} template` : ''
+      toast.success(`Project "${projectName}" created${via}`)
       setProjectNameInput("")
       setIsNameModalOpen(false)
       setIsDialogOpen(false)
       setPendingAction(null)
-    } catch (error) {
-      console.error("Failed to create project:", error)
-      toast.error(`Failed to create project: ${(error as Error).message}`)
     }
   }
 
   const handleDeleteProject = async (projectId: string) => {
-    if (!confirm("Are you sure you want to delete this project?")) return
+    if (deletingId) return
+    if (!confirm("Delete this project? This cannot be undone.")) return
 
+    setDeletingId(projectId)
     try {
       await projectApi.deleteProject(projectId)
-      setProjects(prev => prev.filter(p => p._id !== projectId))
-      if (currentProject?._id === projectId) {
-        // If we deleted the current project, select the first available one
-        const remainingProjects = projects.filter(p => p._id !== projectId)
-        if (remainingProjects.length > 0) {
-          onProjectSelect(remainingProjects[0])
-        }
+      const remaining = projects.filter((p) => p._id !== projectId)
+      setProjects(remaining)
+      if (currentProject?._id === projectId && remaining.length > 0) {
+        onProjectSelect(remaining[0])
       }
+      toast.success("Project deleted")
     } catch (error) {
       console.error("Failed to delete project:", error)
+      toast.error("Failed to delete project")
+    } finally {
+      setDeletingId(null)
     }
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString()
-  }
+  const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString()
 
   return (
     <div className="flex items-center space-x-2">
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogTrigger asChild>
-          <Button variant="outline" size="sm" className="border-blue-500/50 text-blue-200 bg-blue-500/10 hover:bg-blue-500/20 hover:border-blue-400 font-semibold shadow-md shadow-blue-500/10">
-            <Folder className="w-4 h-4 mr-2 text-blue-300" />
-            {currentProject?.name || "Select Project"}
+          <Button
+            variant="outline"
+            size="sm"
+            className="max-w-[220px] gap-2 border-brand/40 bg-brand/10 font-medium text-brand hover:border-brand/60 hover:bg-brand/15"
+          >
+            <FolderClosed className="h-4 w-4 shrink-0" />
+            <span className="truncate">{currentProject?.name || "Select Project"}</span>
           </Button>
         </DialogTrigger>
-        <DialogContent className="bg-popover border-border text-popover-foreground">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Projects</DialogTitle>
+            <DialogDescription>
+              Create a new contract or open an existing one. Everything is saved automatically.
+            </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4">
-            {/* Create New Project */}
+            {/* Create new project */}
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex space-x-2 flex-1">
-                  <Input
-                    placeholder="New project name"
-                    value={newProjectName}
-                    onChange={(e) => setNewProjectName(e.target.value)}
-                    className="bg-muted border-border text-foreground"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleCreateProject()
-                    }}
-                  />
-                  <Button onClick={handleCreateProject} size="sm" className="bg-blue-600 hover:bg-blue-700">
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  placeholder="New project name"
+                  value={newProjectName}
+                  onChange={(e) => setNewProjectName(e.target.value)}
+                  disabled={isCreating}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleCreateProject()
+                  }}
+                />
+                <Button
+                  onClick={handleCreateProject}
+                  size="icon"
+                  disabled={isCreating || !newProjectName.trim()}
+                  title="Create project"
+                  className="shrink-0"
+                >
+                  {isCreating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                </Button>
                 <TemplateSelector
                   onTemplateSelect={handleTemplateSelectWithName}
                   onClose={() => setIsDialogOpen(false)}
                 />
               </div>
-              <Button 
-                onClick={handleCreateBlankProject} 
-                size="sm" 
+              <Button
+                onClick={handleCreateBlankProject}
+                size="sm"
                 variant="outline"
-                className="w-full border-border text-muted-foreground hover:bg-accent"
+                disabled={isCreating}
+                className="w-full gap-2 border-dashed"
               >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Blank Project
+                <Plus className="h-4 w-4" />
+                Create blank project
               </Button>
             </div>
 
-            {/* Project List */}
-            <div className="space-y-2 max-h-60 overflow-y-auto">
+            {/* Project list */}
+            <div className="-mr-2 max-h-72 space-y-2 overflow-y-auto pr-2">
               {isLoading ? (
-                <div className="text-center text-muted-foreground">Loading projects...</div>
+                <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Loading projects…
+                </div>
               ) : projects.length === 0 ? (
-                <div className="text-center text-muted-foreground">No projects found</div>
+                <div className="rounded-lg border border-dashed border-border py-8 text-center text-sm text-muted-foreground">
+                  No projects yet — create one above.
+                </div>
               ) : (
-                projects.map((project) => (
-                  <div
-                    key={project._id}
-                    className={`flex items-center justify-between p-3 rounded border cursor-pointer transition-colors ${
-                      currentProject?._id === project._id
-                        ? "bg-blue-600 border-blue-500"
-                        : "bg-muted border-border hover:bg-accent"
-                    }`}
-                  >
+                projects.map((project) => {
+                  const isActive = currentProject?._id === project._id
+                  return (
                     <div
-                      className="flex-1"
+                      key={project._id}
+                      role="button"
+                      tabIndex={0}
                       onClick={() => {
                         onProjectSelect(project)
                         setIsDialogOpen(false)
                       }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          onProjectSelect(project)
+                          setIsDialogOpen(false)
+                        }
+                      }}
+                      className={`group relative flex cursor-pointer items-center justify-between gap-3 rounded-lg border p-3 transition-colors ${
+                        isActive
+                          ? "border-brand/50 bg-brand/10"
+                          : "border-border bg-card/40 hover:border-border hover:bg-accent"
+                      }`}
                     >
-                      <div className="font-medium text-foreground">{project.name}</div>
-                      <div className="text-sm text-muted-foreground flex items-center">
-                        <Clock className="w-3 h-3 mr-1" />
-                        {formatDate(project.updatedAt)}
+                      {isActive && (
+                        <span className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-brand" aria-hidden />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className={`truncate font-medium ${isActive ? "text-foreground" : "text-foreground/90"}`}>
+                          {project.name}
+                        </div>
+                        <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                          <Clock className="h-3 w-3" />
+                          {formatDate(project.updatedAt)}
+                        </div>
                       </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        disabled={deletingId === project._id}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteProject(project._id)
+                        }}
+                        className="h-8 w-8 shrink-0 text-muted-foreground opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
+                        title="Delete project"
+                        aria-label={`Delete ${project.name}`}
+                      >
+                        {deletingId === project._id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                      </Button>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteProject(project._id)}
-                      className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ))
+                  )
+                })
               )}
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Project Name Modal */}
-      <Dialog open={isNameModalOpen} onOpenChange={setIsNameModalOpen}>
-        <DialogContent className="bg-popover border-border text-popover-foreground">
+      {/* Project name modal (blank + template) */}
+      <Dialog open={isNameModalOpen} onOpenChange={(o) => { if (!isCreating) setIsNameModalOpen(o) }}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Enter Project Name</DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              Please provide a name for your new project
+            <DialogTitle>Name your project</DialogTitle>
+            <DialogDescription>
+              {pendingAction?.type === 'template'
+                ? `Scaffolds from the ${pendingAction.template?.name} template.`
+                : 'Creates an empty Soroban contract.'}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="project-name">Project Name</Label>
-              <Input
-                id="project-name"
-                placeholder="My Soroban Contract"
-                value={projectNameInput}
-                onChange={(e) => setProjectNameInput(e.target.value)}
-                className="bg-muted border-border text-foreground"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && projectNameInput.trim()) {
-                    handleConfirmProjectCreation()
-                  }
-                }}
-                autoFocus
-              />
-            </div>
+          <div className="space-y-2 py-2">
+            <Label htmlFor="project-name">Project name</Label>
+            <Input
+              id="project-name"
+              placeholder="My Soroban Contract"
+              value={projectNameInput}
+              onChange={(e) => setProjectNameInput(e.target.value)}
+              disabled={isCreating}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && projectNameInput.trim()) handleConfirmProjectCreation()
+              }}
+              autoFocus
+            />
           </div>
           <DialogFooter>
             <Button
               variant="outline"
+              disabled={isCreating}
               onClick={() => {
                 setIsNameModalOpen(false)
                 setPendingAction(null)
                 setProjectNameInput("")
               }}
-              className="border-border text-muted-foreground hover:bg-accent"
             >
               Cancel
             </Button>
-            <Button
-              onClick={handleConfirmProjectCreation}
-              disabled={!projectNameInput.trim()}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              Create Project
+            <Button onClick={handleConfirmProjectCreation} disabled={!projectNameInput.trim() || isCreating} className="gap-2">
+              {isCreating && <Loader2 className="h-4 w-4 animate-spin" />}
+              {isCreating ? "Creating…" : "Create project"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
   )
-} 
+}

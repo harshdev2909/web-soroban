@@ -2,7 +2,7 @@
 
 import { useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Loader2, Hammer, Rocket } from "lucide-react"
+import { Loader2, Hammer, Rocket, FlaskConical } from "lucide-react"
 import { motion } from "framer-motion"
 import dynamic from "next/dynamic"
 
@@ -17,6 +17,7 @@ const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
 })
 
 import { ProjectFile } from "@/lib/api"
+import { pathOf, dirName, baseName } from "@/lib/paths"
 
 export interface CompileDiagnostic {
   level: "error" | "warning"
@@ -34,8 +35,10 @@ interface EditorPanelProps {
   onFileContentChange: (content: string) => void
   onCompile: () => void
   onDeploy: () => void
+  onTest?: () => void
   isCompiling: boolean
   isDeploying: boolean
+  isTesting?: boolean
   onCursorChange?: (pos: { line: number; col: number }) => void
   diagnostics?: CompileDiagnostic[]
 }
@@ -47,8 +50,10 @@ export function EditorPanel({
   onFileContentChange,
   onCompile,
   onDeploy,
+  onTest,
   isCompiling,
   isDeploying,
+  isTesting = false,
   onCursorChange,
   diagnostics = [],
 }: EditorPanelProps) {
@@ -73,9 +78,17 @@ export function EditorPanel({
     const model = editor.getModel()
     if (!model) return
 
-    const base = (p?: string) => (p ? p.split("/").pop() : undefined)
+    // Route a diagnostic to this file by FULL path (so two files named mod.rs
+    // in different folders don't collide). Tolerate a bare-basename file field
+    // from older payloads.
+    const activePath = pathOf(activeFile)
+    const matchesActive = (file?: string) => {
+      if (!file) return true
+      if (file === activePath) return true
+      return !file.includes("/") && baseName(activePath) === file
+    }
     const markers = diagnostics
-      .filter((d) => !d.file || base(d.file) === activeFile.name)
+      .filter((d) => matchesActive(d.file))
       .map((d) => ({
         severity: d.level === "error" ? monaco.MarkerSeverity.Error : monaco.MarkerSeverity.Warning,
         message: d.code ? `[${d.code}] ${d.message}` : d.message,
@@ -99,12 +112,15 @@ export function EditorPanel({
       <div className="flex items-center border-b border-border bg-card/30">
         <div className="flex min-w-0 flex-1 overflow-x-auto">
           {files.map((file) => {
-            const isActive = activeFile.name === file.name
+            const filePath = pathOf(file)
+            const isActive = pathOf(activeFile) === filePath
+            const dir = dirName(filePath)
             return (
               <button
-                key={file.name}
+                key={filePath}
                 onClick={() => onFileSelect(file)}
                 aria-current={isActive}
+                title={filePath}
                 className={`group relative flex items-center gap-2 whitespace-nowrap px-4 py-2.5 font-mono text-xs transition-colors ${
                   isActive
                     ? "bg-background text-foreground"
@@ -112,7 +128,8 @@ export function EditorPanel({
                 }`}
               >
                 <span className={`h-1.5 w-1.5 rounded-full transition-colors ${isActive ? "bg-brand" : "bg-border group-hover:bg-muted-foreground"}`} />
-                {file.name}
+                {dir && <span className="text-muted-foreground/60">{dir}/</span>}
+                {baseName(filePath)}
                 {isActive && (
                   <motion.span
                     layoutId="editor-tab-underline"
@@ -131,6 +148,12 @@ export function EditorPanel({
             {isCompiling ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Hammer className="h-3.5 w-3.5" />}
             <span className="text-xs">{isCompiling ? "Compiling…" : "Compile"}</span>
           </Button>
+          {onTest && (
+            <Button onClick={onTest} disabled={isTesting} size="sm" variant="outline" className="h-8 gap-1.5">
+              {isTesting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FlaskConical className="h-3.5 w-3.5" />}
+              <span className="text-xs">{isTesting ? "Testing…" : "Test"}</span>
+            </Button>
+          )}
           <Button onClick={onDeploy} disabled={isDeploying} size="sm" className="h-8 gap-1.5">
             {isDeploying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Rocket className="h-3.5 w-3.5" />}
             <span className="text-xs">{isDeploying ? "Deploying…" : "Deploy"}</span>

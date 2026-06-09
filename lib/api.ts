@@ -1,6 +1,8 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://backend-ide-production.up.railway.app/api';
 
 export interface ProjectFile {
+  /** Project-relative tree path, e.g. "src/lib.rs". Falls back to name if absent. */
+  path?: string;
   name: string;
   type: string;
   content: string;
@@ -14,6 +16,8 @@ export interface Project {
   updatedAt: string;
   lastDeployed?: string;
   contractAddress?: string;
+  manifestPath?: string;
+  deployTarget?: string | null;
   deploymentHistory?: Array<{
     timestamp: string;
     contractAddress: string;
@@ -166,6 +170,25 @@ export const projectApi = {
     return response.json();
   },
 
+  // Build/layout analysis: workspace?, deployable crates, current target, etc.
+  async getBuildInfo(id: string): Promise<{
+    manifestPath: string;
+    deployTarget: string | null;
+    isWorkspace: boolean;
+    ok: boolean;
+    errors: string[];
+    warnings: string[];
+    deployableCrates: { name: string; dir: string }[];
+    requiresTargetSelection: boolean;
+  }> {
+    const token = authApi.getToken();
+    const response = await fetch(`${API_BASE_URL}/projects/${id}/build-info`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    });
+    if (!response.ok) throw new Error('Failed to fetch build info');
+    return response.json();
+  },
+
   // Create new project
   async createProject(name?: string, files?: ProjectFile[], template?: string, isLocal?: boolean): Promise<Project> {
     const token = authApi.getToken();
@@ -184,7 +207,7 @@ export const projectApi = {
   },
 
   // Update project
-  async updateProject(id: string, data: { name?: string; files?: ProjectFile[] }): Promise<Project> {
+  async updateProject(id: string, data: { name?: string; files?: ProjectFile[]; manifestPath?: string; deployTarget?: string | null }): Promise<Project> {
     const token = authApi.getToken();
     const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
       method: 'PUT',
@@ -301,6 +324,77 @@ export const compileApi = {
     
     // Timeout - return error
     throw new Error('Compilation job timed out');
+  },
+};
+
+export interface TestCaseResult {
+  file?: string;
+  name: string;
+  passed: boolean;
+  ignored?: boolean;
+  durationMs?: number;
+  output?: string;
+}
+
+export interface TestRunResult {
+  success: boolean;
+  total: number;
+  passed: number;
+  failed: number;
+  ignored: number;
+  tests: TestCaseResult[];
+  diagnostics?: Array<{ level: string; code?: string; message: string; file?: string; line?: number; column?: number }>;
+  compileFailed?: boolean;
+  logs: Array<{ type: string; message: string; timestamp: string }>;
+  error?: string;
+  jobId?: string;
+}
+
+// Test API — runs `cargo test` across the crate (unit + integration tests).
+export const testApi = {
+  async run(projectId: string, files: ProjectFile[]): Promise<{ jobId?: string; logs: any[] }> {
+    const token = authApi.getToken();
+    const response = await fetch(`${API_BASE_URL}/test`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ projectId, files }),
+    });
+    if (!response.ok) throw new Error('Failed to start test run');
+    const data = await response.json();
+    return { jobId: data.jobId, logs: Array.isArray(data.logs) ? data.logs : [] };
+  },
+
+  async pollResult(jobId: string, onProgress?: (logs: any[]) => void): Promise<TestRunResult> {
+    const maxAttempts = 300; // up to 5 minutes (tests compile a host build)
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        const { job } = await jobsApi.getJob(jobId);
+        const currentLogs = Array.isArray(job.result?.logs) ? job.result.logs : [];
+        if ((job.status === 'queued' || job.status === 'active') && onProgress && currentLogs.length) {
+          onProgress(currentLogs);
+        }
+        if (job.status === 'completed' || job.status === 'failed') {
+          const r = job.result || {};
+          return {
+            success: job.status === 'completed',
+            total: r.total ?? 0,
+            passed: r.passed ?? 0,
+            failed: r.failed ?? 0,
+            ignored: r.ignored ?? 0,
+            tests: Array.isArray(r.tests) ? r.tests : [],
+            diagnostics: Array.isArray(r.diagnostics) ? r.diagnostics : [],
+            compileFailed: !!r.compileFailed,
+            logs: currentLogs,
+            error: job.error || r.error,
+            jobId,
+          };
+        }
+      } catch (e) {
+        console.error('Error polling test job:', e);
+      }
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+    throw new Error('Test job timed out');
   },
 };
 

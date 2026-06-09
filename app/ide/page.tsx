@@ -4,7 +4,8 @@ import { useState, useEffect, useRef, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { useWalletKit } from '@/contexts/WalletKitContext'
-import { projectApi, compileApi, deployApi, jobsApi, Project, ProjectFile, Template, usageApi } from '@/lib/api'
+import { projectApi, compileApi, deployApi, testApi, jobsApi, Project, ProjectFile, Template, usageApi } from '@/lib/api'
+import { pathOf, baseName } from '@/lib/paths'
 import { socketService } from '@/lib/socket'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -19,6 +20,7 @@ import { SubscriptionModal } from '@/components/subscription-modal'
 import { HowItWorksModal } from '@/components/how-it-works-modal'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { CommandPalette, type PaletteCommand } from '@/components/command-palette'
 import { StatusBar } from '@/components/status-bar'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -27,6 +29,7 @@ import {
   Hammer,
   Rocket,
   FilePlus2,
+  FlaskConical,
   Save,
   Terminal,
   FileCode2,
@@ -112,6 +115,7 @@ function IDEPageContent() {
   const [isLoading, setIsLoading] = useState(true)
   const [isCompiling, setIsCompiling] = useState(false)
   const [isDeploying, setIsDeploying] = useState(false)
+  const [isTesting, setIsTesting] = useState(false)
   const [logs, setLogs] = useState<LogEntry[]>([])
   const [isBottomPanelOpen, setIsBottomPanelOpen] = useState(false)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
@@ -122,7 +126,13 @@ function IDEPageContent() {
   const [cursor, setCursor] = useState({ line: 1, col: 1 })
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(true)
   const [diagnostics, setDiagnostics] = useState<any[]>([])
+  // Workspace deploy: when >1 deployable contract and no target chosen yet.
+  const [deployTargetChoices, setDeployTargetChoices] = useState<{ name: string; dir: string }[] | null>(null)
   const currentJobIdRef = useRef<string | null>(null)
+  // Autosave: edits persist to the DB after a short idle, so work survives refresh.
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const pendingSaveRef = useRef<null | (() => Promise<void>)>(null)
 
   const { user, loading: authLoading, isAuthenticated, refreshUser } = useAuth()
   const { address } = useWalletKit()
@@ -226,19 +236,21 @@ function IDEPageContent() {
             if (savedProject) {
               setProject(savedProject);
               
-              // Try to restore the active file
+              // Try to restore the active file (key is a tree path; tolerate a
+              // legacy bare name from before multi-file support).
               if (lastActiveFileName) {
-                const savedFile = savedProject.files.find(f => f.name === lastActiveFileName);
+                const savedFile = savedProject.files.find(
+                  f => pathOf(f) === lastActiveFileName || f.name === lastActiveFileName
+                );
                 if (savedFile) {
                   setActiveFile(savedFile);
                 } else {
-                  // File not found, use first file
                   setActiveFile(savedProject.files[0]);
-                  localStorage.setItem('lastActiveFileName', savedProject.files[0]?.name || '');
+                  localStorage.setItem('lastActiveFileName', savedProject.files[0] ? pathOf(savedProject.files[0]) : '');
                 }
               } else {
                 setActiveFile(savedProject.files[0]);
-                localStorage.setItem('lastActiveFileName', savedProject.files[0]?.name || '');
+                localStorage.setItem('lastActiveFileName', savedProject.files[0] ? pathOf(savedProject.files[0]) : '');
               }
               
               // Update localStorage with current project
@@ -671,6 +683,73 @@ mod tests {
     }
   };
 
+  // Run `cargo test` across the crate; stream per-file results to the console.
+  const handleRunTests = async () => {
+    if (!project) return;
+    setIsTesting(true);
+    setIsBottomPanelOpen(true);
+    try {
+      const projectToTest = await ensureProjectSaved(project);
+      setLogs([{ type: "info", message: "Running cargo test…", timestamp: new Date().toISOString() }]);
+
+      const start = await testApi.run(projectToTest._id, projectToTest.files);
+      if (!start.jobId) {
+        toast.error("Failed to start tests");
+        return;
+      }
+
+      const result = await testApi.pollResult(start.jobId, (logs) => {
+        setLogs((prev) => {
+          const seen = new Set(prev.map((l) => l.message + l.timestamp));
+          const fresh = logs.filter((l) => !seen.has(l.message + l.timestamp));
+          return fresh.length ? [...prev, ...fresh] : prev;
+        });
+      });
+
+      if (result.compileFailed) {
+        if (Array.isArray(result.diagnostics)) setDiagnostics(result.diagnostics);
+        setLogs((prev) => [...prev, { type: "error", message: "Tests failed to compile (see gutter markers).", timestamp: new Date().toISOString() }]);
+        toast.error("Tests failed to compile");
+      } else {
+        for (const t of result.tests) {
+          setLogs((prev) => [...prev, {
+            type: t.passed ? "success" : "error",
+            message: `${t.passed ? "✓" : "✗"} ${t.file ? `${t.file} — ` : ""}${t.name}${t.durationMs != null ? ` (${t.durationMs}ms)` : ""}`,
+            timestamp: new Date().toISOString(),
+          }]);
+          if (!t.passed && t.output) {
+            setLogs((prev) => [...prev, { type: "error", message: t.output as string, timestamp: new Date().toISOString() }]);
+          }
+        }
+        setLogs((prev) => [...prev, {
+          type: result.success ? "success" : "error",
+          message: `Tests ${result.passed}/${result.total} passed${result.failed ? `, ${result.failed} failed` : ""}.`,
+          timestamp: new Date().toISOString(),
+        }]);
+        if (result.success) toast.success(`Tests ${result.passed}/${result.total} passed`);
+        else toast.error(`${result.failed} test(s) failed (${result.passed}/${result.total} passed)`);
+      }
+    } catch (e) {
+      toast.error(`Test run failed: ${(e as Error).message}`);
+    } finally {
+      setIsTesting(false);
+    }
+  };
+
+  // Persist the chosen workspace deploy target, then resume deployment.
+  const chooseDeployTarget = async (name: string) => {
+    if (!project) return;
+    try {
+      const updated = await projectApi.updateProject(project._id, { deployTarget: name });
+      setProject(updated);
+      setDeployTargetChoices(null);
+      toast.success(`Deploy target set to "${name}"`);
+      handleDeploy();
+    } catch {
+      toast.error('Failed to set deploy target');
+    }
+  };
+
   const handleDeploy = async () => {
     if (!project) return;
 
@@ -688,7 +767,20 @@ mod tests {
 
       // Ensure project is saved to DB if it's a local project
       const projectToDeploy = await ensureProjectSaved(project);
-      
+
+      // Workspace with multiple deployable contracts: the user must pick which
+      // crate to deploy before we compile/deploy (the wasm is target-specific).
+      try {
+        const info = await projectApi.getBuildInfo(projectToDeploy._id);
+        if (info.requiresTargetSelection) {
+          setDeployTargetChoices(info.deployableCrates);
+          setIsDeploying(false);
+          return;
+        }
+      } catch {
+        // build-info is best-effort; fall through to a normal deploy.
+      }
+
       // Step 1: Compile the project to get WASM
       setLogs([{
         type: "info",
@@ -999,12 +1091,57 @@ mod tests {
     }
   };
 
+  // Persist a project's files to the DB. Local-only projects (not yet created
+  // server-side) are saved on first compile/deploy via ensureProjectSaved.
+  const persistFiles = async (proj: Project, files: ProjectFile[]) => {
+    if (proj._id.startsWith('local-')) return;
+    try {
+      setSaveStatus('saving');
+      await projectApi.updateProject(proj._id, { files });
+      setSaveStatus('saved');
+    } catch (error) {
+      console.error('Autosave failed:', error);
+      setSaveStatus('error');
+    }
+  };
+
+  // Debounce an autosave; the latest pending save is also flushed on project
+  // switch and unmount so nothing is lost.
+  const scheduleSave = (proj: Project, files: ProjectFile[]) => {
+    pendingSaveRef.current = () => persistFiles(proj, files);
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      const run = pendingSaveRef.current;
+      pendingSaveRef.current = null;
+      saveTimerRef.current = null;
+      run?.();
+    }, 900);
+  };
+
+  const flushSave = async () => {
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
+    const run = pendingSaveRef.current;
+    pendingSaveRef.current = null;
+    if (run) await run();
+  };
+
+  // Flush any pending autosave when the component unmounts.
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      pendingSaveRef.current?.();
+    };
+  }, []);
+
   const handleFileSelect = (file: ProjectFile) => {
     setActiveFile(file);
-    
+
     // Save active file to localStorage for persistence
     if (typeof window !== 'undefined' && project) {
-      localStorage.setItem('lastActiveFileName', file.name);
+      localStorage.setItem('lastActiveFileName', pathOf(file));
       localStorage.setItem('lastProjectId', project._id);
     }
   };
@@ -1015,26 +1152,30 @@ mod tests {
     const updatedFile = { ...activeFile, content };
     setActiveFile(updatedFile);
 
-    // Update the file in the project
-    const updatedFiles = project.files.map((f) => 
-      f.name === activeFile.name ? updatedFile : f
+    // Update the file in the project (match by tree path, not leaf name).
+    const activePath = pathOf(activeFile);
+    const updatedFiles = project.files.map((f) =>
+      pathOf(f) === activePath ? updatedFile : f
     );
-    
+
     const updatedProject = { ...project, files: updatedFiles };
     setProject(updatedProject);
 
-    // Don't send PUT request when template code changes
-    // File changes are saved locally only
+    // Autosave to the DB after the user pauses typing.
+    scheduleSave(updatedProject, updatedFiles);
   };
 
-  const handleProjectSelect = (selectedProject: Project) => {
+  const handleProjectSelect = async (selectedProject: Project) => {
+    // Persist any pending edits to the project we're leaving before switching.
+    await flushSave();
+    setSaveStatus('idle');
     setProject(selectedProject);
     setActiveFile(selectedProject.files[0]);
-    
+
     // Save to localStorage for persistence
     if (typeof window !== 'undefined') {
       localStorage.setItem('lastProjectId', selectedProject._id);
-      localStorage.setItem('lastActiveFileName', selectedProject.files[0]?.name || '');
+      localStorage.setItem('lastActiveFileName', selectedProject.files[0] ? pathOf(selectedProject.files[0]) : '');
     }
   };
 
@@ -1059,59 +1200,101 @@ mod tests {
     // happens in ProjectSelector after user enters the project name
   };
 
-  const handleDeleteFile = async (fileName: string) => {
+  const handleDeleteFile = async (filePath: string) => {
     if (!project) return;
-    
+
     try {
-      const updatedFiles = project.files.filter(file => file.name !== fileName);
+      const updatedFiles = project.files.filter(file => pathOf(file) !== filePath);
       const updatedProject = await projectApi.updateProject(project._id, { files: updatedFiles });
       setProject(updatedProject);
-      
+
       // If the deleted file was active, switch to the first remaining file
-      if (activeFile?.name === fileName) {
-        const newActiveFile = updatedFiles[0];
+      if (activeFile && pathOf(activeFile) === filePath) {
+        const newActiveFile = updatedProject.files[0];
         setActiveFile(newActiveFile);
-        
-        // Save to localStorage
         if (typeof window !== 'undefined' && newActiveFile) {
-          localStorage.setItem('lastActiveFileName', newActiveFile.name);
+          localStorage.setItem('lastActiveFileName', pathOf(newActiveFile));
           localStorage.setItem('lastProjectId', updatedProject._id);
         }
-      } else {
-        // Save project ID even if active file didn't change
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('lastProjectId', updatedProject._id);
-        }
+      } else if (typeof window !== 'undefined') {
+        localStorage.setItem('lastProjectId', updatedProject._id);
       }
-      
-      toast.success(`File "${fileName}" deleted successfully!`);
+
+      toast.success(`Deleted "${filePath}"`);
     } catch (error) {
       console.error("Failed to delete file:", error);
       toast.error("Failed to delete file");
     }
   };
 
-  const handleProjectNameChange = async (name: string) => {
+  // Rename / move a file to a new tree path (updates content's owner, persists).
+  const handleRenameFile = async (oldPath: string, newPath: string) => {
     if (!project) return;
-    // Update local state only, don't send PUT request
-    setProject({ ...project, name });
+    if (oldPath === newPath) return;
+    if (project.files.some((f) => pathOf(f) === newPath)) {
+      toast.error("A file at this path already exists");
+      return;
+    }
+    try {
+      const updatedFiles = project.files.map((f) =>
+        pathOf(f) === oldPath ? { ...f, path: newPath, name: baseName(newPath) } : f
+      );
+      const updatedProject = await projectApi.updateProject(project._id, { files: updatedFiles });
+      setProject(updatedProject);
+      const moved = updatedProject.files.find((f) => pathOf(f) === newPath) || null;
+      if (activeFile && pathOf(activeFile) === oldPath && moved) {
+        setActiveFile(moved);
+        if (typeof window !== 'undefined') localStorage.setItem('lastActiveFileName', newPath);
+      }
+      toast.success(`Renamed to "${newPath}"`);
+    } catch (error) {
+      console.error("Failed to rename file:", error);
+      toast.error("Failed to rename file");
+    }
   };
 
-  const handleNewFile = (fileName?: string) => {
+  const handleProjectNameChange = async (name: string) => {
     if (!project) return;
-    
+    const updatedProject = { ...project, name };
+    setProject(updatedProject);
+    // Persist the rename (debounced) so it survives refresh.
+    if (!project._id.startsWith('local-')) {
+      pendingSaveRef.current = async () => {
+        try {
+          setSaveStatus('saving');
+          await projectApi.updateProject(updatedProject._id, { name });
+          setSaveStatus('saved');
+        } catch (error) {
+          console.error('Failed to save project name:', error);
+          setSaveStatus('error');
+        }
+      };
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = setTimeout(() => {
+        const run = pendingSaveRef.current;
+        pendingSaveRef.current = null;
+        saveTimerRef.current = null;
+        run?.();
+      }, 900);
+    }
+  };
+
+  const handleNewFile = async (inputPath?: string) => {
+    if (!project) return;
+
     const timestamp = Date.now();
-    const defaultName = fileName || `contract_${timestamp}.rs`;
-    
+    const raw = (inputPath || `src/contract_${timestamp}.rs`).trim();
+    // Add .rs only when the leaf has no extension; intermediate folders in the
+    // path are created implicitly by the build context.
+    const leaf = raw.split('/').pop() || raw;
+    const finalName = leaf.includes('.') ? raw : `${raw}.rs`;
+
     // Check if it's a test file
-    const isTestFile = defaultName.includes('test') || defaultName.includes('spec');
-    const fileExtension = defaultName.endsWith('.rs') ? '' : '.rs';
-    const finalName = defaultName + fileExtension;
-    
-    // Check for duplicate names
-    const existingFile = project.files.find(f => f.name === finalName);
-    if (existingFile) {
-      alert('A file with this name already exists!');
+    const isTestFile = /test|spec/.test(finalName);
+
+    // Check for duplicate paths
+    if (project.files.some((f) => pathOf(f) === finalName)) {
+      toast.error('A file at this path already exists');
       return;
     }
 
@@ -1261,28 +1444,38 @@ impl From<Error> for soroban_sdk::Error {
     }
 
     const newFile: ProjectFile = {
-      name: finalName,
+      path: finalName,
+      name: baseName(finalName),
       content: defaultContent,
       type: 'rust'
     };
 
-    setProject(prev => {
-      if (!prev) return null;
-      const updatedProject = {
-        ...prev,
-        files: [...prev.files, newFile]
-      };
-      
-      // Save to localStorage
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('lastProjectId', updatedProject._id);
-        localStorage.setItem('lastActiveFileName', newFile.name);
-      }
-      
-      return updatedProject;
-    });
-
+    const updatedFiles = [...project.files, newFile];
+    const updatedProject = { ...project, files: updatedFiles };
+    setProject(updatedProject);
     setActiveFile(newFile);
+
+    // Save to localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('lastProjectId', updatedProject._id);
+      localStorage.setItem('lastActiveFileName', pathOf(newFile));
+    }
+
+    // Persist immediately so the new file survives refresh.
+    if (!project._id.startsWith('local-')) {
+      try {
+        setSaveStatus('saving');
+        const saved = await projectApi.updateProject(project._id, { files: updatedFiles });
+        setProject(saved);
+        const savedActive = saved.files.find((f) => pathOf(f) === pathOf(newFile));
+        if (savedActive) setActiveFile(savedActive);
+        setSaveStatus('saved');
+      } catch (error) {
+        console.error('Failed to save new file:', error);
+        setSaveStatus('error');
+        toast.error('Failed to save new file');
+      }
+    }
   };
 
   const handleSaveProject = async () => {
@@ -1346,15 +1539,16 @@ impl From<Error> for soroban_sdk::Error {
   const paletteCommands: PaletteCommand[] = [
     { id: 'compile', group: 'Actions', label: 'Compile project', hint: '⌘B', icon: Hammer, disabled: isCompiling, perform: () => handleCompile() },
     { id: 'deploy', group: 'Actions', label: 'Deploy to testnet', icon: Rocket, disabled: isDeploying, perform: () => handleDeploy() },
+    { id: 'test', group: 'Actions', label: 'Run tests', icon: FlaskConical, disabled: isTesting, perform: () => handleRunTests() },
     { id: 'new-file', group: 'Actions', label: 'New file', icon: FilePlus2, perform: () => handleNewFile() },
     { id: 'save', group: 'Actions', label: 'Save project', hint: '⌘S', icon: Save, perform: () => handleSaveProject() },
     { id: 'logs', group: 'Actions', label: 'Toggle console', icon: Terminal, perform: () => setIsBottomPanelOpen((v) => !v) },
     ...project.files.map((f) => ({
-      id: `file-${f.name}`,
+      id: `file-${pathOf(f)}`,
       group: 'Files',
-      label: f.name,
+      label: pathOf(f),
       icon: FileCode2,
-      keywords: ['open', f.name],
+      keywords: ['open', pathOf(f), f.name],
       perform: () => handleFileSelect(f),
     })),
     { id: 'nav-templates', group: 'Go to', label: 'Templates', icon: Store, perform: () => router.push('/marketplace') },
@@ -1401,7 +1595,32 @@ impl From<Error> for soroban_sdk::Error {
         open={isHowItWorksOpen}
         onOpenChange={setIsHowItWorksOpen}
       />
-      
+
+      {/* Workspace deploy-target picker (multiple deployable contracts) */}
+      <Dialog open={deployTargetChoices !== null} onOpenChange={(o) => !o && setDeployTargetChoices(null)}>
+        <DialogContent className="sm:max-w-[460px]">
+          <DialogHeader>
+            <DialogTitle>Choose a contract to deploy</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            This workspace has multiple deployable contracts. Pick which crate to deploy — it&apos;s saved as the
+            project&apos;s deploy target and used for future deploys (you can change it later).
+          </p>
+          <div className="mt-2 space-y-2">
+            {(deployTargetChoices || []).map((c) => (
+              <button
+                key={c.name}
+                onClick={() => chooseDeployTarget(c.name)}
+                className="flex w-full items-center justify-between rounded-md border border-border bg-card px-3 py-2.5 text-left transition-colors hover:border-brand/50 hover:bg-accent"
+              >
+                <span className="font-mono text-sm text-foreground">{c.name}</span>
+                <span className="font-mono text-[11px] text-muted-foreground">{c.dir || '(root)'}</span>
+              </button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="min-h-0 flex-1">
           <ResizablePanelGroup direction="vertical">
@@ -1414,6 +1633,7 @@ impl From<Error> for soroban_sdk::Error {
                     onFileSelect={handleFileSelect}
                     onProjectNameChange={handleProjectNameChange}
                     onNewFile={handleNewFile}
+                    onRenameFile={handleRenameFile}
                     onSaveProject={handleSaveProject}
                     onDeleteFile={handleDeleteFile}
                   />
@@ -1430,8 +1650,10 @@ impl From<Error> for soroban_sdk::Error {
                     onFileContentChange={handleFileContentChange}
                     onCompile={handleCompile}
                     onDeploy={handleDeploy}
+                    onTest={handleRunTests}
                     isCompiling={isCompiling}
                     isDeploying={isDeploying}
+                    isTesting={isTesting}
                     onCursorChange={setCursor}
                     diagnostics={diagnostics}
                   />
@@ -1475,6 +1697,7 @@ impl From<Error> for soroban_sdk::Error {
           lineCount={(activeFile.content || '').split('\n').length}
           errors={logs.filter((l) => l.type === 'error').length}
           warnings={logs.filter((l) => l.type === 'warning').length}
+          saveStatus={saveStatus}
           consoleOpen={isBottomPanelOpen}
           onToggleConsole={() => setIsBottomPanelOpen((v) => !v)}
           rightPanelOpen={isRightPanelOpen}
