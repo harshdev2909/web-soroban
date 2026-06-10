@@ -34,6 +34,7 @@ import {
   Gauge,
   Check,
   Copy,
+  Wand2,
 } from 'lucide-react'
 
 const EASE = [0.16, 1, 0.3, 1] as const
@@ -48,7 +49,7 @@ const item: Variants = {
 }
 
 const steps = [
-  { n: '01', title: 'Spin up a project', desc: 'Start from a template or a blank contract in one click.' },
+  { n: '01', title: 'Spin up a project', desc: 'Start from a template, customise one in the wizard, or open a blank contract.' },
   { n: '02', title: 'Compile to WASM', desc: 'Builds run on managed workers with streamed, readable logs.' },
   { n: '03', title: 'Simulate and test', desc: 'Invoke functions against testnet and inspect return values.' },
   { n: '04', title: 'Deploy in one click', desc: 'Sign with your testnet wallet and get the contract id inline.' },
@@ -188,6 +189,29 @@ export default function HomePage() {
             </div>
           </BentoCard>
 
+          {/* Contract wizard */}
+          <BentoCard className="md:col-span-2" icon={Wand2} title="Contract wizard" reduce={reduce}>
+            <p className="lead text-sm">
+              Pick a token, NFT, or counter, toggle features, and scaffold a compile-ready project.
+            </p>
+            <div className="mt-5 space-y-1.5 rounded-lg border border-border bg-background/70 p-3">
+              {[
+                ['Mintable', true],
+                ['Burnable', true],
+                ['Pausable', false],
+              ].map(([label, on]) => (
+                <div key={label as string} className="flex items-center justify-between">
+                  <span className="font-mono text-[11px] text-muted-foreground">{label as string}</span>
+                  <span
+                    className={`flex h-3.5 w-6 items-center rounded-full px-0.5 ${on ? 'justify-end bg-brand/70' : 'justify-start bg-muted-foreground/25'}`}
+                  >
+                    <span className="h-2.5 w-2.5 rounded-full bg-background" />
+                  </span>
+                </div>
+              ))}
+            </div>
+          </BentoCard>
+
           {/* Tall-ish: wallet */}
           <BentoCard className="md:col-span-2" icon={Wallet} title="Your own testnet wallet" reduce={reduce}>
             <p className="lead text-sm">
@@ -222,10 +246,10 @@ export default function HomePage() {
               explorer hop.
             </p>
           </BentoCard>
-          <BentoCard className="md:col-span-2" icon={KeyRound} title="Keys stay encrypted" reduce={reduce}>
-            <p className="lead text-sm">
+          <BentoCard className="md:col-span-6" icon={KeyRound} title="Keys stay encrypted" reduce={reduce}>
+            <p className="lead max-w-2xl text-sm">
               Your secret key is AES 256 GCM encrypted at rest and never shown, logged, or sent to
-              the browser.
+              the browser. Testnet only — there is no mainnet code path.
             </p>
           </BentoCard>
         </div>

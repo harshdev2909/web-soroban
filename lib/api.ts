@@ -189,8 +189,15 @@ export const projectApi = {
     return response.json();
   },
 
-  // Create new project
-  async createProject(name?: string, files?: ProjectFile[], template?: string, isLocal?: boolean): Promise<Project> {
+  // Create new project. `opts` carries build config for wizard-generated bundles
+  // (e.g. an OpenZeppelin workspace whose deploy target is a member crate).
+  async createProject(
+    name?: string,
+    files?: ProjectFile[],
+    template?: string,
+    isLocal?: boolean,
+    opts?: { manifestPath?: string; deployTarget?: string | null },
+  ): Promise<Project> {
     const token = authApi.getToken();
     const response = await fetch(`${API_BASE_URL}/projects`, {
       method: 'POST',
@@ -198,7 +205,14 @@ export const projectApi = {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ name, files, template, isLocal }),
+      body: JSON.stringify({
+        name,
+        files,
+        template,
+        isLocal,
+        manifestPath: opts?.manifestPath,
+        deployTarget: opts?.deployTarget,
+      }),
     });
     if (!response.ok) {
       throw new Error('Failed to create project');
@@ -236,6 +250,60 @@ export const projectApi = {
     if (!response.ok) {
       throw new Error('Failed to delete project');
     }
+  },
+};
+
+// --- User templates (contract wizard) -------------------------------------
+
+export interface UserTemplateBundle {
+  files: { path: string; content: string }[];
+  manifestPath: string;
+  deployTarget: string | null;
+}
+
+export interface UserTemplate {
+  id: string;
+  name: string;
+  type: string;
+  engine: 'oz' | 'internal';
+  config: any; // serialised WizardState
+  bundle: UserTemplateBundle;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const userTemplateApi = {
+  async list(): Promise<UserTemplate[]> {
+    const response = await fetch(`${API_BASE_URL}/user-templates`, { headers: authHeaders() });
+    if (!response.ok) throw new Error('Failed to load templates');
+    return response.json();
+  },
+
+  async get(id: string): Promise<UserTemplate> {
+    const response = await fetch(`${API_BASE_URL}/user-templates/${id}`, { headers: authHeaders() });
+    if (!response.ok) throw new Error('Failed to load template');
+    return response.json();
+  },
+
+  async create(data: { name: string; type: string; engine: 'oz' | 'internal'; config: any; bundle: UserTemplateBundle }): Promise<UserTemplate> {
+    const response = await fetch(`${API_BASE_URL}/user-templates`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to save template');
+    }
+    return response.json();
+  },
+
+  async remove(id: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/user-templates/${id}`, {
+      method: 'DELETE',
+      headers: authHeaders(),
+    });
+    if (!response.ok && response.status !== 204) throw new Error('Failed to delete template');
   },
 };
 

@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { Plus, FolderClosed, Clock, Trash2, Loader2 } from "lucide-react"
-import { projectApi, Project, Template } from "@/lib/api"
+import { Plus, FolderClosed, Clock, Trash2, Loader2, Wand2, Pencil } from "lucide-react"
+import { projectApi, userTemplateApi, Project, Template, type UserTemplate } from "@/lib/api"
 import { TemplateSelector } from "./template-selector"
+import { ContractWizard } from "./wizard/contract-wizard"
+import type { WizardState } from "@/lib/wizard"
 import { toast } from "sonner"
 
 interface ProjectSelectorProps {
@@ -29,9 +31,22 @@ export function ProjectSelector({ currentProject, onProjectSelect, onProjectCrea
   const [isCreating, setIsCreating] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
+  // Contract wizard + saved ("My") templates.
+  const [wizardOpen, setWizardOpen] = useState(false)
+  const [wizardInitial, setWizardInitial] = useState<WizardState | null>(null)
+  const [userTemplates, setUserTemplates] = useState<UserTemplate[]>([])
+  const [loadingTemplates, setLoadingTemplates] = useState(false)
+  const [usingTemplateId, setUsingTemplateId] = useState<string | null>(null)
+  const [deletingTemplateId, setDeletingTemplateId] = useState<string | null>(null)
+
   useEffect(() => {
     loadProjects()
   }, [])
+
+  // Refresh saved templates whenever the projects dialog opens.
+  useEffect(() => {
+    if (isDialogOpen) loadUserTemplates()
+  }, [isDialogOpen])
 
   // Keep the list in sync when a project is created/renamed elsewhere.
   useEffect(() => {
@@ -54,6 +69,74 @@ export function ProjectSelector({ currentProject, onProjectSelect, onProjectCrea
       console.error("Failed to load projects:", error)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const loadUserTemplates = async () => {
+    setLoadingTemplates(true)
+    try {
+      setUserTemplates(await userTemplateApi.list())
+    } catch (error) {
+      console.error("Failed to load saved templates:", error)
+    } finally {
+      setLoadingTemplates(false)
+    }
+  }
+
+  // Open the wizard fresh (close the projects dialog so the wizard has focus).
+  const openWizardFresh = () => {
+    setWizardInitial(null)
+    setIsDialogOpen(false)
+    setWizardOpen(true)
+  }
+
+  // Re-open a saved template in the wizard to re-customise it.
+  const openWizardWith = (t: UserTemplate) => {
+    setWizardInitial(t.config as WizardState)
+    setIsDialogOpen(false)
+    setWizardOpen(true)
+  }
+
+  // Wizard finished: add the new project to the list and open it.
+  const handleWizardCreate = (project: Project) => {
+    setProjects((prev) => [project, ...prev])
+    onProjectCreate(project)
+    setWizardOpen(false)
+  }
+
+  // Scaffold directly from a saved template's resolved bundle (skip the wizard).
+  const createFromTemplate = async (t: UserTemplate) => {
+    if (usingTemplateId) return
+    setUsingTemplateId(t.id)
+    try {
+      const files = t.bundle.files.map((f) => ({ path: f.path, name: f.path.split("/").pop() || f.path, type: "file", content: f.content }))
+      const project = await projectApi.createProject(t.name, files, undefined, false, {
+        manifestPath: t.bundle.manifestPath,
+        deployTarget: t.bundle.deployTarget,
+      })
+      setProjects((prev) => [project, ...prev])
+      onProjectCreate(project)
+      setIsDialogOpen(false)
+      toast.success(`Created "${project.name}"`)
+    } catch (error) {
+      toast.error(`Failed to create project: ${(error as Error).message}`)
+    } finally {
+      setUsingTemplateId(null)
+    }
+  }
+
+  const deleteTemplate = async (id: string) => {
+    if (deletingTemplateId) return
+    if (!confirm("Delete this saved template? This cannot be undone.")) return
+    setDeletingTemplateId(id)
+    try {
+      await userTemplateApi.remove(id)
+      setUserTemplates((prev) => prev.filter((t) => t.id !== id))
+      toast.success("Template deleted")
+    } catch (error) {
+      toast.error("Failed to delete template")
+    } finally {
+      setDeletingTemplateId(null)
     }
   }
 
@@ -187,17 +270,81 @@ export function ProjectSelector({ currentProject, onProjectSelect, onProjectCrea
                   onClose={() => setIsDialogOpen(false)}
                 />
               </div>
-              <Button
-                onClick={handleCreateBlankProject}
-                size="sm"
-                variant="outline"
-                disabled={isCreating}
-                className="w-full gap-2 border-dashed"
-              >
-                <Plus className="h-4 w-4" />
-                Create blank project
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleCreateBlankProject}
+                  size="sm"
+                  variant="outline"
+                  disabled={isCreating}
+                  className="flex-1 gap-2 border-dashed"
+                >
+                  <Plus className="h-4 w-4" />
+                  Blank project
+                </Button>
+                <Button
+                  onClick={openWizardFresh}
+                  size="sm"
+                  variant="outline"
+                  disabled={isCreating}
+                  className="flex-1 gap-2 border-brand/40 bg-brand/10 text-brand hover:border-brand/60 hover:bg-brand/15"
+                >
+                  <Wand2 className="h-4 w-4" />
+                  Customise a contract
+                </Button>
+              </div>
             </div>
+
+            {/* My Templates — saved wizard designs */}
+            {(loadingTemplates || userTemplates.length > 0) && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">My Templates</h4>
+                  {loadingTemplates && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+                </div>
+                <div className="-mr-2 max-h-40 space-y-1.5 overflow-y-auto pr-2">
+                  {userTemplates.map((t) => (
+                    <div
+                      key={t.id}
+                      className="group flex items-center gap-2 rounded-lg border border-border bg-card/40 p-2.5 transition-colors hover:border-border hover:bg-accent"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-medium text-foreground/90">{t.name}</div>
+                        <div className="mt-0.5 text-[11px] text-muted-foreground">{t.type}</div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
+                        title="Re-customise in wizard"
+                        onClick={() => openWizardWith(t)}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 shrink-0 gap-1.5 px-2 text-xs"
+                        disabled={usingTemplateId === t.id}
+                        onClick={() => createFromTemplate(t)}
+                      >
+                        {usingTemplateId === t.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+                        Use
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                        title="Delete template"
+                        disabled={deletingTemplateId === t.id}
+                        onClick={() => deleteTemplate(t.id)}
+                      >
+                        {deletingTemplateId === t.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Project list */}
             <div className="-mr-2 max-h-72 space-y-2 overflow-y-auto pr-2">
@@ -316,6 +463,14 @@ export function ProjectSelector({ currentProject, onProjectSelect, onProjectCrea
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Contract customisation wizard */}
+      <ContractWizard
+        open={wizardOpen}
+        onOpenChange={setWizardOpen}
+        onProjectCreate={handleWizardCreate}
+        initialState={wizardInitial}
+      />
     </div>
   )
 }

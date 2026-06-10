@@ -34,6 +34,7 @@
 ## Templates
 
 - [Templates](/docs/templates): Scaffold a complete contract project from a verified bundle that builds and tests out of the box.
+- [Contract wizard](/docs/templates/wizard): Customise a token, NFT, or counter with feature toggles and a live preview, then scaffold a compile-ready project.
 
 ## Wallets & faucet
 
