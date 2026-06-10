@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -115,22 +115,44 @@ export function InvokePanel({ contractId }: InvokePanelProps) {
 
   const fn = functions.find((f) => f.name === selected)
 
+  // Bumped on each load so a retry loop abandons itself when the contract changes
+  // (or the panel unmounts), preventing a stale load from overwriting state.
+  const specReqRef = useRef(0)
+
   const loadSpec = useCallback(async () => {
+    const reqId = ++specReqRef.current
     setLoading(true)
     setSpecError(null)
-    try {
-      const res = await contractApi.getSpec(contractId)
-      if (res.success && res.functions) {
-        setFunctions(res.functions)
-        setSelected(res.functions[0]?.name ?? "")
-      } else {
+    // A just-deployed contract's spec can take a moment to be queryable. Retry a
+    // few times so the invoke form fills in automatically right after a deploy,
+    // with no manual reload.
+    const ATTEMPTS = 5
+    for (let i = 0; i < ATTEMPTS; i++) {
+      if (specReqRef.current !== reqId) return
+      try {
+        const res = await contractApi.getSpec(contractId)
+        if (specReqRef.current !== reqId) return
+        if (res.success && res.functions && res.functions.length > 0) {
+          setFunctions(res.functions)
+          setSelected(res.functions[0]?.name ?? "")
+          setLoading(false)
+          return
+        }
+        if (i < ATTEMPTS - 1) {
+          await new Promise((r) => setTimeout(r, 1500))
+          continue
+        }
         setSpecError(res.error || "Contract spec unavailable")
+      } catch (e: any) {
+        if (specReqRef.current !== reqId) return
+        if (i < ATTEMPTS - 1) {
+          await new Promise((r) => setTimeout(r, 1500))
+          continue
+        }
+        setSpecError(e.message || "Failed to load contract spec")
       }
-    } catch (e: any) {
-      setSpecError(e.message || "Failed to load contract spec")
-    } finally {
-      setLoading(false)
     }
+    setLoading(false)
   }, [contractId])
 
   const loadTests = useCallback(async () => {
@@ -145,6 +167,11 @@ export function InvokePanel({ contractId }: InvokePanelProps) {
   useEffect(() => {
     loadSpec()
     loadTests()
+    // Invalidate any in-flight retry loop when the contract changes or the panel
+    // unmounts, so it can't overwrite state for a different contract.
+    return () => {
+      specReqRef.current++
+    }
   }, [loadSpec, loadTests])
 
   // Reset form state when switching functions.
