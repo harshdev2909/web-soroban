@@ -25,6 +25,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { WalletWidget } from './wallet-widget'
+import { NetworkSwitcher } from './network/network-switcher'
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
 import { useAuth } from '@/contexts/AuthContext'
 import { User } from '@/lib/api'
@@ -83,10 +84,9 @@ export function Navbar({
 
       {/* Right */}
       <div className="flex items-center gap-1.5 sm:gap-2">
-        <span className="hidden items-center gap-1.5 rounded-full border border-success/30 bg-success/10 px-2.5 py-1 text-xs font-medium text-success md:flex">
-          <span className="h-1.5 w-1.5 rounded-full bg-success" />
-          Testnet
-        </span>
+        <div className="hidden md:block">
+          <NetworkSwitcher />
+        </div>
 
         <button
           onClick={onOpenCommandPalette}

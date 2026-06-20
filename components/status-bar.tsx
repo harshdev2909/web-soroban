@@ -11,6 +11,7 @@ interface StatusBarProps {
   errors: number
   warnings: number
   network?: string
+  isMainnet?: boolean
   version?: string
   saveStatus?: 'idle' | 'saving' | 'saved' | 'error'
   consoleOpen: boolean
@@ -32,6 +33,7 @@ export function StatusBar({
   errors,
   warnings,
   network = "Testnet",
+  isMainnet = false,
   version = "v1.0.0",
   saveStatus = 'idle',
   consoleOpen,
@@ -125,10 +127,10 @@ export function StatusBar({
           )}
         </button>
         <Sep />
-        <span className="flex items-center gap-1.5 text-success">
+        <span className={cn('flex items-center gap-1.5', isMainnet ? 'text-warning' : 'text-success')}>
           <span className="relative flex h-1.5 w-1.5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-60 motion-reduce:hidden" />
-            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-success" />
+            <span className={cn('absolute inline-flex h-full w-full animate-ping rounded-full opacity-60 motion-reduce:hidden', isMainnet ? 'bg-warning' : 'bg-success')} />
+            <span className={cn('relative inline-flex h-1.5 w-1.5 rounded-full', isMainnet ? 'bg-warning' : 'bg-success')} />
           </span>
           {network}
         </span>

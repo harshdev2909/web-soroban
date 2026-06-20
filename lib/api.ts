@@ -1107,6 +1107,10 @@ export interface UsageSummaryResponse {
       deploy: number;
       function_test: number;
     };
+    deployByNetwork?: {
+      testnet: number;
+      mainnet: number;
+    };
     periodStart: string;
     periodEnd: string;
   };
@@ -1136,6 +1140,7 @@ export interface ActivityLogEntry {
   projectId?: string | null;
   contractAddress?: string | null;
   functionName?: string | null;
+  network?: 'testnet' | 'mainnet';
   success: boolean;
   error?: string | null;
   createdAt: string;

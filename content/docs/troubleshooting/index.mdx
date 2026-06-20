@@ -1,6 +1,6 @@
 ---
 title: Troubleshooting
-description: The errors you hit compiling, deploying, and invoking on WebSoroban — what each message means and the fix.
+description: The errors you hit compiling, deploying, and invoking on WebSoroban, what each message means and the fix.
 ---
 
 Every error below quotes the real message WebSoroban shows. Find your message, then
@@ -46,7 +46,7 @@ own, redeploying creates a fresh instance with live storage.
 A `mod x;` declaration in your source has no matching file. Pre-flight validation
 catches this before the build starts.
 
-For each `mod x;`, add either `x.rs` or `x/mod.rs` in the same directory — for
+For each `mod x;`, add either `x.rs` or `x/mod.rs` in the same directory, for
 `mod storage;` in `src/lib.rs`, create `src/storage.rs` or `src/storage/mod.rs`.
 Remove the `mod` line if you don't need that module.
 </FaqItem>
@@ -81,8 +81,8 @@ lists the candidate crates in `choices` (each `{ name, dir }`) so you know the
 options. See [Deploy](/docs/deploy).
 </FaqItem>
 
-<FaqItem question="Authorization failed — the call requires a signature this wallet did not provide.">
-The function requires authorization from an account that didn't sign — for example
+<FaqItem question="Authorization failed, the call requires a signature this wallet did not provide.">
+The function requires authorization from an account that didn't sign, for example
 a `transfer(from, …)` where `from` is not your wallet, or a call missing a
 `require_auth` signature.
 
@@ -101,7 +101,7 @@ shows exactly what to type for each type.
 </FaqItem>
 
 <FaqItem question="Contract returned error #N">
-The contract ran and returned its own error code — this is the contract's logic
+The contract ran and returned its own error code, this is the contract's logic
 rejecting the call, not a WebSoroban or network fault.
 
 Look up code `N` in your contract's error enum to see what condition failed (a
@@ -113,5 +113,5 @@ to satisfy it.
 
 ## Next
 
-- [Invoke](/docs/invoke) — typed inputs and how results and errors are decoded.
-- [Wallets & faucet](/docs/wallets) — funding the wallet that pays write fees.
+- [Invoke](/docs/invoke), typed inputs and how results and errors are decoded.
+- [Wallets & faucet](/docs/wallets), funding the wallet that pays write fees.

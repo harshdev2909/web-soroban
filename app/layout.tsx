@@ -5,6 +5,7 @@ import { GeistMono } from 'geist/font/mono'
 import { Space_Grotesk } from 'next/font/google'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { WalletKitProvider } from '@/contexts/WalletKitContext'
+import { NetworkProvider } from '@/contexts/NetworkContext'
 import { Toaster } from 'sonner'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
@@ -62,7 +63,9 @@ export default function RootLayout({
           </>
         )}
         <WalletKitProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <NetworkProvider>
+            <AuthProvider>{children}</AuthProvider>
+          </NetworkProvider>
         </WalletKitProvider>
         <Toaster
           theme="dark"

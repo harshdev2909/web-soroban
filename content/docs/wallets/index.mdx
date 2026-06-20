@@ -1,6 +1,6 @@
 ---
 title: Wallets & faucet
-description: Your per-user testnet wallet — where it comes from, what the browser sees, and how to refund it from the faucet.
+description: Your per-user testnet wallet, where it comes from, what the browser sees, and how to refund it from the faucet.
 ---
 
 Every account has one Stellar <Badge tone="testnet">testnet</Badge> wallet. It's
@@ -51,19 +51,20 @@ The keypair is generated on the server when your wallet is created. The handling
 of each half differs:
 
 - The **secret key is AES-256-GCM encrypted at rest** in the database.
-- It is **decrypted in memory only at sign time** — when you deploy or send a
-  write Invoke — then used to sign and discarded.
+- It is **decrypted in memory only at sign time**, when you deploy or send a
+  write Invoke, then used to sign and discarded.
 - The secret is **never returned by any API response and never written to
   logs**.
 - The browser only ever receives the **public key and balance**. The
   `GET /api/wallet/me` and `POST /api/wallet/fund` responses carry
   `{ publicKey, funded, balance }` and nothing else.
 
-<Callout type="danger" title="Testnet only">
-  This is a Stellar testnet wallet. Testnet XLM is free and worthless — never
-  send it real funds, and never treat the public key as a mainnet address. There
-  is no mainnet code path. If the balance hits zero, deploys and write Invokes
-  fail until you refund from the faucet.
+<Callout type="warning" title="Same address, two networks">
+  This keypair is your address on **both** testnet and mainnet, funded separately.
+  Testnet XLM is free (refill from the faucet if it hits zero). On mainnet the
+  same `G…` is your real deposit address, fund it with real XLM, and prefer
+  signing with a connected wallet. See [Networks](/docs/networks) and
+  [Export your private key](/docs/wallets/export).
 </Callout>
 
 ## Next

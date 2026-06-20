@@ -5,6 +5,8 @@ import { Calendar, Clock, Globe, Activity, Copy, Wallet, Rocket, PanelRightClose
 import { Project } from '@/lib/api';
 import { InvokePanel } from '@/components/invoke-panel';
 import { cn, copyToClipboard as copyText } from '@/lib/utils';
+import { useNetwork } from '@/contexts/NetworkContext';
+import { getNetwork } from '@/lib/networks';
 import { toast } from 'sonner';
 
 interface RightPanelProps {
@@ -16,6 +18,8 @@ interface RightPanelProps {
 }
 
 export function RightPanel({ project, onClose, walletAddress, embedded }: RightPanelProps) {
+  const { network } = useNetwork();
+  const net = getNetwork(network);
   const isDeployed = Boolean(project.contractAddress);
 
   const formatDate = (dateString: string) =>
@@ -78,12 +82,12 @@ export function RightPanel({ project, onClose, walletAddress, embedded }: RightP
             <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
               <Globe className="h-3.5 w-3.5 text-brand" /> Info
             </div>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-success/12 px-2 py-0.5 font-mono text-[10px] text-success">
+            <span className={cn('inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-[10px]', net.badgeClass)}>
               <span className="relative flex h-1.5 w-1.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-60 motion-reduce:hidden" />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-success" />
+                <span className={cn('absolute inline-flex h-full w-full animate-ping rounded-full opacity-60 motion-reduce:hidden', net.dotClass)} />
+                <span className={cn('relative inline-flex h-1.5 w-1.5 rounded-full', net.dotClass)} />
               </span>
-              Testnet
+              {net.label}
             </span>
           </div>
 
@@ -100,7 +104,7 @@ export function RightPanel({ project, onClose, walletAddress, embedded }: RightP
             </div>
             <div className="flex items-center justify-between gap-3">
               <dt className="flex items-center gap-1.5 text-muted-foreground"><Globe className="h-3.5 w-3.5" /> RPC</dt>
-              <dd className="truncate font-mono text-[11px] text-muted-foreground">soroban-testnet.stellar.org</dd>
+              <dd className="truncate font-mono text-[11px] text-muted-foreground">{net.isMainnet ? 'mainnet RPC' : 'soroban-testnet.stellar.org'}</dd>
             </div>
             {walletAddress && (
               <div className="flex items-center justify-between gap-3">

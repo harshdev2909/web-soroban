@@ -4,6 +4,10 @@ import { useState, useEffect, useRef, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { useWalletKit } from '@/contexts/WalletKitContext'
+import { useNetwork } from '@/contexts/NetworkContext'
+import { networkApi } from '@/lib/mainnetApi'
+import { getNetwork } from '@/lib/networks'
+import { MainnetDeployDialog, type DeployConfirmDetails } from '@/components/network/mainnet-deploy-dialog'
 import { projectApi, compileApi, deployApi, testApi, jobsApi, Project, ProjectFile, Template, usageApi } from '@/lib/api'
 import { pathOf, baseName } from '@/lib/paths'
 import { socketService } from '@/lib/socket'
@@ -128,6 +132,8 @@ function IDEPageContent() {
   const [dockTab, setDockTab] = useState<DockTab>('copilot')
   // Bumped to refocus the Copilot composer (⌘I).
   const [copilotFocus, setCopilotFocus] = useState(0)
+  // Promise-driven mainnet deploy confirmation (fee preview).
+  const [deployConfirm, setDeployConfirm] = useState<{ open: boolean; details: DeployConfirmDetails | null; resolve?: (ok: boolean) => void }>({ open: false, details: null })
   const [diagnostics, setDiagnostics] = useState<any[]>([])
   // Workspace deploy: when >1 deployable contract and no target chosen yet.
   const [deployTargetChoices, setDeployTargetChoices] = useState<{ name: string; dir: string }[] | null>(null)
@@ -138,7 +144,8 @@ function IDEPageContent() {
   const pendingSaveRef = useRef<null | (() => Promise<void>)>(null)
 
   const { user, loading: authLoading, isAuthenticated, refreshUser } = useAuth()
-  const { address } = useWalletKit()
+  const { address, openWalletModal, signTransaction } = useWalletKit()
+  const { network } = useNetwork()
   const searchParams = useSearchParams()
   const router = useRouter()
 
@@ -793,6 +800,97 @@ mod tests {
     setDockTab('contract');
   };
 
+  // Open the fee-preview dialog and resolve when the user decides.
+  const confirmDeploy = (details: DeployConfirmDetails) =>
+    new Promise<boolean>((resolve) => setDeployConfirm({ open: true, details, resolve }));
+  const resolveDeployConfirm = (ok: boolean) => {
+    deployConfirm.resolve?.(ok);
+    setDeployConfirm({ open: false, details: null });
+  };
+
+  // Mainnet deploy: simulate → show fee → explicit confirm → sign. Non-custodial
+  // (browser wallet, default) is a two-signature flow (upload, then create);
+  // custodial is the explicit opt-in. Real XLM — never auto-deployed.
+  const runMainnetDeploy = async (proj: Project, wasmBase64: string) => {
+    let mode: 'connected' | 'custodial' = 'connected';
+    try {
+      mode = (await networkApi.getSigningMode()).mainnetSigningMode;
+    } catch { /* default connected */ }
+
+    if (mode === 'custodial') {
+      // Best-effort fee preview for the custodial wallet (simulate the upload).
+      let pk = '';
+      let balance: number | undefined;
+      let feeXlm: string | undefined;
+      try {
+        const w = await networkApi.wallet('mainnet');
+        pk = w.publicKey;
+        balance = w.balance;
+        feeXlm = (await networkApi.deployPrepare({ projectId: proj._id, wasmBase64, sourcePk: pk, network: 'mainnet', step: 'upload' })).feeXlm;
+      } catch { /* unfunded / preview unavailable — dialog shows "shown at submit" */ }
+
+      const ok = await confirmDeploy({ mode: 'custodial', signer: pk, feeXlm, steps: 1, balance });
+      if (!ok) {
+        appendLog('info', 'Mainnet deploy cancelled.');
+        return;
+      }
+      appendLog('info', 'Deploying to MAINNET (custodial)…');
+      const r = await networkApi.deployCustodial({ projectId: proj._id, wasmBase64, network: 'mainnet', confirm: true });
+      if (r.contractAddress) {
+        appendLog('success', `Contract deployed · ${r.contractAddress}`);
+        toast.success('Deployed to mainnet', { description: r.contractAddress });
+        await refreshAfterDeploy(proj._id, r.contractAddress);
+      } else {
+        appendLog('error', `Deployment failed: ${r.error || 'unknown error'}`);
+        toast.error(r.error || 'Mainnet deploy failed');
+      }
+      return;
+    }
+
+    // Non-custodial: the connected browser wallet signs both steps.
+    const signer = address || (await openWalletModal());
+    if (!signer) {
+      appendLog('error', 'Connect a wallet to deploy on mainnet.');
+      toast.error('Connect a wallet first');
+      return;
+    }
+
+    appendLog('info', `Preparing mainnet upload — signer ${signer.slice(0, 6)}…${signer.slice(-4)}`);
+    const up = await networkApi.deployPrepare({ projectId: proj._id, wasmBase64, sourcePk: signer, network: 'mainnet', step: 'upload' });
+    let balance: number | undefined;
+    // Balance of the CONNECTED signer (it pays the fees), not the custodial wallet.
+    try { balance = (await networkApi.balance('mainnet', signer)).balance; } catch { /* preview only */ }
+
+    const ok = await confirmDeploy({ mode: 'connected', signer, feeXlm: up.feeXlm, steps: 2, balance });
+    if (!ok) {
+      appendLog('info', 'Mainnet deploy cancelled.');
+      return;
+    }
+
+    appendLog('info', `Sign step 1 of 2 in your wallet (upload, fee ≈ ${up.feeXlm} XLM)…`);
+    const signedUpload = await signTransaction(up.xdr, up.passphrase);
+    const upRes = await networkApi.deploySubmit({ network: 'mainnet', step: 'upload', signedXdr: signedUpload });
+    appendLog('success', `Wasm uploaded · tx ${upRes.txHash}`);
+
+    appendLog('info', 'Preparing contract creation…');
+    const cr = await networkApi.deployPrepare({
+      projectId: proj._id, wasmBase64, sourcePk: signer, network: 'mainnet', step: 'create',
+      wasmHashHex: upRes.wasmHashHex || up.wasmHashHex,
+    });
+    appendLog('info', `Sign step 2 of 2 in your wallet (create, fee ≈ ${cr.feeXlm} XLM)…`);
+    const signedCreate = await signTransaction(cr.xdr, cr.passphrase);
+    const crRes = await networkApi.deploySubmit({
+      projectId: proj._id, network: 'mainnet', step: 'create', signedXdr: signedCreate, sourcePk: signer, wasmBase64,
+    });
+    if (crRes.contractAddress) {
+      appendLog('success', `Contract deployed · ${crRes.contractAddress}`);
+      toast.success('Deployed to mainnet', { description: crRes.contractAddress });
+      await refreshAfterDeploy(proj._id, crRes.contractAddress);
+    } else {
+      appendLog('error', 'Deployed, but could not read the contract id — check the explorer.');
+    }
+  };
+
   const handleDeploy = async () => {
     if (!project) return;
 
@@ -835,6 +933,13 @@ mod tests {
         return;
       }
       appendLog('success', 'Compiled. WASM ready.');
+
+      // MAINNET takes the confirmation-gated, fee-previewed path (non-custodial
+      // browser signing by default, or the custodial opt-in).
+      if (network === 'mainnet') {
+        await runMainnetDeploy(projectToDeploy, compiled.wasmBase64);
+        return;
+      }
 
       // 2. Deploy (single source of truth: poll the job; it streams logs + the
       // final result, so no parallel socket handler is needed).
@@ -1367,6 +1472,9 @@ impl From<Error> for soroban_sdk::Error {
           }
         }}
       />
+      {/* Mainnet deploy confirmation with fee preview */}
+      <MainnetDeployDialog open={deployConfirm.open} details={deployConfirm.details} onResolve={resolveDeployConfirm} />
+
       {/* Workspace deploy-target picker (multiple deployable contracts) */}
       <Dialog open={deployTargetChoices !== null} onOpenChange={(o) => !o && setDeployTargetChoices(null)}>
         <DialogContent className="sm:max-w-[460px]">
@@ -1491,6 +1599,8 @@ impl From<Error> for soroban_sdk::Error {
           errors={logs.filter((l) => l.type === 'error').length}
           warnings={logs.filter((l) => l.type === 'warning').length}
           saveStatus={saveStatus}
+          network={getNetwork(network).label}
+          isMainnet={network === 'mainnet'}
           consoleOpen={isBottomPanelOpen}
           onToggleConsole={() => setIsBottomPanelOpen((v) => !v)}
           rightPanelOpen={isDockOpen}

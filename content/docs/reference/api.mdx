@@ -1,10 +1,10 @@
 ---
 title: API reference
-description: The public WebSoroban backend endpoints — request bodies, responses, and which ones sign with your wallet.
+description: The public WebSoroban backend endpoints, request bodies, responses, and which ones sign with your wallet.
 ---
 
 Every endpoint is under the base path `/api` and requires a `Bearer` token unless
-marked otherwise. All operations run against the Stellar **testnet** — mainnet is
+marked otherwise. All operations run against the Stellar **testnet**, mainnet is
 never used.
 
 <Callout type="note" title="Reading the badges">
@@ -46,9 +46,9 @@ signs with your wallet. Counts one deploy against your quota.
 
 The network is fixed to `testnet` server-side. Two non-`202` cases:
 
-- **Over the plan limit** — HTTP `403` with `{ error, current, limit, upgradeRequired: true }`.
+- **Over the plan limit**, HTTP `403` with `{ error, current, limit, upgradeRequired: true }`.
   See [Plans and limits](/docs/plans-and-limits).
-- **Workspace needs a target** — HTTP `400` with `{ code: "DEPLOY_TARGET_REQUIRED", choices }`
+- **Workspace needs a target**, HTTP `400` with `{ code: "DEPLOY_TARGET_REQUIRED", choices }`
   when the workspace has more than one deployable crate. See [Troubleshooting](/docs/troubleshooting).
 
 ## Invoke
@@ -161,5 +161,5 @@ Return your current usage and limits, plus recent activity. No body.
 
 ## Next
 
-- [Glossary](/docs/reference) — terms used across these docs.
-- [Plans and limits](/docs/plans-and-limits) — what the quotas mean.
+- [Glossary](/docs/reference), terms used across these docs.
+- [Plans and limits](/docs/plans-and-limits), what the quotas mean.

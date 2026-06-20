@@ -27,7 +27,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import {
   ArrowRight,
   Wallet,
-  Cpu,
+  Globe,
   Rocket,
   KeyRound,
   Check,
@@ -99,16 +99,31 @@ export default function HomePage() {
 
         <div className="mx-auto max-w-6xl px-6 pb-16 pt-20 md:pb-24 md:pt-28">
           <motion.div className="mx-auto flex max-w-3xl flex-col items-center text-center" {...motionProps}>
+            {/* Live-on-mainnet announcement (amber, to match the IDE's mainnet treatment) */}
+            <motion.div variants={reduce ? undefined : item}>
+              <Link
+                href="/docs/networks"
+                className="group inline-flex items-center gap-2 rounded-full border border-warning/40 bg-warning/10 px-3 py-1 text-xs font-medium text-warning backdrop-blur transition-colors hover:bg-warning/15"
+              >
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-warning opacity-60" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-warning" />
+                </span>
+                Now live on Stellar Mainnet
+                <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+              </Link>
+            </motion.div>
+
             <motion.span
               variants={reduce ? undefined : item}
-              className="inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-3 py-1 backdrop-blur"
+              className="mt-3 inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-3 py-1 backdrop-blur"
             >
               <span className="relative flex h-1.5 w-1.5">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand opacity-60" />
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-brand" />
               </span>
               <span className="eyebrow flex items-center gap-1.5">
-                <Sparkles className="h-3 w-3 text-brand" /> New · AI Copilot for Soroban
+                <Sparkles className="h-3 w-3 text-brand" /> AI Copilot for Soroban
               </span>
             </motion.span>
 
@@ -122,9 +137,10 @@ export default function HomePage() {
             </motion.h1>
 
             <motion.p variants={reduce ? undefined : item} className="lead mt-6 max-w-xl text-base md:text-lg">
-              A web IDE with a Cursor-style Copilot for Stellar. Describe a contract in plain English —
-              it writes Rust, compiles to WASM, fixes its own errors, and deploys to testnet, every edit
-              validated against the real build &amp; security pipeline.
+              A web IDE with a Cursor-style Copilot for Stellar. Describe a contract in plain English and
+              it writes the Rust, compiles to WASM, fixes its own errors, and deploys to testnet (or
+              mainnet with your connected wallet). Every edit is validated against the real build and
+              security pipeline.
             </motion.p>
 
             <motion.div
@@ -146,7 +162,7 @@ export default function HomePage() {
               variants={reduce ? undefined : item}
               className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-muted-foreground"
             >
-              {['No install', 'Free testnet wallet', 'Every edit compiled + audited'].map((t) => (
+              {['No install', 'Testnet + Mainnet', 'Every edit compiled + audited'].map((t) => (
                 <li key={t} className="flex items-center gap-1.5">
                   <Check className="h-3.5 w-3.5 text-success" /> {t}
                 </li>
@@ -176,7 +192,7 @@ export default function HomePage() {
             <h2 className="font-display mt-3 text-title font-semibold">An agent that actually builds</h2>
             <p className="lead mt-3 max-w-md">
               Not autocomplete. A real tool-using agent: it reads your project, writes diffs you review,
-              runs the compiler, reads the errors, and fixes them — looping until it builds clean and the
+              runs the compiler, reads the errors, and fixes them, looping until it builds clean and the
               tests pass.
             </p>
             <ul className="mt-7 space-y-2.5">
@@ -188,7 +204,7 @@ export default function HomePage() {
                       <Icon className="h-3.5 w-3.5" />
                     </span>
                     <p className="text-sm text-muted-foreground">
-                      <span className="font-medium text-foreground">{m.label}</span> — {m.desc}
+                      <span className="font-medium text-foreground">{m.label}.</span> {m.desc}
                     </p>
                   </li>
                 )
@@ -202,7 +218,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Features — asymmetric bento */}
+      {/* Features (asymmetric bento) */}
       <section className="mx-auto max-w-6xl px-6 py-20 md:py-28">
         <Reveal className="max-w-2xl">
           <p className="eyebrow">Everything in one tab</p>
@@ -210,7 +226,7 @@ export default function HomePage() {
             From a prompt to a deployed contract
           </h2>
           <p className="lead mt-3 max-w-lg">
-            The Copilot and the toolchain share one workspace — generate, compile, audit, and ship,
+            The Copilot and the toolchain share one workspace. Generate, compile, audit, and ship
             without a local setup or a context switch.
           </p>
         </Reveal>
@@ -219,7 +235,7 @@ export default function HomePage() {
           {/* Wide: Copilot / five modes */}
           <BentoCard className="md:col-span-4" icon={Sparkles} title="AI Copilot, five real modes" reduce={reduce}>
             <p className="lead max-w-md text-sm">
-              Ask, Agent, Plan, Debug, and Multitask — enforced by tool permissions, not labels. Agent
+              Ask, Agent, Plan, Debug, and Multitask, enforced by tool permissions, not labels. Agent
               writes diffs you review and self-corrects against the compiler.
             </p>
             <div className="mt-5 flex flex-wrap gap-1.5">
@@ -240,7 +256,7 @@ export default function HomePage() {
           {/* Model switching */}
           <BentoCard className="md:col-span-2" icon={Bot} title="Bring any model" reduce={reduce}>
             <p className="lead text-sm">
-              Claude, GPT, Gemini, DeepSeek — switch per chat or let Auto route. MAX Mode dials up
+              Claude, GPT, Gemini, DeepSeek. Switch per chat or let Auto route, and MAX Mode dials up
               reasoning.
             </p>
             <div className="mt-5 space-y-1.5 rounded-lg border border-border bg-background/70 p-3">
@@ -262,14 +278,14 @@ export default function HomePage() {
             <p className="lead text-sm">
               <span className="font-mono text-foreground/90">/generate</span>,{' '}
               <span className="font-mono text-foreground/90">/fix</span>,{' '}
-              <span className="font-mono text-foreground/90">/audit</span> — and attach{' '}
+              <span className="font-mono text-foreground/90">/audit</span>. Attach{' '}
               <span className="inline-flex items-center gap-0.5 font-mono text-foreground/90"><AtSign className="h-3 w-3" />file</span>,{' '}
               <span className="font-mono text-foreground/90">@errors</span>, or your selection as context.
             </p>
           </BentoCard>
           <BentoCard className="md:col-span-2" icon={Hammer} title="Validated, not hallucinated" reduce={reduce}>
             <p className="lead text-sm">
-              Every generation runs the real pipeline — compile → clippy → tests — and loops on the
+              Every generation runs the real pipeline (compile, clippy, tests) and loops on the
               errors until it builds for the testnet WASM target.
             </p>
           </BentoCard>
@@ -277,22 +293,23 @@ export default function HomePage() {
             <p className="lead text-sm">
               A Soroban rule check flags missing{' '}
               <span className="font-mono text-foreground/90">require_auth</span>, unchecked math, risky
-              storage TTL, and reachable panics — each with a fix.
+              storage TTL, and reachable panics, each with a fix.
             </p>
           </BentoCard>
 
           {/* Wide platform strip */}
           <BentoCard className="md:col-span-6" icon={Rocket} title="A real Stellar workflow underneath" reduce={reduce}>
             <p className="lead max-w-2xl text-sm">
-              Server-side WASM builds, a funded testnet wallet provisioned on first login, one-click
-              deploy with the contract id inline, and an AES-256-GCM-encrypted key that never leaves the
-              server. Testnet only — there is no mainnet code path.
+              Server-side WASM builds, a funded testnet wallet provisioned on first login, and one-click
+              deploy with the contract id inline. Ship on testnet with the faucet, or connect your own
+              wallet to deploy and invoke on <span className="text-warning">mainnet</span>. Your key
+              never leaves the browser.
             </p>
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
               {[
+                { icon: Globe, label: 'Testnet & Mainnet', sub: 'Faucet on testnet · connect for mainnet' },
                 { icon: Wallet, label: 'Funded testnet wallet', sub: '10,000 XLM on first login' },
-                { icon: Cpu, label: 'Server-side builds', sub: 'Streamed, readable logs' },
-                { icon: KeyRound, label: 'Keys encrypted at rest', sub: 'Never shown or logged' },
+                { icon: KeyRound, label: 'Keys encrypted · exportable', sub: 'Self-custody anytime' },
               ].map((x) => {
                 const Icon = x.icon
                 return (
@@ -331,7 +348,7 @@ export default function HomePage() {
                 </h2>
                 <p className="lead mt-3 max-w-md">
                   Sign in, get a funded testnet wallet, and let the Copilot generate, fix, and deploy
-                  your first Soroban contract — on testnet, in minutes.
+                  your first Soroban contract on testnet, in minutes.
                 </p>
                 <div className="mt-7 flex flex-col gap-3 sm:flex-row">
                   <motion.div whileTap={reduce ? undefined : { scale: 0.98 }}>
@@ -470,13 +487,13 @@ function IdePreview() {
   )
 }
 
-/** Animated mock of the docked Copilot — the showcase centerpiece. */
+/** Animated mock of the docked Copilot (the showcase centerpiece). */
 const PREVIEW_STEPS: { icon: React.ComponentType<{ className?: string }>; label: string; tone: string }[] = [
   { icon: FileCode2, label: 'Read lib.rs', tone: 'muted' },
-  { icon: Hammer, label: 'Ran compile — 2 errors', tone: 'error' },
+  { icon: Hammer, label: 'Ran compile · 2 errors', tone: 'error' },
   { icon: GitCompareArrows, label: 'Edited storage.rs', tone: 'brand' },
-  { icon: Hammer, label: 'Ran compile — clean', tone: 'success' },
-  { icon: ShieldCheck, label: 'Security audit — 0 findings', tone: 'success' },
+  { icon: Hammer, label: 'Ran compile · clean', tone: 'success' },
+  { icon: ShieldCheck, label: 'Security audit · 0 findings', tone: 'success' },
 ]
 const TONE: Record<string, string> = {
   muted: 'text-muted-foreground',

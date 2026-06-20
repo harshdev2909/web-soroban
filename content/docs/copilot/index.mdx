@@ -1,6 +1,6 @@
 ---
 title: AI Copilot
-description: Generate, debug, and optimize Soroban contracts from chat — five modes, slash commands, @-context, model switching, and reviewable diffs.
+description: Generate, debug, and optimize Soroban contracts from chat, five modes, slash commands, @-context, model switching, and reviewable diffs.
 ---
 
 The Copilot is a chat and agent panel docked on the right of the IDE. Describe a
@@ -8,15 +8,15 @@ change in plain English; it reads your project, writes edits as **reviewable
 diffs**, and validates them against the real compile and security pipeline before
 you accept anything.
 
-Press `⌘I` (or `Ctrl+I`) to focus it. The dock holds two tabs at the top —
-**Copilot** and **Contract** — switch between chatting and invoking your deployed
+Press `⌘I` (or `Ctrl+I`) to focus it. The dock holds two tabs at the top,
+**Copilot** and **Contract**, switch between chatting and invoking your deployed
 contract without losing either's state.
 
 ## Conversations as tabs
 
 Open several conversations at once with the **`+`** button in the tab strip, and
 click a tab to switch. Each tab keeps its own messages, mode, model, and any
-in-flight generation — a tab that's mid-build keeps running while you work in
+in-flight generation, a tab that's mid-build keeps running while you work in
 another. New tabs are titled automatically from your first message.
 
 ## Modes
@@ -27,11 +27,11 @@ rotate. Each mode starts a fresh conversation.
 
 | Mode | What it does | Edits code? |
 | --- | --- | --- |
-| **Agent** | Generates and edits, then self-corrects against the compiler until it builds. This is where "generate a contract from a prompt" lives. | Yes — as diffs |
+| **Agent** | Generates and edits, then self-corrects against the compiler until it builds. This is where "generate a contract from a prompt" lives. | Yes, as diffs |
 | **Ask** <Badge tone="read-only">read-only</Badge> | Answers questions about your contract. Reads files; never edits. | No |
 | **Plan** | Researches, asks up to three clarifying questions, then writes an editable build plan. Hit **Build** to hand it to Agent. | No |
 | **Debug** | Gathers evidence, names the root cause, and proposes the smallest fix. | Minimal diff |
-| **Multitask** | Runs several agents in parallel on independent sub-tasks. | Yes — per task |
+| **Multitask** | Runs several agents in parallel on independent sub-tasks. | Yes, per task |
 
 ## Slash commands
 
@@ -55,16 +55,16 @@ pre-fills the prompt.
 Type `@` to attach context to your message. Attached items show as chips above
 the composer.
 
-- `@file` — a specific file's contents
-- `@folder` — the file list under a folder
-- `@symbol` — matches for an identifier across the project
-- `@errors` — the current compiler diagnostics
-- `@selection` — the active file
-- `@docs` — relevant Soroban / soroban-sdk documentation
+- `@file`, a specific file's contents
+- `@folder`, the file list under a folder
+- `@symbol`, matches for an identifier across the project
+- `@errors`, the current compiler diagnostics
+- `@selection`, the active file
+- `@docs`, relevant Soroban / soroban-sdk documentation
 
 ## Choosing a model
 
-Open the model switcher in the composer to pick a model per conversation —
+Open the model switcher in the composer to pick a model per conversation,
 Claude, GPT, Gemini, DeepSeek, Qwen and more. **Auto** routes to a strong coding
 default; **MAX Mode** raises the reasoning effort and the context budget for
 harder problems. Your choice is remembered for next time. Use **Add models** to
@@ -104,9 +104,9 @@ edit → compile → read diagnostics → fix → repeat
 ```
 
 A result is only "done" once it builds for the testnet Wasm target and its
-contract interface extracts — the same checks Deploy uses. The tool timeline in
-the chat shows each step as it happens: `Read lib.rs`, `Ran compile — 2 errors`,
-`Edited storage.rs`, `Ran compile — clean`.
+contract interface extracts, the same checks Deploy uses. The tool timeline in
+the chat shows each step as it happens: `Read lib.rs`, `Ran compile, 2 errors`,
+`Edited storage.rs`, `Ran compile, clean`.
 
 ## Security audit
 
@@ -123,7 +123,7 @@ suggested fix:
 
 <Callout type="warning" title="Deploying is always your call">
   The Copilot never deploys on its own. To ship a contract, use the **Deploy**
-  button — it signs with your testnet wallet and requires your confirmation.
+  button, it signs with your testnet wallet and requires your confirmation.
   Everything here is testnet only.
 </Callout>
 

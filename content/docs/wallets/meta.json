@@ -1,1 +1,1 @@
-{ "title": "Wallets & faucet", "icon": "wallet", "pages": ["index"] }
+{ "title": "Wallets & faucet", "icon": "wallet", "pages": ["index", "export"] }

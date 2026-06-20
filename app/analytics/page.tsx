@@ -23,6 +23,7 @@ import {
   Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts"
 import { cn } from "@/lib/utils"
+import { explorerContract, explorerTx, getNetwork, type NetworkId } from "@/lib/networks"
 
 interface DailyUsagePoint {
   date: string
@@ -91,10 +92,18 @@ export default function AnalyticsPage() {
     })) ?? []
 
   const totals = summary?.summary?.totals
+  const deployNet = summary?.summary?.deployByNetwork
   const kpis = [
     { label: "Total events", value: summary?.summary?.totalEvents ?? 0, hint: "last 30 days", icon: Zap, tint: "text-brand" },
     { label: "Unique users", value: summary?.summary?.uniqueUsers ?? 0, hint: "active", icon: Users, tint: "text-cosmic" },
-    { label: "Deployments", value: totals?.deploy ?? 0, hint: "to testnet", icon: Rocket, tint: "text-success" },
+    {
+      label: "Deployments",
+      value: totals?.deploy ?? 0,
+      hint: "testnet + mainnet",
+      icon: Rocket,
+      tint: "text-success",
+      split: deployNet ? { testnet: deployNet.testnet ?? 0, mainnet: deployNet.mainnet ?? 0 } : undefined,
+    },
     { label: "Compilations", value: totals?.compile ?? 0, hint: "builds", icon: Hammer, tint: "text-info" },
     { label: "Function tests", value: totals?.function_test ?? 0, hint: "invocations", icon: FlaskConical, tint: "text-warning" },
   ]
@@ -142,7 +151,11 @@ export default function AnalyticsPage() {
                       <div className="mt-2 font-mono-tnum text-2xl font-semibold text-foreground">
                         {k.value.toLocaleString()}
                       </div>
-                      <div className="mt-0.5 text-[11px] text-muted-foreground">{k.hint}</div>
+                      {(k as any).split ? (
+                        <DeploySplit split={(k as any).split} />
+                      ) : (
+                        <div className="mt-0.5 text-[11px] text-muted-foreground">{k.hint}</div>
+                      )}
                     </div>
                   </Reveal>
                 )
@@ -245,7 +258,7 @@ export default function AnalyticsPage() {
                     <div className="flex shrink-0 items-center gap-2">
                       <StatusBadge status={tx.status} />
                       <a
-                        href={`https://stellar.expert/explorer/${tx.network}/tx/${tx.txHash}`}
+                        href={explorerTx((tx.network as NetworkId) || "testnet", tx.txHash)}
                         target="_blank" rel="noreferrer"
                         className="text-muted-foreground transition-colors hover:text-brand"
                         title="View on Stellar Expert"
@@ -277,6 +290,7 @@ export default function AnalyticsPage() {
                     <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
                       <div className="flex min-w-0 flex-wrap items-center gap-2">
                         <ActionBadge action={log.action} />
+                        {log.action !== "compile" && <NetworkBadge network={log.network} />}
                         <span className={cn("text-xs", log.success ? "text-success" : "text-destructive")}>
                           {log.success ? "Success" : "Failed"}
                         </span>
@@ -301,7 +315,7 @@ export default function AnalyticsPage() {
                           {copiedId === log._id ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
                         </button>
                         <a
-                          href={`https://stellar.expert/explorer/testnet/contract/${log.contractAddress}`}
+                          href={explorerContract((log.network as NetworkId) || "testnet", log.contractAddress!)}
                           target="_blank" rel="noreferrer"
                           className="shrink-0 rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-brand"
                           title="View on Stellar Expert"
@@ -379,6 +393,32 @@ function StatusBadge({ status }: { status: string }) {
       ? "bg-warning/12 text-warning"
       : "bg-destructive/12 text-destructive"
   return <span className={cn("rounded-full px-2 py-0.5 font-mono text-[10px]", cls)}>{status}</span>
+}
+
+function DeploySplit({ split }: { split: { testnet: number; mainnet: number } }) {
+  const total = split.testnet + split.mainnet
+  const testnetPct = total > 0 ? (split.testnet / total) * 100 : 0
+  return (
+    <div className="mt-1">
+      <div className="flex h-1 w-full overflow-hidden rounded-full bg-muted">
+        <span className="h-full bg-success" style={{ width: `${testnetPct}%` }} />
+        <span className="h-full bg-warning" style={{ width: `${100 - testnetPct}%` }} />
+      </div>
+      <div className="mt-1 flex items-center gap-2 font-mono-tnum text-[10px] text-muted-foreground">
+        <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-success" />{split.testnet} testnet</span>
+        <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-warning" />{split.mainnet} mainnet</span>
+      </div>
+    </div>
+  )
+}
+
+function NetworkBadge({ network }: { network?: string }) {
+  const net = getNetwork(network === "mainnet" ? "mainnet" : "testnet")
+  return (
+    <span className={cn("shrink-0 rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider", net.badgeClass)}>
+      {net.label}
+    </span>
+  )
 }
 
 function ActionBadge({ action }: { action: string }) {

@@ -15,6 +15,7 @@ import {
   List,
   Play,
   Sparkles,
+  Globe,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -33,6 +34,7 @@ const ICONS: Record<string, LucideIcon> = {
   list: List,
   play: Play,
   sparkles: Sparkles,
+  globe: Globe,
 };
 
 // The Fumadocs source: file-based routing over content/docs, mounted at /docs.

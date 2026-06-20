@@ -6,50 +6,50 @@ description: The Soroban and WebSoroban terms used across these docs, defined pr
 Definitions for the terms that appear throughout the docs. Each is one or two
 sentences; follow the links for the page that uses the term in context.
 
-**ScVal** — the on-wire value form. Every argument you pass and every value a
+**ScVal**, the on-wire value form. Every argument you pass and every value a
 contract returns is encoded as an `ScVal` (Soroban contract value). WebSoroban
 encodes the plain values you type into `ScVal` for you. See
 [Invoke](/docs/invoke#entering-each-soroban-type).
 
-**ScType** — a value's Soroban type, such as `u32`, `Address`, or `Vec<u32>`. The
+**ScType**, a value's Soroban type, such as `u32`, `Address`, or `Vec<u32>`. The
 [contract spec](#spec) records an `ScType` for every argument, and the Invoke form
 picks an input control from it.
 
-**contract id** — the address of a deployed contract instance. It starts with `C`
+**contract id**, the address of a deployed contract instance. It starts with `C`
 (for example `CDLZ…`) and is created when you instantiate a contract from a
 [Wasm hash](#wasm-hash). See [Core concepts](/docs/core-concepts#soroban-and-the-stellar-testnet).
 
-**Wasm hash** — the SHA-256 of an uploaded Wasm binary. Uploading the Wasm stores
+**Wasm hash**, the SHA-256 of an uploaded Wasm binary. Uploading the Wasm stores
 it on the network under this hash; many contract instances can share one hash.
 
-**spec** — the contract interface extracted from the Wasm: its function names,
+**spec**, the contract interface extracted from the Wasm: its function names,
 argument types, and return types. WebSoroban stores the spec on deploy and renders
 the typed Invoke form from it. See [Core concepts](/docs/core-concepts#contract-spec).
 
-**footprint** — the set of ledger entries a transaction reads and writes, computed
+**footprint**, the set of ledger entries a transaction reads and writes, computed
 by [simulation](#simulate). An empty read-write footprint marks a call as
 read-only; a non-empty one marks it a write. See [Invoke](/docs/invoke#read-vs-write).
 
-**auth / `require_auth`** — Soroban's authorization. A `require_auth(&address)`
+**auth / `require_auth`**, Soroban's authorization. A `require_auth(&address)`
 call asserts that `address` must sign the transaction; a function with auth entries
 is a write. See [Invoke](/docs/invoke#read-vs-write).
 
-**resource fee** — the fee a write pays for execution and ledger I/O, in
+**resource fee**, the fee a write pays for execution and ledger I/O, in
 [stroops](#stroop). Simulation returns the minimum resource fee; the write pays it
 from your testnet wallet. See [Invoke](/docs/invoke#reading-the-result).
 
-**stroop** — the smallest unit of XLM: 1 stroop = 1/10,000,000 XLM. Fees are
+**stroop**, the smallest unit of XLM: 1 stroop = 1/10,000,000 XLM. Fees are
 denominated in stroops.
 
-**simulate** — running a call against the network without submitting it, to get the
+**simulate**, running a call against the network without submitting it, to get the
 return value, the [footprint](#footprint), and the [resource fee](#resource-fee).
 Reads stop here; writes simulate first, then sign and submit.
 
-**instance / persistent / temporary storage** — the three Soroban storage
+**instance / persistent / temporary storage**, the three Soroban storage
 durabilities. *Instance* data lives with the contract instance and shares its
 time-to-live; *persistent* data is long-lived and independently extendable;
 *temporary* data is cheap and expires on its own short schedule.
 
 ## Next
 
-- [API reference](/docs/reference/api) — the backend endpoints behind these actions.
+- [API reference](/docs/reference/api), the backend endpoints behind these actions.

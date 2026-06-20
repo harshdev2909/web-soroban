@@ -13,11 +13,15 @@ import {
   Play, Save, Trash2, FlaskConical, Droplets, ChevronRight,
 } from "lucide-react"
 import { contractApi, type SpecFunction, type InvokeResponse, type FunctionTestCase, authApi } from "@/lib/api"
+import { networkApi } from "@/lib/mainnetApi"
+import { useNetwork } from "@/contexts/NetworkContext"
+import { useWalletKit } from "@/contexts/WalletKitContext"
+import { explorerTx, getNetwork } from "@/lib/networks"
+import { MainnetInvokeDialog, type InvokeConfirmDetails } from "@/components/network/mainnet-invoke-dialog"
 import { cn, copyToClipboard } from "@/lib/utils"
 import { toast } from "sonner"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://backend-ide-production.up.railway.app/api'
-const EXPLORER_TX = (hash: string) => `https://stellar.expert/explorer/testnet/tx/${hash}`
 
 interface InvokePanelProps {
   contractId: string
@@ -98,6 +102,8 @@ function buildArgs(fn: SpecFunction, values: Record<string, any>): Record<string
 }
 
 export function InvokePanel({ contractId }: InvokePanelProps) {
+  const { network } = useNetwork()
+  const { address, openWalletModal, signTransaction } = useWalletKit()
   const [loading, setLoading] = useState(true)
   const [functions, setFunctions] = useState<SpecFunction[]>([])
   const [specError, setSpecError] = useState<string | null>(null)
@@ -107,6 +113,8 @@ export function InvokePanel({ contractId }: InvokePanelProps) {
   const [signing, setSigning] = useState(false)
   const [result, setResult] = useState<InvokeResponse | null>(null)
   const [funding, setFunding] = useState(false)
+  // Promise-driven mainnet write confirmation (fee preview).
+  const [invokeConfirm, setInvokeConfirm] = useState<{ open: boolean; details: InvokeConfirmDetails | null; resolve?: (ok: boolean) => void }>({ open: false, details: null })
 
   // Saved tests
   const [tests, setTests] = useState<FunctionTestCase[]>([])
@@ -191,10 +199,62 @@ export function InvokePanel({ contractId }: InvokePanelProps) {
     execute ? setSigning(true) : setRunning(true)
     try {
       const args = buildArgs(fn, values)
-      const res = await contractApi.invoke(contractId, fn.name, args, { execute })
-      setResult(res)
-      if (res.success && execute && res.status === "success") toast.success("Transaction confirmed")
-      else if (!res.success) toast.error(res.error || "Invocation failed")
+
+      // Read / simulate — free, no signature, either network.
+      if (!execute) {
+        const res = await networkApi.invoke(contractId, { functionName: fn.name, args, execute: false, network })
+        setResult(res)
+        if (!res.success) toast.error(res.error || 'Invocation failed')
+        return
+      }
+
+      // Testnet writes are custodial — sign + submit server-side directly.
+      if (network !== 'mainnet') {
+        const res = await networkApi.invoke(contractId, { functionName: fn.name, args, execute: true, network })
+        setResult(res)
+        if (res.success && res.status === 'success') toast.success('Transaction confirmed')
+        else if (!res.success) toast.error(res.error || 'Invocation failed')
+        return
+      }
+
+      // Mainnet write: simulate first for a fee preview, then confirm, then sign.
+      let mode: 'connected' | 'custodial' = 'connected'
+      try { mode = (await networkApi.getSigningMode()).mainnetSigningMode } catch { /* default */ }
+
+      const preview = await networkApi.invoke(contractId, { functionName: fn.name, args, execute: false, network })
+      if (preview.readOnly) {
+        setResult(preview) // it was actually a read
+        return
+      }
+      const feeXlm = preview.resourceFee ? (Number(preview.resourceFee) / 1e7).toFixed(7) : undefined
+
+      let signer: string | undefined
+      if (mode === 'connected') {
+        signer = address || (await openWalletModal()) || undefined
+        if (!signer) {
+          toast.error('Connect a wallet to sign mainnet transactions')
+          return
+        }
+      }
+
+      const ok = await new Promise<boolean>((resolve) =>
+        setInvokeConfirm({ open: true, details: { mode, signer, feeXlm, fnName: fn.name }, resolve }),
+      )
+      if (!ok) return
+
+      const res = await networkApi.invoke(contractId, { functionName: fn.name, args, execute: true, network, sourcePk: signer })
+      if (res.needsSignature && res.xdr) {
+        // Connected mainnet wallet signs the prepared XDR in the browser.
+        const signed = await signTransaction(res.xdr, res.passphrase)
+        const submitted = await networkApi.invokeSubmit(contractId, { functionName: fn.name, args, signedXdr: signed, network })
+        setResult(submitted)
+        if (submitted.success && submitted.status === 'success') toast.success('Transaction confirmed')
+        else if (!submitted.success) toast.error(submitted.error || 'Submit failed')
+      } else {
+        setResult(res)
+        if (res.success && res.status === 'success') toast.success('Transaction confirmed')
+        else if (!res.success) toast.error(res.error || 'Invocation failed')
+      }
     } catch (e: any) {
       setResult({ success: false, readOnly: true, status: "failed", error: e.message })
       toast.error(e.message)
@@ -393,7 +453,16 @@ export function InvokePanel({ contractId }: InvokePanelProps) {
       )}
 
       {/* Result / error panel */}
-      {result && <ResultPanel result={result} onFund={fundWallet} funding={funding} />}
+      {result && <ResultPanel result={result} onFund={fundWallet} funding={funding} network={network} />}
+
+      <MainnetInvokeDialog
+        open={invokeConfirm.open}
+        details={invokeConfirm.details}
+        onResolve={(ok) => {
+          invokeConfirm.resolve?.(ok)
+          setInvokeConfirm({ open: false, details: null })
+        }}
+      />
 
       {/* Saved tests */}
       <div className="rounded-lg border border-border/60 bg-card/40 p-3">
@@ -451,7 +520,7 @@ export function InvokePanel({ contractId }: InvokePanelProps) {
   )
 }
 
-function ResultPanel({ result, onFund, funding }: { result: InvokeResponse; onFund: () => void; funding: boolean }) {
+function ResultPanel({ result, onFund, funding, network }: { result: InvokeResponse; onFund: () => void; funding: boolean; network: import('@/lib/networks').NetworkId }) {
   const ok = result.success
   const showFaucet = !ok && /balance|fund|faucet|insufficient/i.test(result.error || "")
   const pretty = (v: any) =>
@@ -505,7 +574,7 @@ function ResultPanel({ result, onFund, funding }: { result: InvokeResponse; onFu
             <span className="truncate">{result.txHash.slice(0, 10)}…{result.txHash.slice(-6)}</span>
           </button>
           <a
-            href={EXPLORER_TX(result.txHash)}
+            href={explorerTx(network, result.txHash)}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 font-mono text-[11px] text-brand hover:underline"

@@ -1,6 +1,6 @@
 ---
 title: Quickstart
-description: Deploy a counter contract to testnet and call it — start to finish in about a minute.
+description: Deploy a counter contract to testnet and call it, start to finish in about a minute.
 ---
 
 This walks you from a blank IDE to a deployed contract you can call. It uses the
@@ -10,7 +10,7 @@ built-in **Counter** template, so there's nothing to paste.
 
 <Step title="Sign in">
 Open the [IDE](/ide) and sign in with Google, GitHub, or Discord. Your testnet
-wallet is created and funded automatically — check the wallet widget in the top
+wallet is created and funded automatically, check the wallet widget in the top
 bar to see its `G…` address and XLM balance.
 </Step>
 
@@ -45,7 +45,7 @@ impl CounterContract {
 
 <Step title="Deploy">
 Click **Deploy**. WebSoroban compiles the crate to Wasm, then uploads and
-instantiates it — signing the transaction with your wallet. When it finishes, the
+instantiates it, signing the transaction with your wallet. When it finishes, the
 console prints the contract id:
 
 ```text
@@ -55,7 +55,7 @@ Contract deployed · CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC
 ```
 
 The deploy is signed by your testnet wallet and recorded on the project. You don't
-pick a network — it's always testnet.
+pick a network, it's always testnet.
 </Step>
 
 <Step title="Invoke `increment` (a signed write)">
@@ -69,7 +69,7 @@ Open the **Invoke** panel (the contract console on the right). Select
 </Step>
 
 <Step title="Invoke `get` (a read)">
-Select `get` and click **Run (simulate)**. Reads don't sign or submit anything —
+Select `get` and click **Run (simulate)**. Reads don't sign or submit anything,
 they simulate and return immediately:
 
 ```json

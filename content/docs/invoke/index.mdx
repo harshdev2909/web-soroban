@@ -1,15 +1,18 @@
 ---
 title: Invoke
-description: Call contract functions with typed inputs — the full ScType entry reference, read vs signed writes, and how to read results.
+description: Call contract functions with typed inputs, the full ScType entry reference, read vs signed writes, and how to read results.
 ---
 
 Invoke calls a function on a deployed contract. WebSoroban reads the contract's
 [spec](/docs/core-concepts#contract-spec) and renders a typed form: one field per
-argument, each validated for its Soroban type. You enter plain values — `123`,
-`true`, a `G…` address — and WebSoroban encodes them to `ScVal` for you.
+argument, each validated for its Soroban type. You enter plain values, `123`,
+`true`, a `G…` address, and WebSoroban encodes them to `ScVal` for you.
 
 Open the Invoke panel (the contract console) on a deployed contract, pick a
-function, fill the fields, and run.
+function, fill the fields, and run. Invoke is network-aware: read calls simulate
+free on either network; a **mainnet** write shows its fee, asks you to confirm,
+and is signed by your connected wallet in the browser (or the custodial opt-in).
+See [Networks](/docs/networks).
 
 ## Read vs write
 
@@ -24,7 +27,7 @@ changes state.
   you click **Invoke & sign** to sign with your [wallet](/docs/wallets) and submit
   the transaction.
 
-WebSoroban decides read vs write from the simulation's footprint and auth — you
+WebSoroban decides read vs write from the simulation's footprint and auth, you
 don't mark a function as one or the other.
 
 <Callout type="note" title="Writes cost a fee">
@@ -35,7 +38,7 @@ don't mark a function as one or the other.
 ## Entering each Soroban type
 
 The form picks an input control from the argument's `ScType`. Enter values exactly
-as below — WebSoroban converts the string you type into the right `ScVal`.
+as below, WebSoroban converts the string you type into the right `ScVal`.
 
 | ScType | Control | What you type | Example |
 | --- | --- | --- | --- |
@@ -58,7 +61,7 @@ Rules that catch people out:
 - **Integers go in as digits**, never quoted. `u32` becomes a JS number; 64-bit and
   wider types become big integers. Non-numeric input for a number field is
   rejected before the call.
-- **`Address` accepts both** a `G…` account and a `C…` contract id — both are
+- **`Address` accepts both** a `G…` account and a `C…` contract id, both are
   valid Soroban addresses.
 - **`Bytes` must be even-length hex.** `BytesN<32>` must be exactly 32 bytes
   (64 hex chars); the field tells you if the length is wrong.
@@ -83,13 +86,13 @@ amount  500000000           (i128)
 
 The result panel shows:
 
-- **status** — `simulated` for a read, `success` for a confirmed write.
-- **return value** — decoded to JSON using the contract spec. A `u32` comes back as
+- **status**, `simulated` for a read, `success` for a confirmed write.
+- **return value**, decoded to JSON using the contract spec. A `u32` comes back as
   a number, an `Address` as its string form, a struct as an object.
-- **resource fee** — the fee paid, in stroops (writes only).
-- **tx hash** — for a confirmed write, with a link to stellar.expert. Reads have no
+- **resource fee**, the fee paid, in stroops (writes only).
+- **tx hash**, for a confirmed write, with a link to stellar.expert. Reads have no
   hash.
-- **events** — any contract events emitted, decoded.
+- **events**, any contract events emitted, decoded.
 
 ```json title="get() → read"
 { "status": "simulated", "returnValue": 2 }
@@ -121,7 +124,7 @@ error, so you can see what happened without re-running it.
 
 ## Saved function tests
 
-Any call you run can be saved as a **function test** with an expected result —
+Any call you run can be saved as a **function test** with an expected result,
 WebSoroban replays it by simulation and checks the return. See [Test](/docs/test#function-tests).
 
 ## Next

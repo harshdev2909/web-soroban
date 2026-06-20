@@ -1,11 +1,11 @@
 # WebSoroban docs
 
-> Write, compile, deploy, and call Soroban smart contracts from the browser — no local toolchain.
+> Write, compile, deploy, and call Soroban smart contracts from the browser, no local toolchain.
 
 ## Getting started
 
 - [Overview](/docs/getting-started): What WebSoroban is, how signing in provisions your testnet wallet, and the edit-compile-deploy-invoke loop.
-- [Quickstart](/docs/getting-started/quickstart): Deploy a counter contract to testnet and call it — start to finish in about a minute.
+- [Quickstart](/docs/getting-started/quickstart): Deploy a counter contract to testnet and call it, start to finish in about a minute.
 
 ## Core concepts
 
@@ -17,7 +17,11 @@
 
 ## AI Copilot
 
-- [AI Copilot](/docs/copilot): Generate, debug, and optimize Soroban contracts from chat — five modes, slash commands, @-context, model switching, and reviewable diffs.
+- [AI Copilot](/docs/copilot): Generate, debug, and optimize Soroban contracts from chat, five modes, slash commands, @-context, model switching, and reviewable diffs.
+
+## Networks
+
+- [Networks](/docs/networks): Testnet vs mainnet, RPC and passphrases, how to fund each, who signs your transactions, and what mainnet costs.
 
 ## Compile
 
@@ -29,7 +33,7 @@
 
 ## Invoke
 
-- [Invoke](/docs/invoke): Call contract functions with typed inputs — the full ScType entry reference, read vs signed writes, and how to read results.
+- [Invoke](/docs/invoke): Call contract functions with typed inputs, the full ScType entry reference, read vs signed writes, and how to read results.
 
 ## Test
 
@@ -42,7 +46,8 @@
 
 ## Wallets & faucet
 
-- [Wallets & faucet](/docs/wallets): Your per-user testnet wallet — where it comes from, what the browser sees, and how to refund it from the faucet.
+- [Wallets & faucet](/docs/wallets): Your per-user testnet wallet, where it comes from, what the browser sees, and how to refund it from the faucet.
+- [Export your private key](/docs/wallets/export): Reveal and download your wallet secret to self-custody, the recommended step before relying on mainnet.
 
 ## Plans & limits
 
@@ -50,9 +55,9 @@
 
 ## Troubleshooting
 
-- [Troubleshooting](/docs/troubleshooting): The errors you hit compiling, deploying, and invoking on WebSoroban — what each message means and the fix.
+- [Troubleshooting](/docs/troubleshooting): The errors you hit compiling, deploying, and invoking on WebSoroban, what each message means and the fix.
 
 ## Reference
 
 - [Glossary](/docs/reference): The Soroban and WebSoroban terms used across these docs, defined precisely.
-- [API reference](/docs/reference/api): The public WebSoroban backend endpoints — request bodies, responses, and which ones sign with your wallet.
+- [API reference](/docs/reference/api): The public WebSoroban backend endpoints, request bodies, responses, and which ones sign with your wallet.

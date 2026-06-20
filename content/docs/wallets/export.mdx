@@ -1,0 +1,43 @@
+---
+title: Export your private key
+description: Reveal and download your wallet secret to self-custody, the recommended step before relying on mainnet.
+---
+
+Your wallet's secret key controls its funds on **mainnet and testnet**. Export it
+to move funds out, import the account into another wallet, or back it up, the
+recommended step before you put real value on mainnet.
+
+Open the wallet panel in the IDE header and choose **Export private key**.
+
+## How it works
+
+<Steps>
+  <Step title="Confirm">
+    Type `EXPORT` to confirm. If your account has a password, re-enter it.
+  </Step>
+  <Step title="Reveal once">
+    The secret (`S…`) is decrypted on the server, sent to your browser once, and
+    shown in a copy-once dialog. It is not stored in the page after you close it.
+  </Step>
+  <Step title="Copy or download">
+    Copy it to a password manager, or download a keypair file. Store it the way you
+    would any private key.
+  </Step>
+</Steps>
+
+<Callout type="danger" title="Anyone with this key controls your funds">
+  Treat the secret key like cash. Never paste it into a website, never share it,
+  and never commit it to code. WebSoroban shows it once and writes an audit log
+  entry (time + IP) every time it's exported, it never logs the key itself.
+</Callout>
+
+## After exporting
+
+Import the `S…` secret into Freighter, xBull, Albedo, Lobstr, or Hana to fully
+self-custody. On mainnet you can then **connect that wallet** and sign in the
+browser, so your key never touches our servers.
+
+## Next
+
+- [Networks](/docs/networks), testnet vs mainnet, funding, and custody options.
+- [Wallets & faucet](/docs/wallets), how the per-user wallet works.

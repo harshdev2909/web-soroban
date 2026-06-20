@@ -4,34 +4,44 @@ import { useCallback, useEffect, useState } from 'react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { walletApi, type WalletInfo } from '@/lib/api'
 import { cn, copyToClipboard, formatXlm, truncateAddress } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
+import { useNetwork } from '@/contexts/NetworkContext'
+import { networkApi, type NetWalletInfo } from '@/lib/mainnetApi'
+import { getNetwork } from '@/lib/networks'
 import { toast } from 'sonner'
-import { Wallet, Copy, Check, Droplets, RefreshCw, AlertTriangle, Loader2 } from 'lucide-react'
-
-const LOW_BALANCE = 10
+import { Wallet, Copy, Check, Droplets, RefreshCw, AlertTriangle, Loader2, KeyRound, HelpCircle } from 'lucide-react'
+import { MainnetManual } from '@/components/network/mainnet-manual'
+import { ExportKeyModal } from '@/components/network/export-key-modal'
 
 /**
- * Server-managed per-user Stellar testnet wallet. Shows public key (copyable),
- * balance, funded status, and a faucet button. Never displays the secret key.
+ * Server-managed per-user Stellar wallet — the SAME address on both networks.
+ * Shows the active network's balance, funds via faucet on testnet (or the
+ * funding guide on mainnet), and offers a hardened private-key export. Never
+ * displays the secret inline.
  */
 export function WalletWidget({ className }: { className?: string }) {
   const { isAuthenticated } = useAuth()
-  const [wallet, setWallet] = useState<WalletInfo | null>(null)
+  const { network } = useNetwork()
+  const cfg = getNetwork(network)
+  const [wallet, setWallet] = useState<NetWalletInfo | null>(null)
   const [status, setStatus] = useState<'idle' | 'loading' | 'funding' | 'error'>('loading')
   const [copied, setCopied] = useState(false)
+  const [manualOpen, setManualOpen] = useState(false)
+  const [exportOpen, setExportOpen] = useState(false)
+
+  const lowThreshold = network === 'mainnet' ? 5 : 10
 
   const load = useCallback(async () => {
     setStatus('loading')
     try {
-      const data = await walletApi.me()
+      const data = await networkApi.wallet(network)
       setWallet(data)
       setStatus('idle')
     } catch {
       setStatus('error')
     }
-  }, [])
+  }, [network])
 
   useEffect(() => {
     if (isAuthenticated) load()
@@ -39,12 +49,11 @@ export function WalletWidget({ className }: { className?: string }) {
 
   if (!isAuthenticated) return null
 
-  const lowBalance = wallet ? wallet.balance < LOW_BALANCE : false
+  const lowBalance = wallet ? wallet.balance < lowThreshold : false
 
   const onCopy = async () => {
     if (!wallet) return
-    const ok = await copyToClipboard(wallet.publicKey)
-    if (ok) {
+    if (await copyToClipboard(wallet.publicKey)) {
       setCopied(true)
       toast.success('Address copied')
       setTimeout(() => setCopied(false), 1500)
@@ -52,12 +61,16 @@ export function WalletWidget({ className }: { className?: string }) {
   }
 
   const onFund = async () => {
+    if (network === 'mainnet') {
+      setManualOpen(true)
+      return
+    }
     setStatus('funding')
     try {
-      const data = await walletApi.fund()
-      setWallet(data)
+      const data = await networkApi.fund('testnet')
+      await load()
       setStatus('idle')
-      toast.success('Faucet top-up requested', { description: `Balance: ${formatXlm(data.balance)} XLM` })
+      toast.success('Faucet top-up requested', { description: `Balance: ${formatXlm((data as any).balance ?? wallet?.balance ?? 0)} XLM` })
     } catch {
       setStatus('error')
       toast.error('Faucet request failed')
@@ -70,21 +83,12 @@ export function WalletWidget({ className }: { className?: string }) {
         <Button
           variant="outline"
           size="sm"
-          aria-label="Your testnet wallet"
-          className={cn(
-            'h-9 gap-2 border-border bg-card/60 px-2.5 font-mono text-xs hover:bg-accent',
-            className,
-          )}
+          aria-label="Your wallet"
+          className={cn('h-9 gap-2 border-border bg-card/60 px-2.5 font-mono text-xs hover:bg-accent', className)}
         >
           <span className="relative flex h-2 w-2">
-            <span
-              className={cn(
-                'absolute inline-flex h-full w-full rounded-full opacity-60',
-                lowBalance ? 'bg-warning' : 'bg-success',
-                'animate-ping',
-              )}
-            />
-            <span className={cn('relative inline-flex h-2 w-2 rounded-full', lowBalance ? 'bg-warning' : 'bg-success')} />
+            <span className={cn('absolute inline-flex h-full w-full rounded-full opacity-60 animate-ping', cfg.dotClass)} />
+            <span className={cn('relative inline-flex h-2 w-2 rounded-full', cfg.dotClass)} />
           </span>
           {status === 'loading' && !wallet ? (
             <Skeleton className="h-3.5 w-24" />
@@ -103,12 +107,12 @@ export function WalletWidget({ className }: { className?: string }) {
               <Wallet className="h-4 w-4" />
             </span>
             <div className="leading-tight">
-              <p className="text-sm font-semibold">Deploy wallet</p>
-              <p className="text-[11px] text-muted-foreground">Auto-created · server-signed</p>
+              <p className="text-sm font-semibold">Your wallet</p>
+              <p className="text-[11px] text-muted-foreground">Same address on both networks</p>
             </div>
           </div>
-          <span className="rounded-full border border-success/30 bg-success/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-success">
-            Testnet
+          <span className={cn('rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide', cfg.badgeClass)}>
+            {cfg.label}
           </span>
         </div>
 
@@ -143,7 +147,7 @@ export function WalletWidget({ className }: { className?: string }) {
 
             <div className="mt-4 flex items-end justify-between">
               <div>
-                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Balance</p>
+                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{cfg.label} balance</p>
                 <p className="font-mono-tnum text-2xl font-semibold leading-none">
                   {formatXlm(wallet.balance)} <span className="text-sm font-normal text-muted-foreground">XLM</span>
                 </p>
@@ -151,9 +155,7 @@ export function WalletWidget({ className }: { className?: string }) {
               <span
                 className={cn(
                   'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
-                  wallet.funded
-                    ? 'border border-success/30 bg-success/10 text-success'
-                    : 'border border-warning/30 bg-warning/10 text-warning',
+                  wallet.funded ? cfg.badgeClass : 'border border-warning/30 bg-warning/10 text-warning',
                 )}
               >
                 {wallet.funded ? 'Funded' : 'Unfunded'}
@@ -162,7 +164,7 @@ export function WalletWidget({ className }: { className?: string }) {
 
             {lowBalance && (
               <p className="mt-3 flex items-center gap-1.5 text-[11px] text-warning">
-                <AlertTriangle className="h-3 w-3" /> Low balance. Top up before deploying.
+                <AlertTriangle className="h-3 w-3" /> Low balance for {cfg.label} — top up before deploying.
               </p>
             )}
 
@@ -175,18 +177,29 @@ export function WalletWidget({ className }: { className?: string }) {
             >
               {status === 'funding' ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
+              ) : network === 'mainnet' ? (
+                <HelpCircle className="h-4 w-4" />
               ) : (
                 <Droplets className="h-4 w-4" />
               )}
-              {status === 'funding' ? 'Requesting…' : 'Fund via faucet'}
+              {network === 'mainnet' ? 'How to fund' : status === 'funding' ? 'Requesting…' : 'Fund via faucet'}
+            </Button>
+
+            <Button onClick={() => setExportOpen(true)} size="sm" variant="ghost" className="mt-2 w-full gap-2 text-muted-foreground hover:text-foreground">
+              <KeyRound className="h-3.5 w-3.5" /> Export private key
             </Button>
 
             <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
-              Your contracts deploy from this address. The secret key stays encrypted on the server and is never shown.
+              {network === 'mainnet'
+                ? 'On mainnet you sign in your connected wallet by default — your key is never sent to the server.'
+                : 'Testnet deploys are signed for you. The secret key stays encrypted on the server.'}
             </p>
           </div>
         )}
       </PopoverContent>
+
+      <MainnetManual open={manualOpen} onOpenChange={setManualOpen} />
+      <ExportKeyModal open={exportOpen} onOpenChange={setExportOpen} />
     </Popover>
   )
 }

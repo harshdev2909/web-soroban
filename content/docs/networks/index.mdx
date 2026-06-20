@@ -1,0 +1,72 @@
+---
+title: Networks
+description: Testnet vs mainnet, RPC and passphrases, how to fund each, who signs your transactions, and what mainnet costs.
+---
+
+WebSoroban runs on both Stellar networks. Switch with the network selector in the
+IDE header. Testnet is the default; mainnet is opt-in and spends real XLM.
+
+Your wallet is the **same address on both networks**, only funding and signing
+differ. A contract deployed on testnet is separate from one deployed on mainnet.
+
+## Testnet vs mainnet
+
+| | <Badge tone="testnet">testnet</Badge> | Mainnet |
+|---|---|---|
+| XLM | free, worthless | real, irreversible |
+| Faucet | Friendbot | none, you fund it |
+| Passphrase | `Test SDF Network ; September 2015` | `Public Global Stellar Network ; September 2015` |
+| Explorer | stellar.expert/explorer/testnet | stellar.expert/explorer/public |
+| Default signer | WebSoroban (custodial) | your connected wallet (non-custodial) |
+
+<Callout type="warning" title="Mainnet is real money">
+  Mainnet transactions cost real XLM and cannot be undone. WebSoroban always
+  simulates first, shows the fee in XLM, and asks you to confirm before signing,
+  and never deploys or invokes on mainnet on its own.
+</Callout>
+
+## Who signs your transactions
+
+On **testnet**, WebSoroban signs with the wallet it generated for you.
+
+On **mainnet** you choose, in the funding guide or the wallet panel:
+
+- **Connect a wallet** (recommended, default), Freighter, xBull, Albedo, Lobstr,
+  or Hana. The browser wallet signs; your mainnet key never reaches our servers.
+- **Custodial** (opt-in), WebSoroban signs with the key it stores for you. Faster,
+  but a server-held key signs your real-fund transactions. You must explicitly
+  acknowledge the risk to enable it.
+
+## Funding a mainnet wallet
+
+There is no faucet on mainnet.
+
+<Steps>
+  <Step title="Get XLM">
+    Buy XLM on an exchange (Coinbase, Kraken, Binance) or use another Stellar wallet.
+  </Step>
+  <Step title="Send it to your address">
+    Withdraw to your wallet's public address (`G…`), shown, copyable, in the
+    funding guide. It's your own account, so no memo is needed.
+  </Step>
+  <Step title="Keep a buffer">
+    An account needs ~1 XLM base reserve, ~0.5 XLM per ledger entry, plus fees and
+    rent. Keep a few XLM beyond your first deploy.
+  </Step>
+</Steps>
+
+## What it costs
+
+- **Deploy**, a one-time fee plus storage rent for the contract, typically a few XLM.
+- **Invoke (write)**, a small per-call fee, often a fraction of an XLM, shown before you sign.
+- **Read calls**, free. They simulate, with no signature.
+
+## Configure mainnet RPC
+
+SDF runs **no public mainnet Soroban RPC**. The deployment points at a provider
+endpoint via `MAINNET_SOROBAN_RPC_URL`; self-hosters must set their own.
+
+## Next
+
+- [Export your private key](/docs/wallets/export) to self-custody before relying on mainnet.
+- [Deploy](/docs/deploy) and [Invoke](/docs/invoke) are network-aware, pick the network first.

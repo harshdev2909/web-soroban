@@ -4,7 +4,7 @@ description: What each plan allows for deploys and function tests, how the month
 ---
 
 Two actions count against a quota: **deploys** and **function-test runs**. Everything
-else — compile, read invokes, `cargo test` — is unlimited on every plan.
+else, compile, read invokes, `cargo test`, is unlimited on every plan.
 
 ## The plans
 
@@ -33,7 +33,7 @@ not metered at all.
 
 Both counters reset together roughly 30 days after the last reset. The reset is
 lazy: the next deploy or function-test run after the 30-day mark zeroes both counts
-before checking the limit. There is no fixed calendar date — the clock starts from
+before checking the limit. There is no fixed calendar date, the clock starts from
 your last reset.
 
 ## At the limit
@@ -41,7 +41,7 @@ your last reset.
 A deploy or function-test run over the cap returns HTTP `403` with
 `upgradeRequired: true`:
 
-```json title="403 — deploy over the free limit"
+```json title="403, deploy over the free limit"
 {
   "success": false,
   "error": "Deployment limit reached",
@@ -51,7 +51,7 @@ A deploy or function-test run over the cap returns HTTP `403` with
 }
 ```
 
-```json title="403 — function-test run over the free limit"
+```json title="403, function-test run over the free limit"
 {
   "success": false,
   "error": "Function test limit reached",
@@ -62,12 +62,12 @@ A deploy or function-test run over the cap returns HTTP `403` with
 ```
 
 The IDE surfaces this as an upgrade prompt. Compiling, reading, and running
-`cargo test` keep working at the cap — only the metered action is blocked.
+`cargo test` keep working at the cap, only the metered action is blocked.
 
 ## Usage meters
 
-The plan badge in the navbar opens a popover with two meters — deploys and
-function tests — each showing used against your limit (`unlimited` where the cap
+The plan badge in the navbar opens a popover with two meters, deploys and
+function tests, each showing used against your limit (`unlimited` where the cap
 is lifted) and an upgrade action. The same numbers come from `GET /api/usage`:
 
 ```json title="GET /api/usage"
@@ -90,5 +90,5 @@ counts carry over.
 
 ## Next
 
-- [Deploy](/docs/deploy) — what one deploy unit does.
-- [Test](/docs/test) — saving and running function tests.
+- [Deploy](/docs/deploy), what one deploy unit does.
+- [Test](/docs/test), saving and running function tests.

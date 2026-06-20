@@ -6,7 +6,7 @@ description: Scaffold a complete contract project from a verified bundle that bu
 A template is a **bundle**: the full source tree for a working contract, defined
 as `{ name, description, files, manifestPath, deployTarget?, defaultTests }`.
 Click **Use template** and WebSoroban scaffolds the entire tree into a new
-project — every file, the `Cargo.toml`, and `.cargo/config.toml`.
+project, every file, the `Cargo.toml`, and `.cargo/config.toml`.
 
 Every bundle here compiles to Wasm and passes `cargo test` unchanged. Deploy it as
 is, or edit it into your own contract.
@@ -19,7 +19,7 @@ is, or edit it into your own contract.
 ## Single-file vs multi-file
 
 A single-file template (like **Counter**) is a one-file bundle: just `src/lib.rs`
-plus its manifest. A multi-file template spans modules — `src/lib.rs` declares
+plus its manifest. A multi-file template spans modules, `src/lib.rs` declares
 `mod storage;`, the build resolves that to `src/storage.rs`, and the whole tree
 compiles to one contract Wasm. See [module resolution](/docs/ide) for the rules.
 
@@ -41,7 +41,7 @@ compiles to one contract Wasm. See [module resolution](/docs/ide) for the rules.
 
 <Card title="token-mf" icon="layers">
   A SEP-41-style token split into `storage`, `admin`, `balance`, `allowance`, and
-  `metadata` modules — `initialize`, `mint`, `transfer`, `approve`,
+  `metadata` modules, `initialize`, `mint`, `transfer`, `approve`,
   `transfer_from`, and metadata. Ships with `tests/token.rs`.
 </Card>
 

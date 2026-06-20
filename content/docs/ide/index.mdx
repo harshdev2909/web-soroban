@@ -8,12 +8,12 @@ docked below and a status bar across the bottom.
 
 ## The layout
 
-- **Left — file explorer.** A nested, collapsible tree of your project's files.
-- **Center — editor.** A Monaco editor with one tab per open file. The
+- **Left, file explorer.** A nested, collapsible tree of your project's files.
+- **Center, editor.** A Monaco editor with one tab per open file. The
   Compile, Test, and Deploy buttons live in the tab bar.
-- **Right — contract console.** The Invoke panel and contract info for the
+- **Right, contract console.** The Invoke panel and contract info for the
   deployed contract.
-- **Bottom — console.** Compile, test, and deploy logs. Toggle it from the
+- **Bottom, console.** Compile, test, and deploy logs. Toggle it from the
   status bar.
 - **Status bar.** A slim strip showing the language, cursor position, problem
   counts, network (`Testnet`), and the save state.
@@ -22,7 +22,7 @@ docked below and a status bar across the bottom.
 
 Files render with an icon by extension: `.rs` in violet, `.toml` in amber,
 `.json` in blue, everything else neutral. Folders sort above files; both sort
-alphabetically. Directories start expanded — click a folder to collapse it.
+alphabetically. Directories start expanded, click a folder to collapse it.
 
 Right-click any folder for **New file…** or **New folder…**. Right-click a file
 for **Rename / move…** or **Delete**. Hovering a file row also reveals inline
@@ -30,7 +30,7 @@ rename and delete buttons.
 
 ## Multi-file projects
 
-A project holds real, project-relative paths — not a flat list of names. A
+A project holds real, project-relative paths, not a flat list of names. A
 typical multi-file crate:
 
 ```text
@@ -78,7 +78,7 @@ A `mod admin;` in `src/lib.rs` would instead resolve to `src/admin.rs` or
 ## Creating files and folders
 
 **New file** takes a path, not just a name. Intermediate folders are created
-implicitly — entering `src/admin/mod.rs` creates the `src/admin/` folders along
+implicitly, entering `src/admin/mod.rs` creates the `src/admin/` folders along
 with the file. A leaf with no extension gets `.rs` appended, so `src/storage`
 becomes `src/storage.rs`.
 
@@ -93,7 +93,7 @@ Paths are validated before they're accepted. These are rejected:
 
 Each open file gets a tab keyed off its full path, so two files named `mod.rs`
 in different folders never collide. A tab shows a folder breadcrumb before the
-file name — `src/admin/mod.rs` reads as `src/admin/ mod.rs`, with the directory
+file name, `src/admin/mod.rs` reads as `src/admin/ mod.rs`, with the directory
 dimmed.
 
 ## Command palette
@@ -112,7 +112,7 @@ shows **Saving…**, then **Saved** with a cloud icon. New files, renames, and
 project-name changes persist immediately rather than waiting for the debounce.
 
 Projects are real server records. Selecting or creating a project saves it on
-the spot, and your files are there when you refresh — every project you've made
+the spot, and your files are there when you refresh, every project you've made
 is listed in the project menu.
 
 <Callout type="tip" title="Nothing to install">

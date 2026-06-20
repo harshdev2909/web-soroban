@@ -8,7 +8,7 @@ the file it lives in. Click **Run tests** and the IDE runs `cargo test
 --no-fail-fast` across the whole crate, so one failure never hides the rest.
 
 Tests run locally in the build container. They never sign and never touch the
-network — `Env::default()` gives each test its own in-memory ledger.
+network, `Env::default()` gives each test its own in-memory ledger.
 
 ## Unit tests vs integration tests
 
@@ -79,8 +79,8 @@ The [`counter-mf` template](/docs/templates) ships with both.
 ## Reading the results
 
 Each test reports `{ file, name, passed, durationMs }`, and the IDE lists them
-under their source file. The header shows **Tests N/M** — `N` passed of `M`
-discovered — counting every test across `src/` and `tests/`.
+under their source file. The header shows **Tests N/M**, `N` passed of `M`
+discovered, counting every test across `src/` and `tests/`.
 
 A failing test keeps its panic or assertion output, attached to the test so you
 can read what broke without re-running:
@@ -103,7 +103,7 @@ These are different states, and WebSoroban keeps them apart.
 - **Tests ran and one failed.** The test binary compiled, the run produced
   results, and at least one assertion failed. You get per-test output and a
   **Tests N/M** count where `N < M`.
-- **Tests failed to compile.** The test binary never built — a type error or
+- **Tests failed to compile.** The test binary never built, a type error or
   missing import in a test file. No tests run, so there's nothing to count. This
   surfaces as per-file diagnostics in the editor gutter, the same way a compile
   error does.
@@ -129,7 +129,7 @@ has three modes:
 | `contains` | the return value contains a given value |
 
 Click **Run all** to replay every saved test. Each one runs by **simulation**
-(`execute: false`) — nothing is signed or submitted — and the panel reports
+(`execute: false`), nothing is signed or submitted, and the panel reports
 `passed` of `total`:
 
 ```json
@@ -137,7 +137,7 @@ Click **Run all** to replay every saved test. Each one runs by **simulation**
 ```
 
 <Callout type="warning" title="Function tests count against your quota">
-  Each **Run all** counts as one function test against your plan's quota — the
+  Each **Run all** counts as one function test against your plan's quota, the
   free tier allows 2. See [Plans and limits](/docs/plans-and-limits).
 </Callout>
 
