@@ -30,13 +30,15 @@ interface DailyUsagePoint {
   compile: number
   deploy: number
   function_test: number
+  invoke: number
 }
 
-// Brand-aligned chart colors (literal hsl — recharts needs concrete values).
+// Brand-aligned chart colors (literal hsl, recharts needs concrete values).
 const CHART = {
   compile: "hsl(200 90% 62%)", // info
   deploy: "hsl(152 58% 48%)", // success
   function_test: "hsl(280 78% 66%)", // cosmic
+  invoke: "hsl(250 86% 66%)", // brand
   grid: "hsl(233 16% 16%)",
   axis: "hsl(224 12% 62%)",
   surface: "hsl(233 28% 9%)",
@@ -89,10 +91,12 @@ export default function AnalyticsPage() {
       compile: d.compile,
       deploy: d.deploy,
       function_test: d.function_test,
+      invoke: d.invoke ?? 0,
     })) ?? []
 
   const totals = summary?.summary?.totals
   const deployNet = summary?.summary?.deployByNetwork
+  const invokeNet = summary?.summary?.invokeByNetwork
   const kpis = [
     { label: "Total events", value: summary?.summary?.totalEvents ?? 0, hint: "last 30 days", icon: Zap, tint: "text-brand" },
     { label: "Unique users", value: summary?.summary?.uniqueUsers ?? 0, hint: "active", icon: Users, tint: "text-cosmic" },
@@ -104,8 +108,16 @@ export default function AnalyticsPage() {
       tint: "text-success",
       split: deployNet ? { testnet: deployNet.testnet ?? 0, mainnet: deployNet.mainnet ?? 0 } : undefined,
     },
+    {
+      label: "Invocations",
+      value: totals?.invoke ?? 0,
+      hint: "write calls",
+      icon: Activity,
+      tint: "text-brand",
+      split: invokeNet ? { testnet: invokeNet.testnet ?? 0, mainnet: invokeNet.mainnet ?? 0 } : undefined,
+    },
     { label: "Compilations", value: totals?.compile ?? 0, hint: "builds", icon: Hammer, tint: "text-info" },
-    { label: "Function tests", value: totals?.function_test ?? 0, hint: "invocations", icon: FlaskConical, tint: "text-warning" },
+    { label: "Function tests", value: totals?.function_test ?? 0, hint: "saved-test runs", icon: FlaskConical, tint: "text-warning" },
   ]
 
   const healthy = health?.status === "healthy"
@@ -136,9 +148,9 @@ export default function AnalyticsPage() {
         )}
 
         {/* KPI tiles */}
-        <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           {loading
-            ? Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)
+            ? Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)
             : kpis.map((k, i) => {
                 const Icon = k.icon
                 return (
@@ -190,7 +202,8 @@ export default function AnalyticsPage() {
                     />
                     <Bar dataKey="compile" stackId="a" fill={CHART.compile} name="Compile" radius={[0, 0, 0, 0]} />
                     <Bar dataKey="deploy" stackId="a" fill={CHART.deploy} name="Deploy" />
-                    <Bar dataKey="function_test" stackId="a" fill={CHART.function_test} name="Function tests" radius={[3, 3, 0, 0]} />
+                    <Bar dataKey="function_test" stackId="a" fill={CHART.function_test} name="Function tests" />
+                    <Bar dataKey="invoke" stackId="a" fill={CHART.invoke} name="Invocations" radius={[3, 3, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -200,6 +213,7 @@ export default function AnalyticsPage() {
                 <Legend color={CHART.compile} label="Compile" />
                 <Legend color={CHART.deploy} label="Deploy" />
                 <Legend color={CHART.function_test} label="Function tests" />
+                <Legend color={CHART.invoke} label="Invocations" />
               </div>
             )}
           </Panel>
@@ -427,6 +441,8 @@ function ActionBadge({ action }: { action: string }) {
       ? "bg-success/12 text-success"
       : action === "compile"
       ? "bg-info/12 text-info"
+      : action === "invoke"
+      ? "bg-brand/12 text-brand"
       : "bg-cosmic/12 text-cosmic"
   return (
     <span className={cn("shrink-0 rounded-full px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider", cls)}>

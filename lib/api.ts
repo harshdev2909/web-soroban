@@ -16,11 +16,15 @@ export interface Project {
   updatedAt: string;
   lastDeployed?: string;
   contractAddress?: string;
+  /** the network of the most recent deploy (contractAddress reflects this) */
+  network?: 'testnet' | 'mainnet';
   manifestPath?: string;
   deployTarget?: string | null;
   deploymentHistory?: Array<{
     timestamp: string;
     contractAddress: string;
+    network?: 'testnet' | 'mainnet';
+    deployerPublicKey?: string;
     status: 'success' | 'failed';
     logs: string[];
   }>;
@@ -665,34 +669,6 @@ export const deployApi = {
     return response.json();
   },
 
-  // New deployment flow methods
-  async prepareDeployment(projectId: string, wasmBase64: string, network?: string): Promise<PrepareDeploymentResponse> {
-    const response = await fetch(`${API_BASE_URL}/deploy/prepare-deployment`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ projectId, wasmBase64, network }),
-    });
-    if (!response.ok) {
-      throw new Error('Failed to prepare deployment');
-    }
-    return response.json();
-  },
-
-  async submitDeployment(projectId: string, signedXDR: string, network?: string, tempKeypairName?: string): Promise<SubmitDeploymentResponse> {
-    const response = await fetch(`${API_BASE_URL}/deploy/submit-deployment`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ projectId, signedXDR, network, tempKeypairName }),
-    });
-    if (!response.ok) {
-      throw new Error('Failed to submit deployment');
-    }
-    return response.json();
-  },
 };
 
 // Auth API
@@ -1095,6 +1071,7 @@ export interface UsageSummaryDay {
   compile: number;
   deploy: number;
   function_test: number;
+  invoke?: number;
 }
 
 export interface UsageSummaryResponse {
@@ -1106,8 +1083,13 @@ export interface UsageSummaryResponse {
       compile: number;
       deploy: number;
       function_test: number;
+      invoke?: number;
     };
     deployByNetwork?: {
+      testnet: number;
+      mainnet: number;
+    };
+    invokeByNetwork?: {
       testnet: number;
       mainnet: number;
     };
@@ -1136,7 +1118,7 @@ export const usageApi = {
 
 export interface ActivityLogEntry {
   _id: string;
-  action: 'compile' | 'deploy' | 'function_test';
+  action: 'compile' | 'deploy' | 'function_test' | 'invoke';
   projectId?: string | null;
   contractAddress?: string | null;
   functionName?: string | null;

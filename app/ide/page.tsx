@@ -835,14 +835,21 @@ mod tests {
         return;
       }
       appendLog('info', 'Deploying to MAINNET (custodial)…');
-      const r = await networkApi.deployCustodial({ projectId: proj._id, wasmBase64, network: 'mainnet', confirm: true });
-      if (r.contractAddress) {
-        appendLog('success', `Contract deployed · ${r.contractAddress}`);
-        toast.success('Deployed to mainnet', { description: r.contractAddress });
-        await refreshAfterDeploy(proj._id, r.contractAddress);
+      // Enqueued + polled like a testnet deploy — the worker signs both
+      // transactions, so the request never blocks for the on-chain round-trips.
+      const started = await networkApi.deployCustodial({ projectId: proj._id, wasmBase64, network: 'mainnet', confirm: true });
+      mergeLogs(started.logs);
+      const deployed = started.jobId
+        ? await deployApi.pollDeployJobResult(started.jobId, (p) => mergeLogs(p.logs))
+        : (started as any);
+      mergeLogs(deployed.logs);
+      if (deployed.success && deployed.contractAddress) {
+        appendLog('success', `Contract deployed · ${deployed.contractAddress}`);
+        toast.success('Deployed to mainnet', { description: deployed.contractAddress });
+        await refreshAfterDeploy(proj._id, deployed.contractAddress);
       } else {
-        appendLog('error', `Deployment failed: ${r.error || 'unknown error'}`);
-        toast.error(r.error || 'Mainnet deploy failed');
+        appendLog('error', `Deployment failed: ${deployed.error || 'unknown error'}`);
+        toast.error(deployed.error || 'Mainnet deploy failed');
       }
       return;
     }

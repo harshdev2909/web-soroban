@@ -20,7 +20,21 @@ interface RightPanelProps {
 export function RightPanel({ project, onClose, walletAddress, embedded }: RightPanelProps) {
   const { network } = useNetwork();
   const net = getNetwork(network);
-  const isDeployed = Boolean(project.contractAddress);
+
+  // Resolve the contract for the ACTIVE network. A testnet contract is distinct
+  // from a mainnet one, so never show another network's id. Prefer the latest
+  // successful deployment on this network; fall back to the project's current
+  // pointer only when it was deployed to the active network.
+  const deployedOnNet = (project.deploymentHistory || []).find(
+    (d) => (d.network || 'testnet') === network && d.status === 'success' && d.contractAddress,
+  );
+  const contractId =
+    deployedOnNet?.contractAddress ||
+    ((project.network || 'testnet') === network ? project.contractAddress : undefined);
+  const deployedAt =
+    deployedOnNet?.timestamp ||
+    ((project.network || 'testnet') === network ? project.lastDeployed : undefined);
+  const isDeployed = Boolean(contractId);
 
   const formatDate = (dateString: string) =>
     new Date(dateString).toLocaleDateString('en-US', {
@@ -65,13 +79,13 @@ export function RightPanel({ project, onClose, walletAddress, embedded }: RightP
       <div className="flex-1 space-y-4 overflow-y-auto p-3">
         {/* Invoke — only meaningful once a contract is deployed */}
         {isDeployed ? (
-          <InvokePanel contractId={project.contractAddress!} />
+          <InvokePanel key={`${network}:${contractId}`} contractId={contractId!} />
         ) : (
           <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-border/70 px-4 py-10 text-center">
             <Rocket className="h-6 w-6 text-muted-foreground/50" />
-            <p className="text-xs text-foreground">No contract deployed yet</p>
+            <p className="text-xs text-foreground">No contract on {net.label} yet</p>
             <p className="max-w-[15rem] text-[11px] text-muted-foreground/70">
-              Compile and deploy your contract to generate a type-aware invoke form from its interface.
+              Deploy to {net.label} to generate a type-aware invoke form from the contract&apos;s interface.
             </p>
           </div>
         )}
@@ -98,8 +112,8 @@ export function RightPanel({ project, onClose, walletAddress, embedded }: RightP
             </div>
             <div className="flex items-center justify-between gap-3">
               <dt className="flex items-center gap-1.5 text-muted-foreground"><Clock className="h-3.5 w-3.5" /> Last deployed</dt>
-              <dd className={cn('truncate font-mono-tnum', project.lastDeployed ? 'text-foreground/90' : 'italic text-muted-foreground/60')}>
-                {project.lastDeployed ? formatDate(project.lastDeployed) : 'Never'}
+              <dd className={cn('truncate font-mono-tnum', deployedAt ? 'text-foreground/90' : 'italic text-muted-foreground/60')}>
+                {deployedAt ? formatDate(deployedAt) : `Never on ${net.label}`}
               </dd>
             </div>
             <div className="flex items-center justify-between gap-3">
@@ -127,16 +141,16 @@ export function RightPanel({ project, onClose, walletAddress, embedded }: RightP
             <div className="mb-1.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Contract ID</div>
             {isDeployed ? (
               <button
-                onClick={() => copyValue(project.contractAddress!, 'Contract ID')}
+                onClick={() => copyValue(contractId!, 'Contract ID')}
                 className="group flex w-full items-start gap-2 rounded-md bg-background/60 p-2 text-left transition-colors hover:bg-accent"
                 title="Copy contract ID"
               >
-                <span className="min-w-0 flex-1 break-all font-mono text-[11px] text-foreground/90">{project.contractAddress}</span>
+                <span className="min-w-0 flex-1 break-all font-mono text-[11px] text-foreground/90">{contractId}</span>
                 <Copy className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-brand" />
               </button>
             ) : (
               <div className="rounded-md border border-dashed border-border/70 px-2.5 py-3 text-center font-mono text-[11px] text-muted-foreground/60">
-                No deploys yet
+                No {net.label} deploy yet
               </div>
             )}
           </div>

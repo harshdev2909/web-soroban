@@ -73,8 +73,10 @@ export const networkApi = {
   ),
 
   // --- custodial mainnet deploy (opt-in, confirm-gated) ---
+  // Enqueues a custodial deploy job (the worker signs + submits, no blocking
+  // request). Returns a jobId to poll via deployApi.pollDeployJobResult.
   deployCustodial: (body: { projectId: string; wasmBase64: string; network: NetworkId; confirm: boolean }) =>
-    call<{ contractAddress?: string; network: NetworkId; logs?: any[]; explorer?: string; error?: string }>(
+    call<{ jobId?: string; network: NetworkId; logs?: any[]; message?: string; error?: string }>(
       `/deploy/custodial`, { method: 'POST', body: JSON.stringify(body) },
     ),
 
