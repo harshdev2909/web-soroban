@@ -8,6 +8,8 @@ import {
   HealthResponse,
   ActivityLogEntry,
   PlatformPaymentItem,
+  AdminUserItem,
+  ApiError,
 } from "@/lib/api"
 import PlaygroundNavbar from "@/components/playground-navbar"
 import PlaygroundFooter from "@/components/playground-footer"
@@ -17,7 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   BarChart3, Server, Receipt, ListTodo, ExternalLink, Copy, Check,
-  Activity, Hammer, Rocket, FlaskConical, Users, Zap,
+  Activity, Hammer, Rocket, FlaskConical, Users, Zap, Search, ShieldAlert, LogIn,
 } from "lucide-react"
 import {
   Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
@@ -49,8 +51,12 @@ export default function AnalyticsPage() {
   const [health, setHealth] = useState<HealthResponse | null>(null)
   const [transactionHistory, setTransactionHistory] = useState<PlatformPaymentItem[]>([])
   const [activityLogs, setActivityLogs] = useState<ActivityLogEntry[]>([])
+  const [users, setUsers] = useState<AdminUserItem[]>([])
+  const [usersTotal, setUsersTotal] = useState(0)
+  const [userQuery, setUserQuery] = useState("")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [accessDenied, setAccessDenied] = useState<{ status: number } | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [loginOpen, setLoginOpen] = useState(false)
 
@@ -65,19 +71,28 @@ export default function AnalyticsPage() {
       try {
         setLoading(true)
         setError(null)
-        const [usageResponse, healthResponse, activityRes, transactionsRes] = await Promise.all([
+        setAccessDenied(null)
+        const [usageResponse, healthResponse, activityRes, transactionsRes, usersRes] = await Promise.all([
           analyticsApi.getUsageSummary(),
           systemApi.getHealth(),
           analyticsApi.getActivityLogs(50),
           analyticsApi.getAllTransactions(50),
+          analyticsApi.getUsers("", 200),
         ])
         setSummary(usageResponse)
         setHealth(healthResponse)
         setActivityLogs(activityRes.success ? activityRes.logs : [])
         setTransactionHistory(transactionsRes.success ? transactionsRes.payments : [])
+        setUsers(usersRes.success ? usersRes.users : [])
+        setUsersTotal(usersRes.total ?? 0)
       } catch (err: unknown) {
-        console.error("Failed to load analytics:", err)
-        setError(err instanceof Error ? err.message : "Failed to load analytics")
+        // 401 (not signed in) / 403 (not an admin) → show the gate, not a red error.
+        if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+          setAccessDenied({ status: err.status })
+        } else {
+          console.error("Failed to load analytics:", err)
+          setError(err instanceof Error ? err.message : "Failed to load analytics")
+        }
       } finally {
         setLoading(false)
       }
@@ -122,6 +137,11 @@ export default function AnalyticsPage() {
 
   const healthy = health?.status === "healthy"
 
+  const q = userQuery.trim().toLowerCase()
+  const filteredUsers = q
+    ? users.filter((u) => u.email.toLowerCase().includes(q) || (u.name ?? "").toLowerCase().includes(q))
+    : users
+
   return (
     <div className="relative min-h-screen bg-background">
       <div className="pointer-events-none fixed inset-0 -z-10 bg-radial-fade" aria-hidden />
@@ -147,6 +167,10 @@ export default function AnalyticsPage() {
           </Alert>
         )}
 
+        {accessDenied ? (
+          <AdminGate status={accessDenied.status} onSignIn={() => setLoginOpen(true)} />
+        ) : (
+        <>
         {/* KPI tiles */}
         <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           {loading
@@ -172,6 +196,60 @@ export default function AnalyticsPage() {
                   </Reveal>
                 )
               })}
+        </section>
+
+        {/* Users directory */}
+        <section className="mt-6">
+          <Panel
+            icon={Users}
+            title="Users"
+            subtitle={loading ? "Loading registered users…" : `${usersTotal.toLocaleString()} registered ${usersTotal === 1 ? "user" : "users"}.`}
+          >
+            {loading ? (
+              <ListSkeleton />
+            ) : users.length === 0 ? (
+              <EmptyHint>No users yet.</EmptyHint>
+            ) : (
+              <div className="space-y-3">
+                {/* Search */}
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    type="text"
+                    value={userQuery}
+                    onChange={(e) => setUserQuery(e.target.value)}
+                    placeholder="Search by email or name…"
+                    className="w-full rounded-lg border border-border bg-background/60 py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-brand/50 focus:outline-none"
+                  />
+                </div>
+
+                {/* Column header (md+) */}
+                <div className="hidden items-center gap-3 border-b border-border/60 px-3 pb-2 font-mono text-[10px] uppercase tracking-wider text-muted-foreground md:flex">
+                  <span className="min-w-0 flex-1">User</span>
+                  <span className="w-14 text-center">Plan</span>
+                  <span className="w-16 text-right">Projects</span>
+                  <span className="w-16 text-right">Deploys</span>
+                  <span className="w-16 text-right">Invokes</span>
+                  <span className="w-24 text-right">Joined</span>
+                  <span className="w-16 text-right">Status</span>
+                </div>
+
+                <div className="max-h-[460px] space-y-1.5 overflow-y-auto">
+                  {filteredUsers.length === 0 ? (
+                    <EmptyHint>No users match “{userQuery}”.</EmptyHint>
+                  ) : (
+                    filteredUsers.map((u) => <UserRow key={u.id} u={u} />)
+                  )}
+                </div>
+
+                {usersTotal > users.length && (
+                  <p className="px-1 text-[11px] text-muted-foreground/70">
+                    Showing the newest {users.length.toLocaleString()} of {usersTotal.toLocaleString()} users.
+                  </p>
+                )}
+              </div>
+            )}
+          </Panel>
         </section>
 
         {/* Health + chart */}
@@ -344,6 +422,8 @@ export default function AnalyticsPage() {
             )}
           </Panel>
         </section>
+        </>
+        )}
       </main>
 
       <PlaygroundFooter />
@@ -386,6 +466,87 @@ function ListSkeleton() {
       {Array.from({ length: 4 }).map((_, i) => (
         <Skeleton key={i} className="h-12 w-full rounded-lg" />
       ))}
+    </div>
+  )
+}
+
+function AdminGate({ status, onSignIn }: { status: number; onSignIn: () => void }) {
+  const notSignedIn = status === 401
+  return (
+    <div className="mx-auto mb-16 flex max-w-md flex-col items-center gap-4 rounded-xl border border-border bg-card/40 px-6 py-14 text-center">
+      <span className="grid h-12 w-12 place-items-center rounded-xl bg-warning/12 text-warning">
+        <ShieldAlert className="h-6 w-6" />
+      </span>
+      <div>
+        <h2 className="font-display text-lg font-semibold text-foreground">
+          {notSignedIn ? "Sign in required" : "Admin access required"}
+        </h2>
+        <p className="mt-1.5 text-sm text-muted-foreground">
+          {notSignedIn
+            ? "The analytics dashboard is restricted to administrators. Sign in with an admin account to continue."
+            : "This account doesn't have access to the analytics dashboard. Contact an administrator if you think this is a mistake."}
+        </p>
+      </div>
+      {notSignedIn && (
+        <button
+          onClick={onSignIn}
+          className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white transition hover:bg-brand/90"
+        >
+          <LogIn className="h-4 w-4" /> Sign in
+        </button>
+      )}
+    </div>
+  )
+}
+
+function PlanBadge({ plan }: { plan: string }) {
+  const label = plan === "plan3" || plan === "team" ? "Team" : plan === "plan2" || plan === "pro" ? "Pro" : "Free"
+  const cls =
+    label === "Team" ? "bg-cosmic/15 text-cosmic" : label === "Pro" ? "bg-brand/15 text-brand" : "bg-muted text-muted-foreground"
+  return <span className={cn("inline-block rounded-full px-2 py-0.5 font-mono text-[10px]", cls)}>{label}</span>
+}
+
+function Stat({ label, value, className }: { label: string; value: number; className?: string }) {
+  return (
+    <div className={cn("text-right font-mono-tnum text-xs text-foreground/90", className)}>
+      <span className="mr-1 text-[10px] text-muted-foreground md:hidden">{label}</span>
+      {value.toLocaleString()}
+    </div>
+  )
+}
+
+function UserRow({ u }: { u: AdminUserItem }) {
+  const initials = (u.name || u.email).replace(/[^a-zA-Z0-9]/g, "").slice(0, 2).toUpperCase() || "U"
+  return (
+    <div className="flex flex-col gap-2 rounded-lg border border-border/60 bg-card/40 px-3 py-2 md:flex-row md:items-center md:gap-3">
+      <div className="flex min-w-0 flex-1 items-center gap-2.5">
+        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-brand/12 font-mono text-[10px] font-semibold text-brand">
+          {initials}
+        </span>
+        <div className="min-w-0">
+          <div className="truncate text-sm text-foreground">{u.name || u.email}</div>
+          {u.name && <div className="truncate text-[11px] text-muted-foreground">{u.email}</div>}
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-9 md:flex-nowrap md:pl-0">
+        <div className="w-14 text-center"><PlanBadge plan={u.plan} /></div>
+        <Stat className="w-16" label="proj" value={u.projects} />
+        <Stat className="w-16" label="dep" value={u.deployments} />
+        <Stat className="w-16" label="inv" value={u.invocations} />
+        <div className="w-24 text-right font-mono-tnum text-[11px] text-muted-foreground">
+          {new Date(u.createdAt).toLocaleDateString()}
+        </div>
+        <div className="w-16 text-right">
+          <span
+            className={cn(
+              "rounded-full px-2 py-0.5 font-mono text-[10px]",
+              u.isActive ? "bg-success/12 text-success" : "bg-destructive/12 text-destructive",
+            )}
+          >
+            {u.isActive ? "active" : "off"}
+          </span>
+        </div>
+      </div>
     </div>
   )
 }
