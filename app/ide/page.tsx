@@ -16,7 +16,6 @@ import { BottomPanel, LogEntry } from '@/components/bottom-panel'
 import { Navbar } from '@/components/navbar'
 import { LoginModal } from '@/components/login-modal'
 import { SubscriptionModal } from '@/components/subscription-modal'
-import { HowItWorksModal } from '@/components/how-it-works-modal'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -121,7 +120,6 @@ function IDEPageContent() {
   const [isBottomPanelOpen, setIsBottomPanelOpen] = useState(false)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false)
-  const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(false)
   const [isCommandOpen, setIsCommandOpen] = useState(false)
   const [usage, setUsage] = useState<any>(null)
   const [cursor, setCursor] = useState({ line: 1, col: 1 })
@@ -195,18 +193,6 @@ function IDEPageContent() {
       }
     }
   }, [authLoading, isAuthenticated])
-
-  // Auto-open the "How It Works" modal once per browser, after auth
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    if (!isAuthenticated) return
-    const seen = window.localStorage.getItem('howItWorksSeen')
-    if (!seen) {
-      const t = window.setTimeout(() => setIsHowItWorksOpen(true), 600)
-      window.localStorage.setItem('howItWorksSeen', '1')
-      return () => window.clearTimeout(t)
-    }
-  }, [isAuthenticated])
 
   const loadUsage = async () => {
     try {
@@ -1355,7 +1341,6 @@ impl From<Error> for soroban_sdk::Error {
         user={user}
         onLoginClick={() => setIsLoginModalOpen(true)}
         onSubscriptionClick={() => setIsSubscriptionModalOpen(true)}
-        onHowItWorksClick={() => setIsHowItWorksOpen(true)}
         onOpenCommandPalette={() => setIsCommandOpen(true)}
         projectSelector={
           <ProjectSelector
@@ -1382,11 +1367,6 @@ impl From<Error> for soroban_sdk::Error {
           }
         }}
       />
-      <HowItWorksModal
-        open={isHowItWorksOpen}
-        onOpenChange={setIsHowItWorksOpen}
-      />
-
       {/* Workspace deploy-target picker (multiple deployable contracts) */}
       <Dialog open={deployTargetChoices !== null} onOpenChange={(o) => !o && setDeployTargetChoices(null)}>
         <DialogContent className="sm:max-w-[460px]">
@@ -1414,7 +1394,7 @@ impl From<Error> for soroban_sdk::Error {
 
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="flex min-h-0 flex-1">
-          <div className="min-h-0 flex-1">
+          <div className="min-h-0 min-w-0 flex-1">
           <ResizablePanelGroup direction="vertical">
             <ResizablePanel defaultSize={isBottomPanelOpen ? 70 : 100}>
               <ResizablePanelGroup direction="horizontal">
@@ -1434,7 +1414,7 @@ impl From<Error> for soroban_sdk::Error {
                 <ResizableHandle />
 
                 {/* Editor — the hero */}
-                <ResizablePanel defaultSize={80} minSize={30}>
+                <ResizablePanel defaultSize={80} minSize={30} className="min-w-0">
                   <EditorPanel
                     activeFile={activeFile}
                     files={project.files}

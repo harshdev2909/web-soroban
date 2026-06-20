@@ -186,7 +186,7 @@ export function CopilotPanel(props: CopilotPanelProps) {
   const { active = true, freshStart, onTitleChange } = props
 
   const [mode, setMode] = useState<CopilotMode>('agent')
-  const [model, setModel] = useState('openrouter/auto')
+  const [model, setModel] = useState('auto')
   const [maxMode, setMaxMode] = useState(false)
   const [registry, setRegistry] = useState<ModelRegistry | null>(null)
   const [thread, setThread] = useState<ChatThreadDetail | null>(null)
@@ -662,7 +662,7 @@ export function CopilotPanel(props: CopilotPanelProps) {
           </div>
         )}
 
-        <div className="rounded-xl border border-border bg-card/70 shadow-sm transition focus-within:border-brand/60 focus-within:ring-1 focus-within:ring-brand/20">
+        <div className="rounded-xl border border-border bg-card/70 shadow-sm transition focus-within:border-border">
           <textarea
             ref={textareaRef}
             value={input}
@@ -670,7 +670,7 @@ export function CopilotPanel(props: CopilotPanelProps) {
             onKeyDown={onKeyDown}
             rows={3}
             placeholder={mode === 'multitask' ? 'One sub-task per line…' : 'Ask, generate, or describe a change…  / for commands, @ for context'}
-            className="w-full resize-none bg-transparent px-3 py-2.5 text-[13px] text-foreground outline-none placeholder:text-muted-foreground/70"
+            className="w-full resize-none bg-transparent px-3 py-2.5 text-[13px] text-foreground outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/70"
           />
           <div className="flex items-center gap-1.5 px-2 pb-2">
             <ModeSelector mode={mode} onChange={setMode} />

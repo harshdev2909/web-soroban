@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useEffect } from "react"
+import { useRef, useEffect, type WheelEvent } from "react"
 import { Button } from "@/components/ui/button"
 import { Loader2, Hammer, Rocket, FlaskConical } from "lucide-react"
 import { motion } from "framer-motion"
@@ -59,6 +59,21 @@ export function EditorPanel({
 }: EditorPanelProps) {
   const editorRef = useRef<any>(null)
   const monacoRef = useRef<any>(null)
+  const tabsRef = useRef<HTMLDivElement>(null)
+  const activeTabRef = useRef<HTMLButtonElement>(null)
+
+  // Keep the active tab visible when switching files from elsewhere (file tree,
+  // command palette, AI-applied edits).
+  useEffect(() => {
+    activeTabRef.current?.scrollIntoView({ inline: "nearest", block: "nearest" })
+  }, [activeFile])
+
+  // Let the mouse wheel scroll the tab strip horizontally (it has no vertical
+  // axis), so an overflowing strip is usable without a visible scrollbar.
+  const onTabsWheel = (e: WheelEvent<HTMLDivElement>) => {
+    const el = tabsRef.current
+    if (el && Math.abs(e.deltaY) > Math.abs(e.deltaX)) el.scrollLeft += e.deltaY
+  }
 
   const handleEditorDidMount = (editor: any, monaco: any) => {
     editorRef.current = editor
@@ -107,10 +122,10 @@ export function EditorPanel({
   }
 
   return (
-    <div className="flex h-full flex-col bg-background">
+    <div className="flex h-full min-w-0 flex-col overflow-hidden bg-background">
       {/* File tabs + actions */}
-      <div className="flex items-center border-b border-border bg-card/30">
-        <div className="flex min-w-0 flex-1 overflow-x-auto">
+      <div className="flex min-w-0 items-center border-b border-border bg-card/30">
+        <div ref={tabsRef} onWheel={onTabsWheel} className="flex min-w-0 flex-1 overflow-x-auto overflow-y-hidden no-scrollbar">
           {files.map((file) => {
             const filePath = pathOf(file)
             const isActive = pathOf(activeFile) === filePath
@@ -118,10 +133,11 @@ export function EditorPanel({
             return (
               <button
                 key={filePath}
+                ref={isActive ? activeTabRef : undefined}
                 onClick={() => onFileSelect(file)}
                 aria-current={isActive}
                 title={filePath}
-                className={`group relative flex items-center gap-2 whitespace-nowrap px-4 py-2.5 font-mono text-xs transition-colors ${
+                className={`group relative flex shrink-0 items-center gap-2 whitespace-nowrap px-4 py-2.5 font-mono text-xs transition-colors ${
                   isActive
                     ? "bg-background text-foreground"
                     : "text-muted-foreground hover:bg-accent/40 hover:text-foreground"

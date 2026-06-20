@@ -1,6 +1,6 @@
 import Link from "next/link"
 import type { ReactNode } from "react"
-import { ArrowRight, Rocket, BookOpen, Terminal, Layers, Hammer, FlaskConical, Wallet, FileCode2, UploadCloud, Gauge, LifeBuoy, List, Play, type LucideIcon } from "lucide-react"
+import { ArrowRight, Rocket, BookOpen, Terminal, Layers, Hammer, FlaskConical, Wallet, FileCode2, UploadCloud, Gauge, LifeBuoy, List, Play, Sparkles, type LucideIcon } from "lucide-react"
 
 const ICONS: Record<string, LucideIcon> = {
   rocket: Rocket,
@@ -16,6 +16,7 @@ const ICONS: Record<string, LucideIcon> = {
   help: LifeBuoy,
   list: List,
   play: Play,
+  sparkles: Sparkles,
 }
 
 /** Responsive index grid of cards (1 col mobile, 2 col ≥sm). */

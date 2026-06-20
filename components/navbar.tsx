@@ -16,7 +16,6 @@ import {
   LogOut,
   Settings,
   FileCode,
-  PlayCircle,
   Crown,
   LogIn,
   Search,
@@ -35,7 +34,6 @@ interface NavbarProps {
   user?: User | null
   onLoginClick?: () => void
   onSubscriptionClick?: () => void
-  onHowItWorksClick?: () => void
   onOpenCommandPalette?: () => void
 }
 
@@ -50,7 +48,6 @@ export function Navbar({
   user,
   onLoginClick,
   onSubscriptionClick,
-  onHowItWorksClick,
   onOpenCommandPalette,
 }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -98,19 +95,6 @@ export function Navbar({
         >
           <Search className="h-4 w-4" />
         </button>
-
-        {onHowItWorksClick && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onHowItWorksClick}
-            className="hidden text-muted-foreground hover:text-foreground md:inline-flex"
-            title="How it works"
-          >
-            <PlayCircle className="h-4 w-4 md:mr-1.5" />
-            <span className="hidden md:inline">How it works</span>
-          </Button>
-        )}
 
         <Button asChild variant="ghost" size="sm" className="hidden text-muted-foreground hover:text-foreground md:inline-flex">
           <Link href="/marketplace" title="Templates">
@@ -215,11 +199,6 @@ export function Navbar({
       {mobileOpen && (
         <div className="absolute inset-x-0 top-14 z-40 border-b border-border bg-background/95 p-3 backdrop-blur-xl md:hidden">
           <div className="flex flex-col gap-1">
-            {onHowItWorksClick && (
-              <Button variant="ghost" className="justify-start" onClick={() => { setMobileOpen(false); onHowItWorksClick() }}>
-                <PlayCircle className="mr-2 h-4 w-4" /> How it works
-              </Button>
-            )}
             <Button asChild variant="ghost" className="justify-start">
               <Link href="/marketplace" onClick={() => setMobileOpen(false)}>
                 <FileCode className="mr-2 h-4 w-4" /> Templates

@@ -14,6 +14,7 @@ import {
   LifeBuoy,
   List,
   Play,
+  Sparkles,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -31,6 +32,7 @@ const ICONS: Record<string, LucideIcon> = {
   help: LifeBuoy,
   list: List,
   play: Play,
+  sparkles: Sparkles,
 };
 
 // The Fumadocs source: file-based routing over content/docs, mounted at /docs.

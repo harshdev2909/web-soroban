@@ -29,12 +29,20 @@ import {
   Wallet,
   Cpu,
   Rocket,
-  TerminalSquare,
   KeyRound,
-  Gauge,
   Check,
-  Copy,
-  Wand2,
+  Sparkles,
+  Bot,
+  Bug,
+  Layers,
+  ListChecks,
+  MessageCircleQuestion,
+  Command,
+  AtSign,
+  ShieldCheck,
+  GitCompareArrows,
+  FileCode2,
+  Hammer,
 } from 'lucide-react'
 
 const EASE = [0.16, 1, 0.3, 1] as const
@@ -48,11 +56,13 @@ const item: Variants = {
   show: { opacity: 1, y: 0, transition: { duration: 0.55, ease: EASE } },
 }
 
-const steps = [
-  { n: '01', title: 'Spin up a project', desc: 'Start from a template, customise one in the wizard, or open a blank contract.' },
-  { n: '02', title: 'Compile to WASM', desc: 'Builds run on managed workers with streamed, readable logs.' },
-  { n: '03', title: 'Simulate and test', desc: 'Invoke functions against testnet and inspect return values.' },
-  { n: '04', title: 'Deploy in one click', desc: 'Sign with your testnet wallet and get the contract id inline.' },
+// The five Copilot modes, shown on the showcase + bento.
+const MODES = [
+  { icon: Bot, label: 'Agent', desc: 'Generates & edits, then self-corrects against compile + tests' },
+  { icon: MessageCircleQuestion, label: 'Ask', desc: 'Read-only answers about your contract' },
+  { icon: ListChecks, label: 'Plan', desc: 'Researches, then writes an editable build plan' },
+  { icon: Bug, label: 'Debug', desc: 'Finds the root cause, proposes a minimal fix' },
+  { icon: Layers, label: 'Multitask', desc: 'Runs several agents in parallel' },
 ]
 
 export default function HomePage() {
@@ -97,21 +107,24 @@ export default function HomePage() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand opacity-60" />
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-brand" />
               </span>
-              <span className="eyebrow">Stellar · Soroban IDE</span>
+              <span className="eyebrow flex items-center gap-1.5">
+                <Sparkles className="h-3 w-3 text-brand" /> New · AI Copilot for Soroban
+              </span>
             </motion.span>
 
             <motion.h1
               variants={reduce ? undefined : item}
               className="font-display mt-6 text-display-lg font-semibold"
             >
-              Write, compile, test and deploy
+              Generate, debug, and deploy
               <br />
-              <span className="text-brand">Soroban contracts</span> in the browser.
+              <span className="text-brand">Soroban contracts</span> with AI.
             </motion.h1>
 
             <motion.p variants={reduce ? undefined : item} className="lead mt-6 max-w-xl text-base md:text-lg">
-              A modern web IDE for Stellar smart contracts. Skip the toolchain, write Rust, build WASM,
-              and deploy to testnet from a wallet we provision for you.
+              A web IDE with a Cursor-style Copilot for Stellar. Describe a contract in plain English —
+              it writes Rust, compiles to WASM, fixes its own errors, and deploys to testnet, every edit
+              validated against the real build &amp; security pipeline.
             </motion.p>
 
             <motion.div
@@ -133,7 +146,7 @@ export default function HomePage() {
               variants={reduce ? undefined : item}
               className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-muted-foreground"
             >
-              {['No install', 'Free testnet wallet', 'First deploy under 90s'].map((t) => (
+              {['No install', 'Free testnet wallet', 'Every edit compiled + audited'].map((t) => (
                 <li key={t} className="flex items-center gap-1.5">
                   <Check className="h-3.5 w-3.5 text-success" /> {t}
                 </li>
@@ -152,155 +165,150 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* AI Copilot showcase */}
+      <section className="relative overflow-hidden border-t border-border/60">
+        <div className="pointer-events-none absolute inset-0 bg-radial-fade opacity-60" aria-hidden />
+        <div className="mx-auto grid max-w-6xl items-center gap-12 px-6 py-20 md:py-28 lg:grid-cols-2">
+          <Reveal>
+            <p className="eyebrow flex items-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-brand" /> The Copilot
+            </p>
+            <h2 className="font-display mt-3 text-title font-semibold">An agent that actually builds</h2>
+            <p className="lead mt-3 max-w-md">
+              Not autocomplete. A real tool-using agent: it reads your project, writes diffs you review,
+              runs the compiler, reads the errors, and fixes them — looping until it builds clean and the
+              tests pass.
+            </p>
+            <ul className="mt-7 space-y-2.5">
+              {MODES.map((m) => {
+                const Icon = m.icon
+                return (
+                  <li key={m.label} className="flex items-start gap-3">
+                    <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-md border border-border bg-card text-brand">
+                      <Icon className="h-3.5 w-3.5" />
+                    </span>
+                    <p className="text-sm text-muted-foreground">
+                      <span className="font-medium text-foreground">{m.label}</span> — {m.desc}
+                    </p>
+                  </li>
+                )
+              })}
+            </ul>
+          </Reveal>
+
+          <Reveal delay={0.1}>
+            <CopilotPreview reduce={reduce} />
+          </Reveal>
+        </div>
+      </section>
+
       {/* Features — asymmetric bento */}
       <section className="mx-auto max-w-6xl px-6 py-20 md:py-28">
         <Reveal className="max-w-2xl">
           <p className="eyebrow">Everything in one tab</p>
           <h2 className="font-display mt-3 text-title font-semibold">
-            The full loop from author to deploy
+            From a prompt to a deployed contract
           </h2>
           <p className="lead mt-3 max-w-lg">
-            Authoring, building, testing and shipping, without a local toolchain and without
-            leaving the editor.
+            The Copilot and the toolchain share one workspace — generate, compile, audit, and ship,
+            without a local setup or a context switch.
           </p>
         </Reveal>
 
         <div className="mt-10 grid auto-rows-[minmax(0,1fr)] grid-cols-1 gap-3 md:grid-cols-6">
-          {/* Wide: editor */}
-          <BentoCard className="md:col-span-4" icon={TerminalSquare} title="Zero setup editor" reduce={reduce}>
+          {/* Wide: Copilot / five modes */}
+          <BentoCard className="md:col-span-4" icon={Sparkles} title="AI Copilot, five real modes" reduce={reduce}>
             <p className="lead max-w-md text-sm">
-              A full Rust and Soroban environment in the browser. No cargo, no Docker, no toolchain.
-              Open a file and start writing.
+              Ask, Agent, Plan, Debug, and Multitask — enforced by tool permissions, not labels. Agent
+              writes diffs you review and self-corrects against the compiler.
             </p>
-            <div className="mt-5 overflow-hidden rounded-lg border border-border bg-background/70">
-              <div className="flex items-center gap-1.5 border-b border-border px-3 py-2">
-                <span className="h-2 w-2 rounded-full bg-muted-foreground/30" />
-                <span className="h-2 w-2 rounded-full bg-muted-foreground/30" />
-                <span className="h-2 w-2 rounded-full bg-muted-foreground/30" />
-                <span className="ml-2 font-mono text-[11px] text-muted-foreground">lib.rs</span>
-              </div>
-              <pre className="overflow-x-auto p-3 font-mono text-[12px] leading-relaxed text-muted-foreground">
-                <code>
-                  <span className="text-cosmic">pub fn</span> <span className="text-brand">hello</span>(env: Env) {'->'} Symbol {'{'}
-                  {'\n'}  symbol_short!(<span className="text-success">"Hello"</span>)
-                  {'\n'}{'}'}
-                </code>
-              </pre>
+            <div className="mt-5 flex flex-wrap gap-1.5">
+              {MODES.map((m) => {
+                const Icon = m.icon
+                return (
+                  <span
+                    key={m.label}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/70 px-2.5 py-1 font-mono text-[11px] text-muted-foreground"
+                  >
+                    <Icon className="h-3 w-3 text-brand" /> {m.label}
+                  </span>
+                )
+              })}
             </div>
           </BentoCard>
 
-          {/* Contract wizard */}
-          <BentoCard className="md:col-span-2" icon={Wand2} title="Contract wizard" reduce={reduce}>
+          {/* Model switching */}
+          <BentoCard className="md:col-span-2" icon={Bot} title="Bring any model" reduce={reduce}>
             <p className="lead text-sm">
-              Pick a token, NFT, or counter, toggle features, and scaffold a compile-ready project.
+              Claude, GPT, Gemini, DeepSeek — switch per chat or let Auto route. MAX Mode dials up
+              reasoning.
             </p>
             <div className="mt-5 space-y-1.5 rounded-lg border border-border bg-background/70 p-3">
               {[
-                ['Mintable', true],
-                ['Burnable', true],
-                ['Pausable', false],
-              ].map(([label, on]) => (
-                <div key={label as string} className="flex items-center justify-between">
-                  <span className="font-mono text-[11px] text-muted-foreground">{label as string}</span>
-                  <span
-                    className={`flex h-3.5 w-6 items-center rounded-full px-0.5 ${on ? 'justify-end bg-brand/70' : 'justify-start bg-muted-foreground/25'}`}
-                  >
-                    <span className="h-2.5 w-2.5 rounded-full bg-background" />
-                  </span>
+                ['Claude Opus 4.8', 'High'],
+                ['GPT-5.1', 'High'],
+                ['Auto', 'Routing'],
+              ].map(([m, tag]) => (
+                <div key={m} className="flex items-center justify-between">
+                  <span className="font-mono text-[11px] text-foreground/90">{m}</span>
+                  <span className="rounded bg-brand/12 px-1.5 py-0.5 font-mono text-[9px] text-brand">{tag}</span>
                 </div>
               ))}
-            </div>
-          </BentoCard>
-
-          {/* Tall-ish: wallet */}
-          <BentoCard className="md:col-span-2" icon={Wallet} title="Your own testnet wallet" reduce={reduce}>
-            <p className="lead text-sm">
-              A Stellar testnet keypair is created and funded for you on first login. Deploys are
-              signed server side.
-            </p>
-            <div className="mt-5 rounded-lg border border-border bg-background/70 p-3">
-              <p className="eyebrow">Public key</p>
-              <div className="mt-1.5 flex items-center justify-between gap-2">
-                <code className="truncate font-mono text-xs text-foreground">GBZX…Q4WM</code>
-                <Copy className="h-3.5 w-3.5 text-muted-foreground" />
-              </div>
-              <div className="mt-3 flex items-end justify-between">
-                <span className="font-mono-tnum text-xl font-semibold">10,000 <span className="text-xs font-normal text-muted-foreground">XLM</span></span>
-                <span className="rounded-full border border-success/30 bg-success/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-success">
-                  Funded
-                </span>
-              </div>
             </div>
           </BentoCard>
 
           {/* Row 2 */}
-          <BentoCard className="md:col-span-2" icon={Cpu} title="Server side WASM builds" reduce={reduce}>
+          <BentoCard className="md:col-span-2" icon={Command} title="Slash commands & @-context" reduce={reduce}>
             <p className="lead text-sm">
-              Compile to optimized WASM on managed build workers with streamed logs, so your laptop
-              stays cool.
+              <span className="font-mono text-foreground/90">/generate</span>,{' '}
+              <span className="font-mono text-foreground/90">/fix</span>,{' '}
+              <span className="font-mono text-foreground/90">/audit</span> — and attach{' '}
+              <span className="inline-flex items-center gap-0.5 font-mono text-foreground/90"><AtSign className="h-3 w-3" />file</span>,{' '}
+              <span className="font-mono text-foreground/90">@errors</span>, or your selection as context.
             </p>
           </BentoCard>
-          <BentoCard className="md:col-span-2" icon={Rocket} title="One click deploy" reduce={reduce}>
+          <BentoCard className="md:col-span-2" icon={Hammer} title="Validated, not hallucinated" reduce={reduce}>
             <p className="lead text-sm">
-              Push a contract to Stellar testnet and get the contract id back inline, no external
-              explorer hop.
+              Every generation runs the real pipeline — compile → clippy → tests — and loops on the
+              errors until it builds for the testnet WASM target.
             </p>
           </BentoCard>
-          <BentoCard className="md:col-span-6" icon={KeyRound} title="Keys stay encrypted" reduce={reduce}>
+          <BentoCard className="md:col-span-2" icon={ShieldCheck} title="Security audit built in" reduce={reduce}>
+            <p className="lead text-sm">
+              A Soroban rule check flags missing{' '}
+              <span className="font-mono text-foreground/90">require_auth</span>, unchecked math, risky
+              storage TTL, and reachable panics — each with a fix.
+            </p>
+          </BentoCard>
+
+          {/* Wide platform strip */}
+          <BentoCard className="md:col-span-6" icon={Rocket} title="A real Stellar workflow underneath" reduce={reduce}>
             <p className="lead max-w-2xl text-sm">
-              Your secret key is AES 256 GCM encrypted at rest and never shown, logged, or sent to
-              the browser. Testnet only — there is no mainnet code path.
+              Server-side WASM builds, a funded testnet wallet provisioned on first login, one-click
+              deploy with the contract id inline, and an AES-256-GCM-encrypted key that never leaves the
+              server. Testnet only — there is no mainnet code path.
             </p>
-          </BentoCard>
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section className="border-t border-border/60 bg-card/20">
-        <div className="mx-auto max-w-6xl px-6 py-20 md:py-28">
-          <Reveal className="max-w-2xl">
-            <p className="eyebrow">How it works</p>
-            <h2 className="font-display mt-3 text-title font-semibold">From blank editor to live contract</h2>
-            <p className="lead mt-3 max-w-lg">
-              Watch the whole workflow happen in the browser, with no installs and no context switches.
-            </p>
-          </Reveal>
-
-          <div className="mt-12 grid items-center gap-10 lg:grid-cols-5">
-            <Reveal delay={0.1} className="lg:col-span-3">
-              <div className="relative overflow-hidden rounded-2xl border border-border bg-background shadow-lg">
-                <video
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  preload="metadata"
-                  className="block h-auto w-full"
-                  aria-label="WebSoroban workflow demo"
-                >
-                  <source src="/howitworks.mp4" type="video/mp4" />
-                  <source src="/howitworks.mov" type="video/quicktime" />
-                </video>
-                <div className="absolute right-3 top-3 flex items-center gap-1.5 rounded-md border border-success/30 bg-background/80 px-2.5 py-1 font-mono text-[11px] text-success backdrop-blur">
-                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-success" /> LIVE
-                </div>
-              </div>
-            </Reveal>
-
-            <ol className="space-y-3 lg:col-span-2">
-              {steps.map((s, i) => (
-                <Reveal as="li" key={s.n} delay={0.15 + i * 0.06}>
-                  <div className="flex gap-4 rounded-xl border border-border bg-card p-4 transition-colors duration-200 hover:border-brand/40">
-                    <span className="font-mono text-sm font-semibold text-brand">{s.n}</span>
-                    <div>
-                      <h3 className="font-display text-sm font-semibold">{s.title}</h3>
-                      <p className="mt-1 text-sm text-muted-foreground">{s.desc}</p>
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              {[
+                { icon: Wallet, label: 'Funded testnet wallet', sub: '10,000 XLM on first login' },
+                { icon: Cpu, label: 'Server-side builds', sub: 'Streamed, readable logs' },
+                { icon: KeyRound, label: 'Keys encrypted at rest', sub: 'Never shown or logged' },
+              ].map((x) => {
+                const Icon = x.icon
+                return (
+                  <div key={x.label} className="flex items-center gap-3 rounded-lg border border-border bg-background/70 p-3">
+                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-brand/12 text-brand">
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-medium text-foreground">{x.label}</p>
+                      <p className="truncate text-[11px] text-muted-foreground">{x.sub}</p>
                     </div>
                   </div>
-                </Reveal>
-              ))}
-            </ol>
-          </div>
+                )
+              })}
+            </div>
+          </BentoCard>
         </div>
       </section>
 
@@ -319,10 +327,11 @@ export default function HomePage() {
               <div>
                 <p className="eyebrow">Ready when you are</p>
                 <h2 className="font-display mt-3 text-title font-semibold">
-                  Ship your first Soroban contract today
+                  Describe it. The Copilot builds it.
                 </h2>
                 <p className="lead mt-3 max-w-md">
-                  Sign in, get a funded testnet wallet, and deploy in under two minutes.
+                  Sign in, get a funded testnet wallet, and let the Copilot generate, fix, and deploy
+                  your first Soroban contract — on testnet, in minutes.
                 </p>
                 <div className="mt-7 flex flex-col gap-3 sm:flex-row">
                   <motion.div whileTap={reduce ? undefined : { scale: 0.98 }}>
@@ -453,6 +462,138 @@ function IdePreview() {
             <code className="rounded bg-muted px-2 py-0.5 font-mono text-foreground">CDLZ…F7QK</code>
             <span className="ml-auto flex items-center gap-1.5 text-muted-foreground">
               <Wallet className="h-3.5 w-3.5" /> GBZX…Q4WM
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** Animated mock of the docked Copilot — the showcase centerpiece. */
+const PREVIEW_STEPS: { icon: React.ComponentType<{ className?: string }>; label: string; tone: string }[] = [
+  { icon: FileCode2, label: 'Read lib.rs', tone: 'muted' },
+  { icon: Hammer, label: 'Ran compile — 2 errors', tone: 'error' },
+  { icon: GitCompareArrows, label: 'Edited storage.rs', tone: 'brand' },
+  { icon: Hammer, label: 'Ran compile — clean', tone: 'success' },
+  { icon: ShieldCheck, label: 'Security audit — 0 findings', tone: 'success' },
+]
+const TONE: Record<string, string> = {
+  muted: 'text-muted-foreground',
+  error: 'text-destructive',
+  brand: 'text-brand',
+  success: 'text-success',
+}
+const DOT: Record<string, string> = {
+  muted: 'bg-muted-foreground/50',
+  error: 'bg-destructive',
+  brand: 'bg-brand',
+  success: 'bg-success',
+}
+
+function CopilotPreview({ reduce }: { reduce: boolean | null }) {
+  const list: Variants = { hidden: {}, show: { transition: { staggerChildren: 0.12, delayChildren: 0.15 } } }
+  const stepItem: Variants = {
+    hidden: { opacity: 0, x: -8 },
+    show: { opacity: 1, x: 0, transition: { duration: 0.35, ease: EASE } },
+  }
+  const listMotion = reduce
+    ? {}
+    : {
+        variants: list,
+        initial: 'hidden' as const,
+        whileInView: 'show' as const,
+        viewport: { once: true, margin: '-60px' },
+      }
+
+  return (
+    <div className="relative">
+      {/* soft brand glow */}
+      <div
+        className="pointer-events-none absolute -inset-4 -z-10 rounded-[2rem] bg-gradient-to-br from-brand/20 via-cosmic/10 to-transparent blur-2xl"
+        aria-hidden
+      />
+      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
+        {/* dock header: segmented + mode + model */}
+        <div className="flex items-center gap-2 border-b border-border px-3 py-2">
+          <span className="flex items-center gap-1.5 rounded-md bg-background px-2 py-1 text-xs font-medium text-foreground shadow-sm">
+            <Sparkles className="h-3.5 w-3.5 text-brand" /> Copilot
+          </span>
+          <span className="rounded-md px-2 py-1 text-xs text-muted-foreground">Contract</span>
+          <span className="ml-auto flex items-center gap-1 rounded-md border border-border bg-card px-2 py-1 text-[11px] text-muted-foreground">
+            <Bot className="h-3 w-3 text-brand" /> Agent
+          </span>
+          <span className="hidden items-center rounded-md border border-border bg-card px-2 py-1 text-[11px] text-muted-foreground sm:flex">
+            Claude · Auto
+          </span>
+        </div>
+
+        <div className="space-y-3 p-3.5">
+          {/* user turn */}
+          <div className="flex justify-end">
+            <div className="max-w-[88%] rounded-2xl rounded-br-md border border-brand/20 bg-gradient-to-br from-brand/15 to-brand/5 px-3 py-2 text-[13px] leading-relaxed text-foreground">
+              Make the token pausable by an admin, and write tests.
+            </div>
+          </div>
+
+          {/* assistant */}
+          <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+            <span className="grid h-5 w-5 place-items-center rounded-md bg-brand/15 text-brand">
+              <Bot className="h-3 w-3" />
+            </span>
+            <span className="font-medium text-foreground/80">Assistant</span>
+          </div>
+
+          {/* tool-step timeline (staggers in on view) */}
+          <motion.ul className="space-y-1.5" {...listMotion}>
+            {PREVIEW_STEPS.map((s) => {
+              const Icon = s.icon
+              return (
+                <motion.li
+                  key={s.label}
+                  variants={reduce ? undefined : stepItem}
+                  className="flex items-center gap-2 rounded-md border border-border/60 bg-background/50 px-2.5 py-1.5"
+                >
+                  <Icon className={`h-3.5 w-3.5 ${TONE[s.tone]}`} />
+                  <span className="text-[12px] text-foreground/90">{s.label}</span>
+                  <span className={`ml-auto h-1.5 w-1.5 rounded-full ${DOT[s.tone]}`} />
+                </motion.li>
+              )
+            })}
+          </motion.ul>
+
+          {/* summary with blinking caret */}
+          <p className="text-[13px] leading-relaxed text-foreground/90">
+            Added a{' '}
+            <code className="rounded bg-muted px-1 py-0.5 font-mono text-[0.85em] text-brand">paused</code> flag gated by{' '}
+            <code className="rounded bg-muted px-1 py-0.5 font-mono text-[0.85em] text-brand">admin.require_auth()</code>, plus
+            4 tests. Builds clean.
+            {!reduce && (
+              <span className="ml-0.5 inline-block h-3.5 w-[2px] translate-y-[2px] animate-pulse bg-brand align-middle" aria-hidden />
+            )}
+          </p>
+
+          {/* diff */}
+          <div className="overflow-hidden rounded-lg border border-border bg-background/70">
+            <div className="flex items-center justify-between border-b border-border px-3 py-1.5">
+              <span className="font-mono text-[10px] text-muted-foreground">src/storage.rs</span>
+              <span className="font-mono text-[10px]">
+                <span className="text-success">+18</span> <span className="text-destructive">−2</span>
+              </span>
+            </div>
+            <pre className="overflow-x-auto px-3 py-2 font-mono text-[11px] leading-[1.6]">
+              <div className="text-destructive"><span className="select-none opacity-60">- </span>pub fn set_paused(e: Env, p: bool) {'{'}</div>
+              <div className="text-success"><span className="select-none opacity-60">+ </span>pub fn set_paused(e: Env, p: bool) {'{'}</div>
+              <div className="text-success"><span className="select-none opacity-60">+ </span>{'  '}admin(&e).require_auth();</div>
+              <div className="text-muted-foreground"><span className="select-none opacity-60">{'  '}</span>{'  '}e.storage().instance().set(&PAUSED, &p);</div>
+            </pre>
+          </div>
+
+          {/* apply bar */}
+          <div className="flex items-center justify-between rounded-lg border border-border bg-card/60 px-3 py-2">
+            <span className="text-[11px] text-muted-foreground">1 file changed · review as a diff</span>
+            <span className="inline-flex items-center gap-1.5 rounded-md bg-brand px-2.5 py-1 text-[11px] font-medium text-white">
+              <Check className="h-3 w-3" /> Apply
             </span>
           </div>
         </div>

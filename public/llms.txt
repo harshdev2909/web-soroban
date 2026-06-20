@@ -15,6 +15,10 @@
 
 - [The IDE](/docs/ide): The three-zone layout, the file tree, multi-file projects and module resolution, the command palette, and autosave.
 
+## AI Copilot
+
+- [AI Copilot](/docs/copilot): Generate, debug, and optimize Soroban contracts from chat — five modes, slash commands, @-context, model switching, and reviewable diffs.
+
 ## Compile
 
 - [Compile](/docs/compile): Build your crate to a wasm32v1-none binary, read per-file diagnostics, and fix pre-flight validation errors.

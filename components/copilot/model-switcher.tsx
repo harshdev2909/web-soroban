@@ -116,7 +116,7 @@ export function ModelSwitcher({
                 autoFocus
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Search OpenRouter models…"
+                placeholder="Search models…"
                 className="w-full bg-transparent text-xs text-foreground outline-none placeholder:text-muted-foreground"
               />
             </div>
