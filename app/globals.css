@@ -244,3 +244,12 @@
     transform: none;
   }
 }
+
+/* Hide scrollbar but keep scrolling (Copilot tab strip, chip rows). */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

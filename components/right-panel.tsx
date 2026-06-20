@@ -9,11 +9,13 @@ import { toast } from 'sonner';
 
 interface RightPanelProps {
   project: Project;
-  onClose: () => void;
+  onClose?: () => void;
   walletAddress?: string;
+  /** rendered inside the shared right-dock (the dock owns the title bar) */
+  embedded?: boolean;
 }
 
-export function RightPanel({ project, onClose, walletAddress }: RightPanelProps) {
+export function RightPanel({ project, onClose, walletAddress, embedded }: RightPanelProps) {
   const isDeployed = Boolean(project.contractAddress);
 
   const formatDate = (dateString: string) =>
@@ -29,27 +31,31 @@ export function RightPanel({ project, onClose, walletAddress }: RightPanelProps)
   };
 
   return (
-    <div className="relative flex h-full flex-col overflow-hidden border-l border-border bg-sidebar">
-      {/* Header */}
-      <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-brand/12 text-brand">
-            <Activity className="h-4 w-4" />
-          </span>
-          <div className="min-w-0">
-            <h2 className="text-sm font-semibold text-foreground">Contract</h2>
-            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Invoke &amp; test</p>
+    <div className={cn('relative flex h-full flex-col overflow-hidden bg-sidebar', !embedded && 'border-l border-border')}>
+      {/* Header — omitted when embedded (the right-dock provides the title bar) */}
+      {!embedded && (
+        <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-brand/12 text-brand">
+              <Activity className="h-4 w-4" />
+            </span>
+            <div className="min-w-0">
+              <h2 className="text-sm font-semibold text-foreground">Contract</h2>
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Invoke &amp; test</p>
+            </div>
           </div>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="rounded p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              title="Hide panel"
+              aria-label="Hide panel"
+            >
+              <PanelRightClose className="h-4 w-4" />
+            </button>
+          )}
         </div>
-        <button
-          onClick={onClose}
-          className="rounded p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-          title="Hide panel"
-          aria-label="Hide panel"
-        >
-          <PanelRightClose className="h-4 w-4" />
-        </button>
-      </div>
+      )}
 
       {/* Content */}
       <div className="flex-1 space-y-4 overflow-y-auto p-3">

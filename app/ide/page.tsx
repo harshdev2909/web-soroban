@@ -12,7 +12,6 @@ import { Button } from '@/components/ui/button'
 import { ProjectSelector } from '@/components/project-selector'
 import { Sidebar } from '@/components/sidebar'
 import { EditorPanel } from '@/components/editor-panel'
-import { RightPanel } from '@/components/right-panel'
 import { BottomPanel, LogEntry } from '@/components/bottom-panel'
 import { Navbar } from '@/components/navbar'
 import { LoginModal } from '@/components/login-modal'
@@ -24,6 +23,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { CommandPalette, type PaletteCommand } from '@/components/command-palette'
 import { StatusBar } from '@/components/status-bar'
 import { Skeleton } from '@/components/ui/skeleton'
+import { RightDock, type DockTab } from '@/components/copilot/right-dock'
 import {
   Loader2,
   Hammer,
@@ -35,6 +35,7 @@ import {
   FileCode2,
   Store,
   Home,
+  Sparkles,
 } from 'lucide-react'
 
 function IDELoading({ label = 'Loading IDE…' }: { label?: string }) {
@@ -124,7 +125,11 @@ function IDEPageContent() {
   const [isCommandOpen, setIsCommandOpen] = useState(false)
   const [usage, setUsage] = useState<any>(null)
   const [cursor, setCursor] = useState({ line: 1, col: 1 })
-  const [isRightPanelOpen, setIsRightPanelOpen] = useState(true)
+  // One docked right panel hosting both Copilot + Contract (tabbed).
+  const [isDockOpen, setIsDockOpen] = useState(true)
+  const [dockTab, setDockTab] = useState<DockTab>('copilot')
+  // Bumped to refocus the Copilot composer (⌘I).
+  const [copilotFocus, setCopilotFocus] = useState(0)
   const [diagnostics, setDiagnostics] = useState<any[]>([])
   // Workspace deploy: when >1 deployable contract and no target chosen yet.
   const [deployTargetChoices, setDeployTargetChoices] = useState<{ name: string; dir: string }[] | null>(null)
@@ -151,6 +156,29 @@ function IDEPageContent() {
       socketService.disconnect();
     };
   }, [])
+
+  // Cmd/Ctrl+I focuses the Copilot (opening it if needed).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'i') {
+        e.preventDefault()
+        setIsDockOpen(true)
+        setDockTab('copilot')
+        setCopilotFocus((n) => n + 1)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  // When the Copilot applies (or undoes) edits, swap in the updated project and
+  // keep the user on the same file (its content may have changed).
+  const handleCopilotApplied = (updated: Project) => {
+    setProject(updated)
+    const activePath = activeFile ? pathOf(activeFile) : null
+    const next = (activePath && updated.files.find((f) => pathOf(f) === activePath)) || updated.files[0] || null
+    setActiveFile(next)
+  }
 
   // Check authentication
   useEffect(() => {
@@ -774,7 +802,9 @@ mod tests {
         prev ? { ...prev, contractAddress, lastDeployed: new Date().toISOString() } : prev,
       );
     }
-    setIsRightPanelOpen(true);
+    // Surface the freshly deployed contract's invoke form.
+    setIsDockOpen(true);
+    setDockTab('contract');
   };
 
   const handleDeploy = async () => {
@@ -1383,7 +1413,8 @@ impl From<Error> for soroban_sdk::Error {
       </Dialog>
 
       <div className="flex min-h-0 flex-1 flex-col">
-        <div className="min-h-0 flex-1">
+        <div className="flex min-h-0 flex-1">
+          <div className="min-h-0 flex-1">
           <ResizablePanelGroup direction="vertical">
             <ResizablePanel defaultSize={isBottomPanelOpen ? 70 : 100}>
               <ResizablePanelGroup direction="horizontal">
@@ -1403,7 +1434,7 @@ impl From<Error> for soroban_sdk::Error {
                 <ResizableHandle />
 
                 {/* Editor — the hero */}
-                <ResizablePanel defaultSize={isRightPanelOpen ? 52 : 80} minSize={30}>
+                <ResizablePanel defaultSize={80} minSize={30}>
                   <EditorPanel
                     activeFile={activeFile}
                     files={project.files}
@@ -1420,18 +1451,6 @@ impl From<Error> for soroban_sdk::Error {
                   />
                 </ResizablePanel>
 
-                {isRightPanelOpen && (
-                  <>
-                    <ResizableHandle />
-                    <ResizablePanel defaultSize={28} minSize={20} maxSize={40}>
-                      <RightPanel
-                        project={project}
-                        onClose={() => setIsRightPanelOpen(false)}
-                        walletAddress={address || user?.walletAddress}
-                      />
-                    </ResizablePanel>
-                  </>
-                )}
               </ResizablePanelGroup>
             </ResizablePanel>
 
@@ -1448,7 +1467,40 @@ impl From<Error> for soroban_sdk::Error {
               </>
             )}
           </ResizablePanelGroup>
+          </div>
+
+          {isDockOpen && (
+            <div className="hidden w-[400px] shrink-0 lg:block xl:w-[460px]">
+              <RightDock
+                tab={dockTab}
+                onTabChange={setDockTab}
+                onClose={() => setIsDockOpen(false)}
+                project={project}
+                activeFile={activeFile}
+                diagnostics={diagnostics}
+                ensureProjectSaved={ensureProjectSaved}
+                onApplied={handleCopilotApplied}
+                onDeploy={handleDeploy}
+                focusSignal={copilotFocus}
+                walletAddress={address || user?.walletAddress}
+              />
+            </div>
+          )}
         </div>
+
+        {!isDockOpen && (
+          <button
+            onClick={() => {
+              setIsDockOpen(true)
+              setDockTab('copilot')
+              setCopilotFocus((n) => n + 1)
+            }}
+            className="fixed bottom-10 right-5 z-40 flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-2 text-xs font-medium text-foreground shadow-lg transition hover:border-brand/60 hover:bg-accent"
+          >
+            <Sparkles className="h-4 w-4 text-brand" /> Copilot
+            <span className="rounded bg-muted px-1 font-mono text-[9px] text-muted-foreground">⌘I</span>
+          </button>
+        )}
 
         {/* Single full-width status bar */}
         <StatusBar
@@ -1461,8 +1513,8 @@ impl From<Error> for soroban_sdk::Error {
           saveStatus={saveStatus}
           consoleOpen={isBottomPanelOpen}
           onToggleConsole={() => setIsBottomPanelOpen((v) => !v)}
-          rightPanelOpen={isRightPanelOpen}
-          onToggleRightPanel={() => setIsRightPanelOpen((v) => !v)}
+          rightPanelOpen={isDockOpen}
+          onToggleRightPanel={() => setIsDockOpen((v) => !v)}
         />
       </div>
     </div>

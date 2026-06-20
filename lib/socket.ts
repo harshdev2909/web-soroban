@@ -179,6 +179,29 @@ class SocketService {
     }
   }
 
+  /**
+   * Subscribe to an AI Copilot run. The server emits `ai:event` with
+   * { runId, type, payload } where type is token | reasoning | tool | status |
+   * error. Returns an unsubscribe function.
+   */
+  subscribeToRun(runId: string, onEvent: (type: string, payload: any) => void): () => void {
+    if (!this.socket) this.connect();
+    const handler = (data: { runId: string; type: string; payload: any }) => {
+      if (data.runId === runId) onEvent(data.type, data.payload);
+    };
+    const join = () => {
+      this.socket?.emit('subscribe:run', runId);
+      this.socket?.on('ai:event', handler);
+    };
+    if (this.socket?.connected) join();
+    else this.socket?.once('connect', join);
+
+    return () => {
+      this.socket?.emit('unsubscribe:run', runId);
+      this.socket?.off('ai:event', handler);
+    };
+  }
+
   getSocket(): Socket | null {
     return this.socket;
   }
