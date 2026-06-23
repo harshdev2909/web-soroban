@@ -113,7 +113,7 @@ export default function BillingPage() {
             {/* Onboarding note */}
             <div className="mt-4 flex items-start gap-2 rounded-lg border border-border/70 bg-muted/40 p-3 text-xs text-muted-foreground">
               <Gift className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
-              <span>New accounts start with <strong className="text-foreground">10 free credits</strong>. When you run low, buy a one-time credit pack — credits never expire and are charged per run based on the model's actual cost.</span>
+              <span>New accounts start with <strong className="text-foreground">50 free credits</strong>. When you run low, buy a one-time credit pack — credits never expire and are charged per run based on the model's actual cost.</span>
             </div>
 
             {/* Plans */}

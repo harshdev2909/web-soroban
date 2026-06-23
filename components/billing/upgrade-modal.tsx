@@ -93,7 +93,7 @@ export function UpgradeModal({
           </div>
         )}
         <p className="text-center text-[10px] text-muted-foreground">
-          Secure checkout via Dodo Payments — {crypto ? 'card or stablecoin (USDC/USDT)' : 'card'}. New accounts start with 10 free credits.
+          Secure checkout via Dodo Payments — {crypto ? 'card or stablecoin (USDC/USDT)' : 'card'}. New accounts start with 50 free credits.
         </p>
       </DialogContent>
     </Dialog>

@@ -699,7 +699,7 @@ export interface User {
     };
   };
   purchasedTemplates?: string[];
-  /** AI Copilot credit balance (fiat, via Dodo). Granted 10 free on signup. */
+  /** AI Copilot credit balance (fiat, via Dodo). Granted 50 free on signup. */
   credits?: number;
 }
 
