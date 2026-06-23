@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
@@ -22,6 +22,7 @@ import {
   Menu,
   X,
   Command,
+  Coins,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { WalletWidget } from './wallet-widget'
@@ -29,6 +30,8 @@ import { NetworkSwitcher } from './network/network-switcher'
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
 import { useAuth } from '@/contexts/AuthContext'
 import { User } from '@/lib/api'
+import { billingApi } from '@/lib/billingApi'
+import { CREDITS_UPDATED_EVENT } from '@/components/billing/credit-badge'
 
 interface NavbarProps {
   projectSelector?: React.ReactNode
@@ -105,6 +108,7 @@ export function Navbar({
 
         {user ? (
           <>
+            <NavCredits initial={user.credits} />
             {plan && (
               <Popover>
                 <PopoverTrigger asChild>
@@ -164,6 +168,9 @@ export function Navbar({
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem asChild>
+                  <Link href="/billing"><Coins className="mr-2 h-4 w-4" /> Credits &amp; billing</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                   <Link href="/marketplace"><FileCode className="mr-2 h-4 w-4" /> Templates</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -199,6 +206,13 @@ export function Navbar({
       {mobileOpen && (
         <div className="absolute inset-x-0 top-14 z-40 border-b border-border bg-background/95 p-3 backdrop-blur-xl md:hidden">
           <div className="flex flex-col gap-1">
+            {user && (
+              <Button asChild variant="ghost" className="justify-start">
+                <Link href="/billing" onClick={() => setMobileOpen(false)}>
+                  <Coins className="mr-2 h-4 w-4" /> Credits &amp; billing
+                </Link>
+              </Button>
+            )}
             <Button asChild variant="ghost" className="justify-start">
               <Link href="/marketplace" onClick={() => setMobileOpen(false)}>
                 <FileCode className="mr-2 h-4 w-4" /> Templates
@@ -208,6 +222,44 @@ export function Navbar({
         </div>
       )}
     </header>
+  )
+}
+
+/**
+ * AI credit balance pill in the navbar — links to the /billing page. Seeds from
+ * the user prop, refreshes on mount, and live-updates after each Copilot run via
+ * the `credits:updated` window event.
+ */
+function NavCredits({ initial }: { initial?: number }) {
+  const [balance, setBalance] = useState<number | null>(typeof initial === 'number' ? initial : null)
+
+  useEffect(() => {
+    let alive = true
+    billingApi.getBalance().then((r) => { if (alive) setBalance(r.balance) }).catch(() => {})
+    const onUpdate = (e: Event) => {
+      const detail = (e as CustomEvent).detail
+      if (typeof detail === 'number') setBalance(detail)
+      else billingApi.getBalance().then((r) => setBalance(r.balance)).catch(() => {})
+    }
+    window.addEventListener(CREDITS_UPDATED_EVENT, onUpdate)
+    return () => { alive = false; window.removeEventListener(CREDITS_UPDATED_EVENT, onUpdate) }
+  }, [])
+
+  const low = balance !== null && balance <= 0
+  return (
+    <Link
+      href="/billing"
+      title="AI credits — view billing & buy more"
+      className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition ${
+        low
+          ? 'border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/20'
+          : 'border-border bg-card/60 text-foreground hover:border-brand/40 hover:bg-accent'
+      }`}
+    >
+      <Coins className={`h-3.5 w-3.5 ${low ? 'text-destructive' : 'text-brand'}`} />
+      <span className="font-mono-tnum">{(balance ?? 0).toLocaleString()}</span>
+      <span className="hidden text-muted-foreground sm:inline">credits</span>
+    </Link>
   )
 }
 

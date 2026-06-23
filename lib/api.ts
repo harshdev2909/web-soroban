@@ -1179,6 +1179,7 @@ export interface AdminUserItem {
   picture: string | null;
   authMethod: string;
   plan: string;
+  credits: number;
   isActive: boolean;
   createdAt: string;
   lastLogin: string;
@@ -1186,6 +1187,29 @@ export interface AdminUserItem {
   deployments: number;
   invocations: number;
   aiRuns: number;
+}
+
+export interface BillingSummaryResponse {
+  success: boolean;
+  billing: {
+    granted: number;
+    purchased: number;
+    purchaseCount: number;
+    spent: number;
+    refunded: number;
+    adminAdjust: number;
+    outstandingCredits: number;
+    totalUsers: number;
+    ai: {
+      runs: number;
+      creditsCharged: number;
+      costUsd: number;
+      tokensIn: number;
+      tokensOut: number;
+    };
+    last30d: { runs: number; creditsCharged: number; costUsd: number };
+    periodEnd: string;
+  };
 }
 
 export interface AdminUsersResponse {
@@ -1204,6 +1228,11 @@ export const analyticsApi = {
   // Platform-wide activity logs (admin only)
   getActivityLogs(limit = 50): Promise<{ success: boolean; logs: ActivityLogEntry[] }> {
     return adminFetch(`/usage/activity?limit=${limit}`);
+  },
+
+  // Platform-wide AI credit + billing metrics (admin only)
+  getBillingSummary(): Promise<BillingSummaryResponse> {
+    return adminFetch<BillingSummaryResponse>('/usage/billing');
   },
 
   // Platform-wide transaction history (admin only)

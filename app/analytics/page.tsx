@@ -9,6 +9,7 @@ import {
   ActivityLogEntry,
   PlatformPaymentItem,
   AdminUserItem,
+  BillingSummaryResponse,
   ApiError,
 } from "@/lib/api"
 import PlaygroundNavbar from "@/components/playground-navbar"
@@ -20,6 +21,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   BarChart3, Server, Receipt, ListTodo, ExternalLink, Copy, Check,
   Activity, Hammer, Rocket, FlaskConical, Users, Zap, Search, ShieldAlert, LogIn,
+  Coins, Wallet, DollarSign, Sparkles, ShoppingCart,
 } from "lucide-react"
 import {
   Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
@@ -53,6 +55,7 @@ export default function AnalyticsPage() {
   const [activityLogs, setActivityLogs] = useState<ActivityLogEntry[]>([])
   const [users, setUsers] = useState<AdminUserItem[]>([])
   const [usersTotal, setUsersTotal] = useState(0)
+  const [billing, setBilling] = useState<BillingSummaryResponse["billing"] | null>(null)
   const [userQuery, setUserQuery] = useState("")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -72,12 +75,14 @@ export default function AnalyticsPage() {
         setLoading(true)
         setError(null)
         setAccessDenied(null)
-        const [usageResponse, healthResponse, activityRes, transactionsRes, usersRes] = await Promise.all([
+        const [usageResponse, healthResponse, activityRes, transactionsRes, usersRes, billingRes] = await Promise.all([
           analyticsApi.getUsageSummary(),
           systemApi.getHealth(),
           analyticsApi.getActivityLogs(50),
           analyticsApi.getAllTransactions(50),
           analyticsApi.getUsers("", 200),
+          // Tolerate an older backend without the billing endpoint.
+          analyticsApi.getBillingSummary().catch(() => null),
         ])
         setSummary(usageResponse)
         setHealth(healthResponse)
@@ -85,6 +90,7 @@ export default function AnalyticsPage() {
         setTransactionHistory(transactionsRes.success ? transactionsRes.payments : [])
         setUsers(usersRes.success ? usersRes.users : [])
         setUsersTotal(usersRes.total ?? 0)
+        setBilling(billingRes?.success ? billingRes.billing : null)
       } catch (err: unknown) {
         // 401 (not signed in) / 403 (not an admin) → show the gate, not a red error.
         if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
@@ -198,6 +204,36 @@ export default function AnalyticsPage() {
               })}
         </section>
 
+        {/* Credits & billing (AI credit economy via Dodo) */}
+        <section className="mt-6">
+          <Panel
+            icon={Coins}
+            title="Credits & billing"
+            subtitle={
+              billing
+                ? `${billing.outstandingCredits.toLocaleString()} credits outstanding across ${billing.totalUsers.toLocaleString()} users · margin = credits charged vs OpenRouter cost.`
+                : "AI credit economy (Dodo Payments)."
+            }
+          >
+            {loading ? (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+                {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)}
+              </div>
+            ) : !billing ? (
+              <EmptyHint>No billing data yet.</EmptyHint>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+                <CreditTile icon={Wallet} tint="text-brand" label="Outstanding" value={billing.outstandingCredits} hint="unspent credits (liability)" />
+                <CreditTile icon={ShoppingCart} tint="text-success" label="Purchased" value={billing.purchased} hint={`${billing.purchaseCount.toLocaleString()} purchase${billing.purchaseCount === 1 ? "" : "s"}`} />
+                <CreditTile icon={Zap} tint="text-cosmic" label="Spent" value={billing.spent} hint="consumed by runs" />
+                <CreditTile icon={Sparkles} tint="text-warning" label="Free granted" value={billing.granted} hint="signup credits" />
+                <CreditTile icon={Activity} tint="text-info" label="AI runs" value={billing.ai.runs} hint={`${billing.last30d.runs.toLocaleString()} in 30d`} />
+                <CreditTile icon={DollarSign} tint="text-success" label="Model cost" value={`$${billing.ai.costUsd.toFixed(2)}`} hint={`$${billing.last30d.costUsd.toFixed(2)} in 30d`} />
+              </div>
+            )}
+          </Panel>
+        </section>
+
         {/* Users directory */}
         <section className="mt-6">
           <Panel
@@ -227,6 +263,7 @@ export default function AnalyticsPage() {
                 <div className="hidden items-center gap-3 border-b border-border/60 px-3 pb-2 font-mono text-[10px] uppercase tracking-wider text-muted-foreground md:flex">
                   <span className="min-w-0 flex-1">User</span>
                   <span className="w-14 text-center">Plan</span>
+                  <span className="w-16 text-right">Credits</span>
                   <span className="w-16 text-right">Projects</span>
                   <span className="w-16 text-right">Deploys</span>
                   <span className="w-16 text-right">Invokes</span>
@@ -515,6 +552,33 @@ function Stat({ label, value, className }: { label: string; value: number; class
   )
 }
 
+function CreditTile({
+  icon: Icon,
+  tint,
+  label,
+  value,
+  hint,
+}: {
+  icon: any
+  tint: string
+  label: string
+  value: number | string
+  hint: string
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-card/40 p-4">
+      <div className="flex items-center justify-between">
+        <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{label}</span>
+        <Icon className={cn("h-3.5 w-3.5", tint)} />
+      </div>
+      <div className="mt-2 font-mono-tnum text-2xl font-semibold text-foreground">
+        {typeof value === "number" ? value.toLocaleString() : value}
+      </div>
+      <div className="mt-0.5 truncate text-[11px] text-muted-foreground">{hint}</div>
+    </div>
+  )
+}
+
 function UserRow({ u }: { u: AdminUserItem }) {
   const initials = (u.name || u.email).replace(/[^a-zA-Z0-9]/g, "").slice(0, 2).toUpperCase() || "U"
   return (
@@ -530,6 +594,11 @@ function UserRow({ u }: { u: AdminUserItem }) {
       </div>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-9 md:flex-nowrap md:pl-0">
         <div className="w-14 text-center"><PlanBadge plan={u.plan} /></div>
+        <div className="flex w-16 items-center justify-end gap-1 font-mono-tnum text-[11px] tabular-nums">
+          <span className="text-[10px] text-muted-foreground md:hidden">credits</span>
+          <Coins className="h-3 w-3 text-brand" />
+          <span className={cn(u.credits <= 0 ? "text-destructive" : "text-foreground")}>{(u.credits ?? 0).toLocaleString()}</span>
+        </div>
         <Stat className="w-16" label="proj" value={u.projects} />
         <Stat className="w-16" label="dep" value={u.deployments} />
         <Stat className="w-16" label="inv" value={u.invocations} />
