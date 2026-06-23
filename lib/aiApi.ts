@@ -112,6 +112,36 @@ export interface Plan {
   updatedAt: string
 }
 
+export type SkillScope = 'always' | 'auto' | 'manual'
+export type SkillVisibility = 'private' | 'public'
+
+export interface Skill {
+  _id: string
+  id: string
+  name: string
+  slug: string
+  description: string
+  whenToUse: string
+  body: string
+  scope: SkillScope
+  visibility: SkillVisibility
+  official: boolean
+  owned: boolean
+  editable: boolean
+  enabled: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface SkillInput {
+  name: string
+  description?: string
+  whenToUse?: string
+  body: string
+  scope?: SkillScope
+  visibility?: SkillVisibility
+}
+
 export interface SecurityFinding {
   id: string
   severity: 'critical' | 'high' | 'medium' | 'low' | 'info'
@@ -196,6 +226,17 @@ export const aiApi = {
   // Multitask
   multitask: (body: { projectId: string; tasks: { prompt: string; mode?: CopilotMode; model?: string }[]; model?: string; maxMode?: boolean }) =>
     aiFetch<{ parentRunId: string; runIds: string[] }>('/multitask', { method: 'POST', body: JSON.stringify(body) }),
+
+  // Skills (knowledge/instruction packs). Mounted at /api/ai/skills.
+  listSkills: (library = false) => aiFetch<{ skills: Skill[] }>(`/skills${library ? '?library=1' : ''}`),
+  getSkill: (id: string) => aiFetch<Skill>(`/skills/${id}`),
+  createSkill: (body: SkillInput) => aiFetch<Skill>('/skills', { method: 'POST', body: JSON.stringify(body) }),
+  updateSkill: (id: string, body: Partial<SkillInput>) =>
+    aiFetch<Skill>(`/skills/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  deleteSkill: (id: string) => aiFetch<{ success: boolean }>(`/skills/${id}`, { method: 'DELETE' }),
+  toggleSkill: (id: string, enabled: boolean) =>
+    aiFetch<Skill>(`/skills/${id}/toggle`, { method: 'POST', body: JSON.stringify({ enabled }) }),
+  duplicateSkill: (id: string) => aiFetch<Skill>(`/skills/${id}/duplicate`, { method: 'POST' }),
 }
 
 export default aiApi

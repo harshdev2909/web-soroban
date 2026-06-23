@@ -2,10 +2,11 @@ import type { ReactNode } from "react"
 import { Info, Lightbulb, TriangleAlert, OctagonAlert } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-type CalloutType = "note" | "tip" | "warning" | "danger"
+type CalloutType = "note" | "info" | "tip" | "warning" | "danger"
 
 const STYLES: Record<CalloutType, { icon: typeof Info; ring: string; tint: string; label: string }> = {
   note: { icon: Info, ring: "border-info/30", tint: "bg-info/[0.06] text-info", label: "Note" },
+  info: { icon: Info, ring: "border-info/30", tint: "bg-info/[0.06] text-info", label: "Info" },
   tip: { icon: Lightbulb, ring: "border-success/30", tint: "bg-success/[0.06] text-success", label: "Tip" },
   warning: { icon: TriangleAlert, ring: "border-warning/30", tint: "bg-warning/[0.07] text-warning", label: "Warning" },
   danger: { icon: OctagonAlert, ring: "border-destructive/30", tint: "bg-destructive/[0.06] text-destructive", label: "Danger" },
@@ -21,7 +22,7 @@ export function Callout({
   title?: string
   children: ReactNode
 }) {
-  const s = STYLES[type]
+  const s = STYLES[type] ?? STYLES.note
   const Icon = s.icon
   return (
     <div className={cn("my-5 flex gap-3 rounded-lg border px-4 py-3", s.ring, s.tint.split(" ")[0])}>

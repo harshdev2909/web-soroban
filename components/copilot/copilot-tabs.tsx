@@ -5,9 +5,11 @@
 // messages, mode/model, and in-flight stream when you switch away and back.
 
 import { useRef, useState } from 'react'
-import { MessageSquare, Plus, X } from 'lucide-react'
+import { BookOpen, MessageSquare, Plus, X } from 'lucide-react'
 import type { Project, ProjectFile } from '@/lib/api'
 import { CopilotPanel } from './copilot-panel'
+import { SkillsPanel } from './skills-panel'
+import { CreditBadge } from '@/components/billing/credit-badge'
 
 interface TabItem {
   id: string
@@ -29,6 +31,7 @@ export interface CopilotTabsProps {
 export function CopilotTabs(props: CopilotTabsProps) {
   const [tabs, setTabs] = useState<TabItem[]>([{ id: 't1', title: 'Chat', fresh: false }])
   const [activeId, setActiveId] = useState('t1')
+  const [showSkills, setShowSkills] = useState(false)
   const counter = useRef(1)
 
   const addTab = () => {
@@ -99,10 +102,26 @@ export function CopilotTabs(props: CopilotTabsProps) {
             <Plus className="h-3.5 w-3.5" />
           </button>
         </div>
+        <CreditBadge compact />
+        <button
+          onClick={() => setShowSkills((v) => !v)}
+          className={`shrink-0 rounded-md p-1.5 transition hover:bg-accent hover:text-foreground ${
+            showSkills ? 'bg-accent text-brand' : 'text-muted-foreground'
+          }`}
+          title="Skills — Soroban knowledge packs"
+        >
+          <BookOpen className="h-3.5 w-3.5" />
+        </button>
       </div>
 
-      {/* One mounted panel per tab; inactive hidden to preserve state + streams. */}
+      {/* One mounted panel per tab; inactive hidden to preserve state + streams.
+          The Skills manager overlays the panel area when toggled on. */}
       <div className="relative min-h-0 flex-1">
+        {showSkills && (
+          <div className="absolute inset-0 z-10 bg-background">
+            <SkillsPanel onClose={() => setShowSkills(false)} />
+          </div>
+        )}
         {tabs.map((t) => (
           <div key={t.id} className={t.id === activeId ? 'h-full' : 'hidden'}>
             <CopilotPanel

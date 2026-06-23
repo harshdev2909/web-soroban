@@ -61,6 +61,28 @@ the composer.
 - `@errors`, the current compiler diagnostics
 - `@selection`, the active file
 - `@docs`, relevant Soroban / soroban-sdk documentation
+- `@skill`, force-load one of your [Skills](/docs/copilot/skills) for this message
+
+## Skills
+
+**Skills** are reusable Soroban/Stellar knowledge packs the Copilot loads as
+context, your team's token pattern, an auth convention, a coding style, so it
+works the way you want, consistently. Open the **Skills** panel from the
+book icon in the tab strip to enable the official packs or write your own.
+Mention any with `@skill:<slug>` to force-load it for a message.
+
+See [Skills](/docs/copilot/skills) for the full guide.
+
+## Stays in scope
+
+The Copilot is a **Soroban/Stellar smart-contract assistant** and only that. It
+generates and explains Soroban contracts (Rust), their Cargo/`.cargo` config and
+tests, and helps you compile, deploy, invoke, and debug them, plus explains
+Soroban/Stellar concepts. It will politely decline off-domain requests (writing a
+web page, a Python script, another chain's contract) and offer the closest
+Soroban alternative. It can only create or edit Soroban project files, so it can't
+be talked into writing, say, an `index.html`. Skills shape *how* it writes
+contracts; they can't change this scope or its safety rules.
 
 ## Choosing a model
 

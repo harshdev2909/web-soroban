@@ -12,7 +12,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import {
-  AtSign, Bot, Brain, ChevronDown, ChevronRight, FileCode2, FolderClosed, Hammer,
+  AtSign, BookOpen, Bot, Brain, ChevronDown, ChevronRight, FileCode2, FolderClosed, Hammer,
   Loader2, Plus, Rocket, Search, ShieldCheck, Slash, Sparkles, SquareTerminal,
   StopCircle, X,
 } from 'lucide-react'
@@ -24,13 +24,15 @@ import { pathOf } from '@/lib/paths'
 import type { Project, ProjectFile } from '@/lib/api'
 import {
   aiApi, type AgentRun, type ChatMessage, type ChatThreadDetail, type CopilotMode,
-  type ModelRegistry, type ProposedEdit, type ToolCall,
+  type ModelRegistry, type ProposedEdit, type Skill, type ToolCall,
 } from '@/lib/aiApi'
 import { socketService } from '@/lib/socket'
 import { Markdown } from './markdown'
 import { DiffView, type AcceptPayload } from './diff-view'
 import { ModeSelector, nextMode } from './mode-selector'
 import { ModelSwitcher } from './model-switcher'
+import { UpgradeModal } from '@/components/billing/upgrade-modal'
+import { emitCreditsUpdated } from '@/components/billing/credit-badge'
 
 // ------- slash commands ------------------------------------------------------
 interface SlashCmd { id: string; label: string; hint: string; mode: CopilotMode; template: string; attach?: 'errors' | 'file' }
@@ -49,7 +51,7 @@ const SLASH: SlashCmd[] = [
 ]
 
 // ------- context chips -------------------------------------------------------
-interface Chip { kind: 'file' | 'folder' | 'symbol' | 'errors' | 'selection' | 'docs'; label: string; value: string }
+interface Chip { kind: 'file' | 'folder' | 'symbol' | 'errors' | 'selection' | 'docs' | 'skill'; label: string; value: string }
 
 interface LiveTool { callId: string; name: string; args: any; status: 'running' | 'success' | 'error'; summary?: string; data?: any; edit?: ProposedEdit }
 interface Live {
@@ -181,6 +183,11 @@ function deriveTitle(s: string): string {
   return t.length > 32 ? t.slice(0, 30) + '…' : t || 'New chat'
 }
 
+/** The backend returns 402 with error "OUT_OF_CREDITS" when a run is gated. */
+function isOutOfCredits(e: any): boolean {
+  return !!e && typeof e.message === 'string' && e.message.includes('OUT_OF_CREDITS')
+}
+
 export function CopilotPanel(props: CopilotPanelProps) {
   const { project, activeFile, diagnostics, ensureProjectSaved, onApplied, onClose, onDeploy, focusSignal, embedded } = props
   const { active = true, freshStart, onTitleChange } = props
@@ -198,6 +205,8 @@ export function CopilotPanel(props: CopilotPanelProps) {
   const [runData, setRunData] = useState<Record<string, { edits: ProposedEdit[]; applied: boolean; applying?: boolean }>>({})
   const [slashOpen, setSlashOpen] = useState(false)
   const [ctxOpen, setCtxOpen] = useState(false)
+  const [skills, setSkills] = useState<Skill[]>([])
+  const [outOfCredits, setOutOfCredits] = useState(false)
   const [multitask, setMultitask] = useState<{ parentRunId: string; runs: AgentRun[] } | null>(null)
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -213,12 +222,14 @@ export function CopilotPanel(props: CopilotPanelProps) {
     let alive = true
     ;(async () => {
       try {
-        const [settings, reg, threads] = await Promise.all([
+        const [settings, reg, threads, skillRes] = await Promise.all([
           aiApi.getSettings().catch(() => null),
           aiApi.getModels().catch(() => null),
           aiApi.listThreads(project._id).catch(() => []),
+          aiApi.listSkills().catch(() => ({ skills: [] })),
         ])
         if (!alive) return
+        setSkills((skillRes?.skills || []).filter((s) => s.enabled))
         if (settings) {
           setMode(settings.mode)
           setModel(settings.selectedModel)
@@ -300,6 +311,9 @@ export function CopilotPanel(props: CopilotPanelProps) {
         parts.push(`// SYMBOL ${c.value}\n${hits.map((h) => `${h.f}:${h.i + 1}: ${h.l.trim()}`).join('\n')}`)
       } else if (c.kind === 'docs') {
         parts.push(`// DOCS topic: ${c.value}`)
+      } else if (c.kind === 'skill') {
+        // Emit the @skill:slug marker the backend parses to force-load the body.
+        parts.push(`@skill:${c.value}`)
       }
     }
     return parts.join('\n\n')
@@ -355,8 +369,13 @@ export function CopilotPanel(props: CopilotPanelProps) {
           else tools.push(updated)
           cur.tools = tools
         }
+      } else if (type === 'credits') {
+        // Live credit balance after metering — refresh the header badge.
+        emitCreditsUpdated(typeof payload?.balance === 'number' ? payload.balance : undefined)
+        return
       } else if (type === 'status') {
         cur.status = payload.phase
+        if (typeof payload.creditBalance === 'number') emitCreditsUpdated(payload.creditBalance)
         if (payload.phase === 'done') {
           cur.done = true
           if (payload.title) onTitleChange?.(payload.title)
@@ -416,6 +435,7 @@ export function CopilotPanel(props: CopilotPanelProps) {
         setInput('')
         pollMultitask(res.parentRunId)
       } catch (e: any) {
+        if (isOutOfCredits(e)) { setOutOfCredits(true); setIsRunning(false); return }
         toast.error(e.message || 'Failed to start multitask')
         setIsRunning(false)
       }
@@ -445,6 +465,15 @@ export function CopilotPanel(props: CopilotPanelProps) {
       setChips([])
       startStream(res.runId)
     } catch (e: any) {
+      if (isOutOfCredits(e)) {
+        // Restore the prompt so the user doesn't lose it, drop the optimistic
+        // user bubble, and surface the upgrade modal.
+        setMessages((prev) => prev.filter((m) => !m.id.startsWith('u-')))
+        setInput(text)
+        setOutOfCredits(true)
+        setIsRunning(false)
+        return
+      }
       toast.error(e.message || 'Failed to send')
       setIsRunning(false)
     }
@@ -723,6 +752,20 @@ export function CopilotPanel(props: CopilotPanelProps) {
                         <Search className="mr-2 h-3.5 w-3.5" /> @docs <span className="ml-auto text-[10px] text-muted-foreground">Soroban docs</span>
                       </CommandItem>
                     </CommandGroup>
+                    {skills.length > 0 && (
+                      <CommandGroup heading="Skills">
+                        {skills.map((s) => (
+                          <CommandItem
+                            key={s.id}
+                            value={`skill ${s.slug} ${s.name}`}
+                            onSelect={() => addChip({ kind: 'skill', label: `@skill:${s.slug}`, value: s.slug })}
+                          >
+                            <BookOpen className="mr-2 h-3.5 w-3.5" /> {s.name}
+                            <span className="ml-auto truncate pl-2 text-[10px] text-muted-foreground">{s.official ? 'official' : 'yours'}</span>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    )}
                     <CommandGroup heading="Files">
                       {projectFiles.map((f) => (
                         <CommandItem key={pathOf(f)} value={`file ${pathOf(f)}`} onSelect={() => addChip({ kind: 'file', label: `@${pathOf(f)}`, value: pathOf(f) })}>
@@ -763,6 +806,8 @@ export function CopilotPanel(props: CopilotPanelProps) {
         </p>
       </div>
 
+      {/* Out-of-credits → buy more */}
+      <UpgradeModal open={outOfCredits} onOpenChange={setOutOfCredits} outOfCredits />
     </div>
   )
 }

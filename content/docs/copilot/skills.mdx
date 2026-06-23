@@ -1,0 +1,97 @@
+---
+title: Skills
+description: Reusable Soroban/Stellar knowledge and instruction packs the Copilot loads as context — official packs plus your own, with progressive loading and an @skill mention.
+---
+
+A **Skill** is a reusable Soroban/Stellar knowledge + instruction pack the Copilot
+loads as context, like Cursor or Claude rules, scoped to Soroban. Use them to make
+the Copilot follow a pattern (a SEP-41 token, OpenZeppelin access control), a
+convention (storage/TTL, `require_auth`), or your team's coding style,
+**consistently**, across every conversation and mode.
+
+Open the **Skills** panel from the book icon in the Copilot tab strip.
+
+## Official vs your skills
+
+- **Official skills** ship with the IDE, vetted Soroban patterns accurate to the
+  current `soroban-sdk`. Toggle them on or off; **Duplicate** one to make an
+  editable copy.
+- **Your skills** are private to you. Create one from scratch, or duplicate an
+  official pack and edit it. You can mark a skill **public** to share it.
+
+The official packs cover SEP-41 fungible tokens, OpenZeppelin access control,
+storage tiers & TTL, auth (`require_auth`) and sub-invocations, events, and
+testing patterns. They're aligned with [Stellar's official dev
+skills](https://github.com/stellar/stellar-dev-skill).
+
+## Anatomy of a skill
+
+| Field | What it's for |
+| --- | --- |
+| **Name** | Display name; also its `@skill:<slug>` handle |
+| **Description** | One line, shown in the always-on index |
+| **When to use** | 1–2 lines that tell the Copilot when to load the body |
+| **Scope** | How the body is loaded, see below |
+| **Visibility** | Private (just you) or Public (shareable) |
+| **Body** | Markdown: the patterns, rules, code snippets, and links |
+
+## How loading works (and why it's cheap)
+
+Only a tiny **index** (each enabled skill's name, description, and when-to-use) is
+ever added to every message, so enabling many skills stays inexpensive. The full
+**body** loads only when it's actually needed, decided by the skill's scope:
+
+| Scope | Body loads… |
+| --- | --- |
+| **Always on** | every run. Use sparingly, it always spends tokens. |
+| **Auto** <Badge tone="read-only">recommended</Badge> | when the Copilot decides your task matches its "when to use". |
+| **Manual** | only when you `@skill:<slug>`-mention it in a message. |
+
+You can always force-load any skill for a single message by mentioning it,
+`@skill:sep-41-fungible-token`, from the `@` menu or by typing it.
+
+<Callout type="info" title="Token budget">
+  There's a per-message cap on how much skill content is injected. Mentioned and
+  always-on skills win the budget first; anything over is skipped (the Copilot can
+  still pull it on demand).
+</Callout>
+
+## Create a skill
+
+<Steps>
+  <Step title="Open Skills → New">
+    Click the book icon in the tab strip, then **New**.
+  </Step>
+  <Step title="Fill in the fields">
+    Give it a name, a one-line description, and a "when to use". Pick a scope
+    (**Auto** is usually right).
+  </Step>
+  <Step title="Write the body">
+    Markdown, write the pattern, rules, and code snippets you want followed. Use
+    **Preview** to check the rendering.
+  </Step>
+  <Step title="Save">
+    It's enabled immediately and shows up in the Copilot's index for your next
+    message.
+  </Step>
+</Steps>
+
+## Skills are guidance, not authority
+
+A skill shapes **how** the Copilot writes Soroban contracts, it can't change
+**what** it's allowed to do. Skill content is treated as reference, exactly like
+attached `@`-context: it can't redefine the assistant, widen it beyond Soroban, let
+it write non-Rust files, or weaken its safety rules. To keep that true, off-domain
+or role-changing content is **rejected when you save** (for example, a "write
+HTML" skill won't save).
+
+<Callout type="warning" title="Stay in scope">
+  Skills are for Soroban/Stellar contract work, token patterns, auth, storage,
+  testing, coding style. A skill that tries to turn the Copilot into a
+  general-purpose assistant, or send it off-domain, is refused on save.
+</Callout>
+
+## Next
+
+- Back to the [AI Copilot](/docs/copilot) overview.
+- [Compile](/docs/compile) and [Deploy](/docs/deploy) what the Copilot builds.

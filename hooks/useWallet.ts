@@ -8,6 +8,13 @@ export interface WalletAccount {
   isConnected: boolean;
 }
 
+/** Base64-encode raw bytes in the browser (for the v3 Buffer signedMessage). */
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return typeof btoa !== 'undefined' ? btoa(binary) : Buffer.from(bytes).toString('base64');
+}
+
 export function useWallet() {
   const [account, setAccount] = useState<WalletAccount | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -199,13 +206,17 @@ export function useWallet() {
         throw new Error('Wallet not connected');
       }
 
-      const result = await freighterSignMessage(message, account.publicKey);
-      
+      // freighter-api v4: signMessage(message, { address }) → { signedMessage, signerAddress }.
+      // signedMessage is a base64 string (v4) or a Buffer (v3); normalize to string.
+      const result = await freighterSignMessage(message, { address: account.publicKey });
+
       if (result.error) {
-        throw new Error(result.error);
+        throw new Error(result.error.message || 'Failed to sign message');
       }
 
-      return result.signature || null;
+      const signed = result.signedMessage;
+      if (signed == null) return null;
+      return typeof signed === 'string' ? signed : bytesToBase64(signed);
     } catch (err) {
       console.error('Failed to sign message:', err);
       throw err;
