@@ -11,6 +11,7 @@ import PlaygroundFooter from '@/components/playground-footer'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/AuthContext'
 import { billingApi, type CreditPack, type LedgerEntry, type UsageEntry } from '@/lib/billingApi'
+import { formatModelName } from '@/lib/aiApi'
 import { UpgradeModal } from '@/components/billing/upgrade-modal'
 import { emitCreditsUpdated } from '@/components/billing/credit-badge'
 
@@ -166,7 +167,7 @@ export default function BillingPage() {
                     {usage.length ? usage.map((u) => (
                       <tr key={u.id} className="border-t border-border/60">
                         <td className="px-3 py-2 text-muted-foreground">{new Date(u.createdAt).toLocaleString()}</td>
-                        <td className="px-3 py-2 font-mono text-[11px]">{u.model}</td>
+                        <td className="px-3 py-2 font-mono text-[11px]">{formatModelName(u.model)}</td>
                         <td className="px-3 py-2 capitalize">{u.mode}</td>
                         <td className="px-3 py-2 text-right text-muted-foreground">{(u.tokensIn + u.tokensOut).toLocaleString()}</td>
                         <td className="px-3 py-2 text-right text-muted-foreground">${u.costUsd.toFixed(4)}</td>

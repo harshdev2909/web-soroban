@@ -211,7 +211,7 @@ export default function AnalyticsPage() {
             title="Credits & billing"
             subtitle={
               billing
-                ? `${billing.outstandingCredits.toLocaleString()} credits outstanding across ${billing.totalUsers.toLocaleString()} users · margin = credits charged vs OpenRouter cost.`
+                ? `${billing.outstandingCredits.toLocaleString()} credits outstanding across ${billing.totalUsers.toLocaleString()} users · margin = credits charged vs model cost.`
                 : "AI credit economy (Dodo Payments)."
             }
           >

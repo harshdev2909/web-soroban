@@ -109,7 +109,7 @@ const PlaygroundFooter = () => {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-60" />
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-success" />
               </span>
-              Stellar Testnet · operational
+              Stellar Mainnet · operational
             </span>
             <button
               onClick={scrollToTop}

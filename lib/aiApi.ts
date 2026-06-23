@@ -10,6 +10,18 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://backend-ide-pro
 
 export type CopilotMode = 'ask' | 'agent' | 'plan' | 'debug' | 'multitask'
 
+/**
+ * User-facing model label. "Auto" stays Auto, and the underlying routing provider
+ * is never surfaced (no `openrouter/` prefix leaks into the UI).
+ */
+export function formatModelName(model?: string | null): string {
+  if (!model) return 'Auto'
+  const m = model.trim()
+  if (m === 'openrouter/auto' || m === 'auto') return 'Auto'
+  const cleaned = m.replace(/^openrouter\//i, '')
+  return cleaned === 'auto' || cleaned === '' ? 'Auto' : cleaned
+}
+
 export interface RegistryModel {
   id: string
   label: string

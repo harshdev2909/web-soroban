@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import { Check, ChevronDown, Gauge, Plus, Search, Sparkles, Zap } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Switch } from '@/components/ui/switch'
-import type { ModelRegistry, RegistryModel } from '@/lib/aiApi'
+import { formatModelName, type ModelRegistry, type RegistryModel } from '@/lib/aiApi'
 
 function EffortBadge({ effort }: { effort: RegistryModel['effort'] }) {
   const map = {
@@ -40,7 +40,7 @@ export function ModelSwitcher({
 
   const curated = registry?.models || []
   const current = curated.find((m) => m.id === model)
-  const currentLabel = current?.label || model.split('/').pop() || model
+  const currentLabel = current?.label || formatModelName(model)
 
   const catalogResults = useMemo(() => {
     if (!showAll || !registry) return []
