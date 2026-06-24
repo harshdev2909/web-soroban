@@ -113,6 +113,55 @@ The IDE is a three-zone layout with one focal point and one accent action:
 - **Loading:** `IDESkeleton` renders the three-zone shell with `Skeleton` blocks
   (explorer rows, editor lines, panel cards) instead of a bare spinner.
 
+### Project catalog conventions (`/projects`)
+
+The post-login landing — where users browse projects, open one, or create a new
+one before entering the IDE. OAuth flows login → `/auth/callback` → **`/projects`**;
+opening a project routes to `/ide?project=<id>` (the IDE honors that deep link).
+The per-user testnet wallet is ensured on arrival by `AuthContext` (once per
+session); the top bar surfaces wallet + network state via the existing
+`WalletWidget` + `NetworkSwitcher`.
+
+Shared components live in `components/catalog/`:
+
+- **`CatalogTopBar`** — quiet, typographic header: wordmark, a single Guides →
+  `/docs` link, `ThemeToggle`, network/wallet widgets, and an avatar account menu.
+  One row, hairline bottom border, blurred translucent background (matches the IDE
+  `Navbar`).
+- **`CatalogRail`** — left catalog nav (All Projects / Templates, + **Settings**
+  pinned bottom → `/billing`). A wide (`w-64`), full-height **sticky** panel
+  anchored flush-left with a `bg-card/20` tint; Lucide icons, a shared-layout
+  `motion` active pill (`layoutId="catalog-rail"`) + brand bar. Collapses to a
+  fixed bottom nav on mobile.
+- **`ProjectCard`** — flat `bg-card` surface, **weight not borders**. Hover/focus
+  is where the only "glow" lives: `-translate-y-0.5` + `shadow-md` + a restrained
+  `border-brand/45` edge (never a permanent heavy border). Shows the real name,
+  `edited <relative>`, a **network badge** (testnet green / mainnet amber via
+  `getNetwork`, so mainnet is unmistakable), file + deploy counts, and template
+  origin if known. Card body opens the project; a kebab menu + quick star host
+  Open / Rename / Duplicate / Delete (confirm) / Pin.
+- **`NewProjectCard`** — the lead grid cell (dashed brand accent) → create dialog.
+- **`CreateProjectDialog`** — name + starting point (Blank / Template / the
+  `ContractWizard`) + default network (testnet default). Reuses `templatesApi`,
+  the wizard scaffolder, and `projectApi.createProject`; on success routes to the
+  IDE. Locked premium templates link out to the marketplace.
+- **States** — `ProjectCardSkeleton` (loading), `CatalogEmptyState` (thoughtful
+  first-run CTA + suggestions), `CatalogErrorState` (graceful retry),
+  `CatalogNoMatches` (post-filter). Grid is 1/2/3-up (mobile/tablet/desktop) with
+  a `framer-motion` stagger gated by `MotionConfig reducedMotion="user"`.
+
+Catalog helpers live in `lib/catalog.ts`: `relativeTime` (date-fns), `sortProjects`
+/ `filterProjects`, and **client-side stores the backend doesn't model** —
+favorites/pins (`ws.favorites.<userId>`) and template-origin labels
+(`ws.projectOrigin`), both in `localStorage`. Rename/duplicate/delete hit the
+projects API and update the grid optimistically; duplicate composes
+`createProject` from the source files (no backend duplicate endpoint).
+
+**Theme:** the catalog has its own `next-themes` provider (`app/projects/layout.tsx`,
+`attribute="class"`, dark-first) so the `ThemeToggle` works here. The IDE stays
+**dark-only** — it force-sets `dark` on mount — matching the docs-subtree
+precedent.
+
 ## Accessibility (non-negotiable)
 
 - Real `<button>`/`<a>` for interactions; visible focus ring via global

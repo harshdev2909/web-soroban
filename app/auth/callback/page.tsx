@@ -98,10 +98,10 @@ function AuthCallbackContent() {
           <AlertTriangle className="mx-auto h-7 w-7 text-warning" />
           <p className="mt-4 font-display text-lg font-semibold">You&apos;re signed in</p>
           <p className="mt-1.5 text-sm text-muted-foreground">
-            Your wallet will finish provisioning in the IDE.
+            Your wallet will finish provisioning in a moment.
           </p>
-          <Button className="mt-6 w-full gap-2" onClick={() => router.push('/ide')}>
-            Continue to the IDE <ArrowRight className="h-4 w-4" />
+          <Button className="mt-6 w-full gap-2" onClick={() => router.push('/projects')}>
+            Continue to your projects <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
       </Shell>
@@ -119,7 +119,7 @@ function AuthCallbackContent() {
           </span>
           <h1 className="mt-4 font-display text-xl font-semibold">Your testnet wallet is ready</h1>
           <p className="mt-1.5 text-sm text-muted-foreground">
-            We created and funded a Stellar testnet keypair for you. Contracts deploy from this address.
+            We created and funded a Stellar testnet keypair for you. Your contracts deploy from this address.
           </p>
         </div>
 
@@ -152,8 +152,8 @@ function AuthCallbackContent() {
             </span>
           </div>
 
-          <Button className="mt-6 w-full gap-2" onClick={() => router.push('/ide')}>
-            Enter the IDE <ArrowRight className="h-4 w-4" />
+          <Button className="mt-6 w-full gap-2" onClick={() => router.push('/projects')}>
+            Continue to your projects <ArrowRight className="h-4 w-4" />
           </Button>
           <p className="mt-3 text-center text-[11px] text-muted-foreground">
             Your secret key is encrypted on the server and never shown.

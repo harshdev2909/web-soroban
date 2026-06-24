@@ -72,7 +72,7 @@ export default function HomePage() {
   const reduce = useReducedMotion()
 
   const startBuilding = () => {
-    if (isAuthenticated) router.push('/ide')
+    if (isAuthenticated) router.push('/projects')
     else setLoginOpen(true)
   }
 
@@ -149,7 +149,7 @@ export default function HomePage() {
             >
               <motion.div whileTap={reduce ? undefined : { scale: 0.98 }}>
                 <Button size="lg" className="gap-2" onClick={startBuilding}>
-                  {isAuthenticated ? 'Open the IDE' : 'Start building free'}
+                  {isAuthenticated ? 'Open your projects' : 'Start building free'}
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </motion.div>
@@ -353,7 +353,7 @@ export default function HomePage() {
                 <div className="mt-7 flex flex-col gap-3 sm:flex-row">
                   <motion.div whileTap={reduce ? undefined : { scale: 0.98 }}>
                     <Button size="lg" className="gap-2" onClick={startBuilding}>
-                      {isAuthenticated ? 'Open the IDE' : 'Start building free'}
+                      {isAuthenticated ? 'Open your projects' : 'Start building free'}
                       <ArrowRight className="h-4 w-4" />
                     </Button>
                   </motion.div>

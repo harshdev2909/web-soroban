@@ -149,6 +149,14 @@ function IDEPageContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
+  // The IDE is dark-only. The catalog (/projects) has its own theme toggle that
+  // can leave `light` on the document via client-side nav — force dark here.
+  useEffect(() => {
+    const el = document.documentElement;
+    el.classList.add('dark');
+    el.classList.remove('light');
+  }, []);
+
   // Initialize WebSocket connection on mount
   useEffect(() => {
     socketService.connect();
@@ -245,7 +253,31 @@ function IDEPageContent() {
         }
 
         const projects = await projectApi.getProjects();
-        
+
+        // Deep link from the catalog: /ide?project=<id> opens that project directly.
+        const deepLinkId = searchParams.get('project');
+        if (deepLinkId) {
+          let target = projects.find((p) => p._id === deepLinkId) || null;
+          if (!target) {
+            // Not in the list (e.g. a local project) — try a direct fetch.
+            try {
+              target = await projectApi.getProject(deepLinkId);
+            } catch {
+              toast.error('Project not found — opening your latest project instead.');
+            }
+          }
+          if (target) {
+            setProject(target);
+            setActiveFile(target.files[0] || null);
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('lastProjectId', target._id);
+              localStorage.setItem('lastActiveFileName', target.files[0] ? pathOf(target.files[0]) : '');
+            }
+            router.replace('/ide', { scroll: false });
+            return;
+          }
+        }
+
         // Try to restore last project from localStorage
         if (typeof window !== 'undefined' && projects.length > 0) {
           const lastProjectId = localStorage.getItem('lastProjectId');

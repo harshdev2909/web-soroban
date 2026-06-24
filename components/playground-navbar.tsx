@@ -95,8 +95,8 @@ export default function PlaygroundNavbar({ onSignInClick }: PlaygroundNavbarProp
           </a>
           {isAuthenticated ? (
             <Button asChild size="sm" className="gap-1.5">
-              <Link href="/ide">
-                Open IDE <ArrowRight className="h-4 w-4" />
+              <Link href="/projects">
+                Open app <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
           ) : (
@@ -144,7 +144,7 @@ export default function PlaygroundNavbar({ onSignInClick }: PlaygroundNavbarProp
               <div className="mt-2 flex flex-col gap-2">
                 {isAuthenticated ? (
                   <Button asChild className="w-full">
-                    <Link href="/ide" onClick={() => setOpen(false)}>Open IDE</Link>
+                    <Link href="/projects" onClick={() => setOpen(false)}>Open app</Link>
                   </Button>
                 ) : (
                   <>
