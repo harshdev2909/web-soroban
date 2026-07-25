@@ -26,6 +26,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { WalletWidget } from './wallet-widget'
+import { ConnectedWalletChip } from './connected-wallet-chip'
 import { NetworkSwitcher } from './network/network-switcher'
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
 import { useAuth } from '@/contexts/AuthContext'
@@ -150,6 +151,7 @@ export function Navbar({
                 </PopoverContent>
               </Popover>
             )}
+            <ConnectedWalletChip />
             <WalletWidget />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

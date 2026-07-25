@@ -34,6 +34,7 @@ interface FileTreeProps {
   onNewFolderInDir: (dir: string) => void
   onRename: (file: ProjectFile) => void
   onDelete: (path: string) => void
+  onDeleteFolder: (dir: string) => void
   canDelete: boolean
 }
 
@@ -59,6 +60,7 @@ interface RowProps {
   onNewFolderInDir: (dir: string) => void
   onRename: (file: ProjectFile) => void
   onDelete: (path: string) => void
+  onDeleteFolder: (dir: string) => void
   canDelete: boolean
 }
 
@@ -86,6 +88,7 @@ export function FileTree(props: FileTreeProps) {
     onNewFolderInDir: props.onNewFolderInDir,
     onRename: props.onRename,
     onDelete: props.onDelete,
+    onDeleteFolder: props.onDeleteFolder,
     canDelete: props.canDelete,
   }
 
@@ -109,6 +112,7 @@ function TreeRow({
   onNewFolderInDir,
   onRename,
   onDelete,
+  onDeleteFolder,
   canDelete,
 }: RowProps) {
   const indent = { paddingLeft: `${depth * 12 + 8}px` }
@@ -141,6 +145,13 @@ function TreeRow({
             <ContextMenuItem onClick={() => onNewFolderInDir(node.path)}>
               <FolderPlus className="mr-2 h-3.5 w-3.5" /> New folder…
             </ContextMenuItem>
+            <ContextMenuSeparator />
+            <ContextMenuItem
+              className="text-destructive focus:text-destructive"
+              onClick={() => onDeleteFolder(node.path)}
+            >
+              <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete folder
+            </ContextMenuItem>
           </ContextMenuContent>
         </ContextMenu>
         {isOpen && (
@@ -158,6 +169,7 @@ function TreeRow({
                 onNewFolderInDir={onNewFolderInDir}
                 onRename={onRename}
                 onDelete={onDelete}
+                onDeleteFolder={onDeleteFolder}
                 canDelete={canDelete}
               />
             ))}

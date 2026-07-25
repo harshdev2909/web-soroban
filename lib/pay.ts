@@ -16,6 +16,12 @@ export interface PayParams {
   memo: string
   /** 'testnet' | 'mainnet' (or the WalletNetwork enum value). Defaults to testnet. */
   network?: string
+  /**
+   * Optional: reads the connected wallet's live network. When paying on mainnet,
+   * this is used to block early if the wallet is on the wrong network (otherwise
+   * it signs, then fails at submit with a confusing error against real funds).
+   */
+  getWalletNetwork?: () => Promise<{ network: string; networkPassphrase: string } | null>
 }
 
 const TESTNET_HORIZON = 'https://horizon-testnet.stellar.org'
@@ -54,6 +60,7 @@ export async function payWithWallet({
   amount,
   memo,
   network,
+  getWalletNetwork,
 }: PayParams): Promise<{ hash: string }> {
   // Stellar text memos are capped at 28 bytes.
   if (new TextEncoder().encode(memo).length > 28) {
@@ -66,6 +73,19 @@ export async function payWithWallet({
   const testnet = isTestnetNetwork(network)
   const horizonUrl = testnet ? TESTNET_HORIZON : MAINNET_HORIZON
   const networkPassphrase = testnet ? Networks.TESTNET : Networks.PUBLIC
+
+  // Mainnet payments spend real XLM: make sure the wallet is actually on Public
+  // before we ask it to sign. Only block on a positive mismatch — if the wallet
+  // won't report its network, defer to submit-time (Horizon still enforces it).
+  if (!testnet && getWalletNetwork) {
+    const wnet = await getWalletNetwork()
+    if (wnet && wnet.networkPassphrase !== networkPassphrase) {
+      throw new Error(
+        `Your wallet is on ${wnet.network || 'a different network'}. Switch it to Mainnet (Public) and try again.`,
+      )
+    }
+  }
+
   const Server = StellarSdk.Horizon?.Server || StellarSdk.Server
   const server = new Server(horizonUrl)
 

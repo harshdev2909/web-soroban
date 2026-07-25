@@ -47,7 +47,7 @@ export function TemplatePurchaseModal({
   const [paymentSuccess, setPaymentSuccess] = useState(false)
   const [sessionExpired, setSessionExpired] = useState(false)
   const { refreshUser, login } = useAuth()
-  const { address, signTransaction, openWalletModal, isInitialized, disconnect } = useWalletKit()
+  const { address, signTransaction, openWalletModal, isInitialized, disconnect, getWalletNetwork } = useWalletKit()
 
   useEffect(() => {
     if (open) setSessionExpired(false)
@@ -113,6 +113,7 @@ export function TemplatePurchaseModal({
         amount: paymentInfo.amount,
         memo: paymentInfo.memo,
         network: paymentInfo.network,
+        getWalletNetwork,
       })
       setTxHash(hash)
       toast.success('Payment sent — verifying…')

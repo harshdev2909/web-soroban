@@ -29,7 +29,7 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
   const [paymentSuccess, setPaymentSuccess] = useState(false)
   const [successDetails, setSuccessDetails] = useState<any>(null)
   const { user, refreshUser } = useAuth()
-  const { address, signTransaction, openWalletModal, isInitialized, disconnect } = useWalletKit()
+  const { address, signTransaction, openWalletModal, isInitialized, disconnect, getWalletNetwork } = useWalletKit()
 
   useEffect(() => {
     if (open) {
@@ -98,6 +98,7 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
         amount: paymentInfo.amount,
         memo: paymentInfo.memo,
         network: paymentInfo.network,
+        getWalletNetwork,
       })
       setTxHash(hash)
       toast.success('Payment sent — verifying…')

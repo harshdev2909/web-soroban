@@ -30,6 +30,7 @@ interface SidebarProps {
   onRenameFile: (oldPath: string, newPath: string) => void
   onSaveProject: () => void
   onDeleteFile: (path: string) => void
+  onDeleteFolder: (dir: string) => void
 }
 
 type DialogMode = "new-file" | "new-folder" | "rename" | null
@@ -43,6 +44,7 @@ export function Sidebar({
   onRenameFile,
   onSaveProject,
   onDeleteFile,
+  onDeleteFolder,
 }: SidebarProps) {
   const [isEditingName, setIsEditingName] = useState(false)
   const [editName, setEditName] = useState(project.name)
@@ -137,6 +139,33 @@ export function Sidebar({
     }
     if (pathOf(activeFile) === path && !confirm(`Delete the currently active file "${path}"?`)) return
     onDeleteFile(path)
+  }
+
+  const handleDeleteFolder = (dir: string) => {
+    const prefix = `${dir}/`
+    const filesInFolder = project.files.filter((f) => pathOf(f).startsWith(prefix))
+
+    // Drop this folder and any nested ones from the client-only empty-folder list.
+    const pruneExtraFolders = () =>
+      setExtraFolders((prev) => prev.filter((f) => f !== dir && !f.startsWith(prefix)))
+
+    // Empty (client-only) folder — nothing is persisted, just forget it.
+    if (filesInFolder.length === 0) {
+      pruneExtraFolders()
+      toast.success(`Folder "${dir}" removed`)
+      return
+    }
+
+    if (filesInFolder.length >= project.files.length) {
+      toast.error("Cannot delete every file in the project")
+      return
+    }
+
+    const count = filesInFolder.length
+    if (!confirm(`Delete folder "${dir}" and its ${count} ${count === 1 ? "file" : "files"}? This cannot be undone.`)) return
+
+    pruneExtraFolders()
+    onDeleteFolder(dir)
   }
 
   const deployCount = project.deploymentHistory?.length || 0
@@ -246,6 +275,7 @@ export function Sidebar({
             onNewFolderInDir={openNewFolder}
             onRename={openRename}
             onDelete={handleDelete}
+            onDeleteFolder={handleDeleteFolder}
             canDelete={project.files.length > 1}
           />
         </div>

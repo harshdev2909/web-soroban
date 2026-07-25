@@ -17,19 +17,39 @@ import {
   HotWalletModule,
   KleverModule,
 } from '@creit.tech/stellar-wallets-kit'
+import { WatchWalletChanges } from '@stellar/freighter-api'
+
+/** The connected wallet's real, live network (as reported by the wallet itself). */
+export interface WalletNetworkInfo {
+  /** wallet-reported name, e.g. "PUBLIC" | "TESTNET" */
+  network: string
+  /** the passphrase — the reliable identity of the network */
+  networkPassphrase: string
+}
 
 interface WalletKitContextType {
   kit: StellarWalletsKit | null
   isInitialized: boolean
   selectedWallet: ISupportedWallet | null
   address: string | null
+  /** true while a connect flow is in progress */
+  connecting: boolean
+  /** last connection error, cleared on the next connect attempt */
+  error: string | null
+  /** convenience: is a wallet currently connected */
+  isConnected: boolean
+  /** the kit's target network (derived from the live wallet network; defaults testnet) */
   network: WalletNetwork
+  /** the connected wallet's live network passphrase, or null when unknown/disconnected */
+  walletNetworkPassphrase: string | null
   connect: () => Promise<void>
   disconnect: () => void
   signMessage: (message: string) => Promise<string>
   signTransaction: (xdr: string, networkPassphrase?: string) => Promise<string>
   /** Opens the wallet picker and resolves with the connected address (or null if cancelled). */
   openWalletModal: (onWalletSelected?: (wallet: ISupportedWallet) => void) => Promise<string | null>
+  /** Reads the connected wallet's network fresh (not cached). Used to guard mainnet signs. */
+  getWalletNetwork: () => Promise<WalletNetworkInfo | null>
 }
 
 const WalletKitContext = createContext<WalletKitContextType | undefined>(undefined)
@@ -46,7 +66,16 @@ export function WalletKitProvider({ children }: { children: ReactNode }) {
   const [selectedWallet, setSelectedWallet] = useState<ISupportedWallet | null>(null)
   const [selectedWalletId, setSelectedWalletId] = useState<string | null>(null)
   const [address, setAddress] = useState<string | null>(null)
-  const [network, setNetwork] = useState<WalletNetwork>(WalletNetwork.TESTNET)
+  const [connecting, setConnecting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  // The connected wallet's live network passphrase (from the wallet itself), not
+  // the app's target network. null until known / after disconnect.
+  const [walletNetworkPassphrase, setWalletNetworkPassphrase] = useState<string | null>(null)
+
+  // Derive the kit network from the live wallet network so the signTransaction
+  // fallback picks the right passphrase (fixes the old hardcoded-TESTNET bug).
+  const network: WalletNetwork =
+    walletNetworkPassphrase === WalletNetwork.PUBLIC ? WalletNetwork.PUBLIC : WalletNetwork.TESTNET
 
   useEffect(() => {
     // Initialize the wallet kit
@@ -108,11 +137,93 @@ export function WalletKitProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  // Keep the wallet's module selected on the kit whenever the id is known
+  // (survives reloads where only the cached id is available).
+  const ensureWalletSelected = (): string | null => {
+    const id =
+      selectedWalletId ||
+      (typeof window !== 'undefined' ? window.localStorage.getItem(LS_WALLET_ID) : null)
+    if (id && kit) {
+      try { kit.setWallet(id) } catch {}
+    }
+    return id
+  }
+
+  const persistWallet = (id: string) => {
+    try { window.localStorage.setItem(LS_WALLET_ID, id) } catch {}
+  }
+  const persistAddress = (addr: string) => {
+    try { window.localStorage.setItem(LS_ADDRESS, addr) } catch {}
+  }
+
+  // Read the connected wallet's live network and cache the passphrase. Best-effort:
+  // some wallet modules don't expose the network — we leave it null then.
+  const readAndStoreNetwork = async (): Promise<WalletNetworkInfo | null> => {
+    if (!kit) return null
+    try {
+      ensureWalletSelected()
+      const net = await kit.getNetwork()
+      if (net?.networkPassphrase) {
+        setWalletNetworkPassphrase(net.networkPassphrase)
+        return { network: net.network, networkPassphrase: net.networkPassphrase }
+      }
+    } catch (e) {
+      console.error('Failed to read wallet network:', e)
+    }
+    return null
+  }
+
+  const getWalletNetwork = async (): Promise<WalletNetworkInfo | null> => {
+    const info = await readAndStoreNetwork()
+    return info
+  }
+
+  // Watch for account / network changes made inside the wallet (Freighter) so the
+  // cached address + network never go stale mid-session. Uses Freighter's poller,
+  // which reads current state without popping the extension. Only meaningful for
+  // Freighter; other wallets fall back to the pre-sign network check.
+  useEffect(() => {
+    if (!kit || typeof window === 'undefined' || !address) return
+    const id = selectedWalletId || window.localStorage.getItem(LS_WALLET_ID)
+    if (id !== FREIGHTER_ID) return
+
+    let active = true
+    const watcher = new WatchWalletChanges(2000)
+    watcher.watch(({ address: nextAddr, networkPassphrase, error: watchError }) => {
+      if (!active || watchError) return
+
+      if (!nextAddr) {
+        // Wallet locked or disconnected — reflect it so the UI stops showing a
+        // stale connected state (keep the wallet id for an easy reconnect).
+        setAddress(null)
+        setWalletNetworkPassphrase(null)
+        try { window.localStorage.removeItem(LS_ADDRESS) } catch {}
+        return
+      }
+
+      // Network switched in the wallet (React ignores an unchanged value).
+      if (networkPassphrase) setWalletNetworkPassphrase(networkPassphrase)
+
+      // Active account switched in the wallet.
+      if (nextAddr !== address) {
+        setAddress(nextAddr)
+        persistAddress(nextAddr)
+      }
+    })
+
+    return () => {
+      active = false
+      watcher.stop()
+    }
+  }, [kit, address, selectedWalletId])
+
   const connect = async () => {
     if (!kit) {
       throw new Error('Wallet kit not initialized')
     }
 
+    setConnecting(true)
+    setError(null)
     try {
       // Open modal to let user select wallet
       await kit.openModal({
@@ -128,6 +239,8 @@ export function WalletKitProvider({ children }: { children: ReactNode }) {
             setAddress(addressResult.address)
             persistAddress(addressResult.address)
           }
+          // Cache the wallet's live network too.
+          await readAndStoreNetwork()
         },
         onClosed: (err) => {
           if (err) {
@@ -136,30 +249,30 @@ export function WalletKitProvider({ children }: { children: ReactNode }) {
         },
         modalTitle: 'Connect Stellar Wallet',
       })
-    } catch (error: any) {
-      console.error('Failed to connect wallet:', error)
-      throw error
+    } catch (err: any) {
+      console.error('Failed to connect wallet:', err)
+      setError(err?.message || 'Failed to connect wallet')
+      throw err
+    } finally {
+      setConnecting(false)
     }
-  }
-
-  const persistWallet = (id: string) => {
-    try { window.localStorage.setItem(LS_WALLET_ID, id) } catch {}
-  }
-  const persistAddress = (addr: string) => {
-    try { window.localStorage.setItem(LS_ADDRESS, addr) } catch {}
   }
 
   const disconnect = () => {
     setAddress(null)
     setSelectedWallet(null)
     setSelectedWalletId(null)
+    setWalletNetworkPassphrase(null)
+    setError(null)
     try {
       window.localStorage.removeItem(LS_WALLET_ID)
       window.localStorage.removeItem(LS_ADDRESS)
     } catch {}
     if (kit) {
-      // Reset wallet selection
-      kit.setWallet(FREIGHTER_ID)
+      // Best-effort: let the kit clear its own stored connection, then reset the
+      // default module so a fresh connect starts clean.
+      Promise.resolve(kit.disconnect?.()).catch(() => {})
+      try { kit.setWallet(FREIGHTER_ID) } catch {}
     }
   }
 
@@ -171,10 +284,10 @@ export function WalletKitProvider({ children }: { children: ReactNode }) {
     try {
       // Check if Freighter is available and connected
       // First check selectedWallet, then check if Freighter extension is available
-      const isFreighter = selectedWallet?.id === FREIGHTER_ID || 
+      const isFreighter = selectedWallet?.id === FREIGHTER_ID ||
                          (typeof window !== 'undefined' && (window as any).freighterApi)
-      
-     
+
+
       const isFreighterWallet = isFreighter || (!selectedWallet && typeof window !== 'undefined' && (window as any).freighterApi)
 
       if (isFreighterWallet) {
@@ -184,13 +297,13 @@ export function WalletKitProvider({ children }: { children: ReactNode }) {
           // Freighter signMessage signature: signMessage(message: string, publicKey: string)
           // @ts-ignore - TypeScript types for freighter-api may be incorrect
           const result = await freighterApi.signMessage(message, address)
-          
-        
+
+
           if ('error' in result && result.error) {
             console.error('Freighter signMessage error:', result.error)
             throw new Error(result.error || 'Failed to sign message with Freighter')
           }
-          
+
           // V4 response has signature property, V3 might have different structure
           // Check both possible response formats
           const signature = (result as any).signature || (result as any).publicKey || (result as any).signatureBase64
@@ -198,7 +311,7 @@ export function WalletKitProvider({ children }: { children: ReactNode }) {
             console.error('Freighter response:', result)
             throw new Error('Freighter returned no signature. Please make sure you approve the signing request in Freighter.')
           }
-          
+
           return signature
         } catch (freighterError: any) {
           console.error('Freighter API error:', freighterError)
@@ -209,7 +322,7 @@ export function WalletKitProvider({ children }: { children: ReactNode }) {
           throw new Error(`Freighter signing failed: ${freighterError.message || 'Unknown error'}`)
         }
       } else {
-      
+
         throw new Error('Message signing not fully supported for this wallet. Please use Freighter wallet for authentication, or use Google OAuth instead.')
       }
     } catch (error: any) {
@@ -229,10 +342,7 @@ export function WalletKitProvider({ children }: { children: ReactNode }) {
 
     // Make sure the kit knows which wallet module to use (survives reloads where
     // only the cached id is available). Without this the kit throws code -3.
-    const walletId = selectedWalletId || (typeof window !== 'undefined' ? window.localStorage.getItem(LS_WALLET_ID) : null)
-    if (walletId) {
-      try { kit.setWallet(walletId) } catch {}
-    }
+    ensureWalletSelected()
 
     // Resolve the signer address — re-read from the wallet if state is empty.
     let signer = address
@@ -311,6 +421,8 @@ export function WalletKitProvider({ children }: { children: ReactNode }) {
               setAddress(addr)
               persistAddress(addr)
             }
+            // Cache the wallet's live network for the pre-sign guard.
+            await readAndStoreNetwork()
             onWalletSelected?.(wallet)
             settled = true
             resolve(addr)
@@ -335,12 +447,17 @@ export function WalletKitProvider({ children }: { children: ReactNode }) {
         isInitialized,
         selectedWallet,
         address,
+        connecting,
+        error,
+        isConnected: !!address,
         network,
+        walletNetworkPassphrase,
         connect,
         disconnect,
         signMessage,
         signTransaction,
         openWalletModal,
+        getWalletNetwork,
       }}
     >
       {children}

@@ -2,9 +2,10 @@
 
 import { useRef, useEffect, type WheelEvent } from "react"
 import { Button } from "@/components/ui/button"
-import { Loader2, Hammer, Rocket, FlaskConical } from "lucide-react"
+import { Loader2, Hammer, Rocket, FlaskConical, AlertTriangle } from "lucide-react"
 import { motion } from "framer-motion"
 import dynamic from "next/dynamic"
+import { cn } from "@/lib/utils"
 
 // Dynamically import Monaco Editor to avoid SSR issues
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
@@ -41,6 +42,10 @@ interface EditorPanelProps {
   isTesting?: boolean
   onCursorChange?: (pos: { line: number; col: number }) => void
   diagnostics?: CompileDiagnostic[]
+  /** When set, the Deploy button shows a non-blocking warning (e.g. the connected
+   *  wallet is on the wrong network for a mainnet deploy). The click still works —
+   *  the actual block happens at sign time, scoped to the non-custodial path. */
+  deployWarning?: string
 }
 
 export function EditorPanel({
@@ -56,6 +61,7 @@ export function EditorPanel({
   isTesting = false,
   onCursorChange,
   diagnostics = [],
+  deployWarning,
 }: EditorPanelProps) {
   const editorRef = useRef<any>(null)
   const monacoRef = useRef<any>(null)
@@ -170,8 +176,21 @@ export function EditorPanel({
               <span className="text-xs">{isTesting ? "Testing…" : "Test"}</span>
             </Button>
           )}
-          <Button onClick={onDeploy} disabled={isDeploying} size="sm" className="h-8 gap-1.5">
-            {isDeploying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Rocket className="h-3.5 w-3.5" />}
+          <Button
+            onClick={onDeploy}
+            disabled={isDeploying}
+            size="sm"
+            title={deployWarning || undefined}
+            aria-label={deployWarning ? `Deploy — ${deployWarning}` : undefined}
+            className={cn("h-8 gap-1.5", deployWarning && "bg-warning text-background hover:bg-warning/90")}
+          >
+            {isDeploying ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : deployWarning ? (
+              <AlertTriangle className="h-3.5 w-3.5" />
+            ) : (
+              <Rocket className="h-3.5 w-3.5" />
+            )}
             <span className="text-xs">{isDeploying ? "Deploying…" : "Deploy"}</span>
           </Button>
         </div>

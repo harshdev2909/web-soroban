@@ -16,7 +16,7 @@ import { contractApi, type SpecFunction, type InvokeResponse, type FunctionTestC
 import { networkApi } from "@/lib/mainnetApi"
 import { useNetwork } from "@/contexts/NetworkContext"
 import { useWalletKit } from "@/contexts/WalletKitContext"
-import { explorerTx, getNetwork } from "@/lib/networks"
+import { explorerTx, getNetwork, MAINNET } from "@/lib/networks"
 import { MainnetInvokeDialog, type InvokeConfirmDetails } from "@/components/network/mainnet-invoke-dialog"
 import { cn, copyToClipboard } from "@/lib/utils"
 import { toast } from "sonner"
@@ -103,7 +103,7 @@ function buildArgs(fn: SpecFunction, values: Record<string, any>): Record<string
 
 export function InvokePanel({ contractId }: InvokePanelProps) {
   const { network } = useNetwork()
-  const { address, openWalletModal, signTransaction } = useWalletKit()
+  const { address, openWalletModal, signTransaction, getWalletNetwork } = useWalletKit()
   const [loading, setLoading] = useState(true)
   const [functions, setFunctions] = useState<SpecFunction[]>([])
   const [specError, setSpecError] = useState<string | null>(null)
@@ -233,6 +233,14 @@ export function InvokePanel({ contractId }: InvokePanelProps) {
         signer = address || (await openWalletModal()) || undefined
         if (!signer) {
           toast.error('Connect a wallet to sign mainnet transactions')
+          return
+        }
+        // Guard: the connected wallet must actually be on Mainnet (Public), or
+        // the sign/submit fails with a confusing error. Block only on a positive
+        // mismatch; if the wallet won't report its network, defer to submit-time.
+        const walletNet = await getWalletNetwork()
+        if (walletNet && walletNet.networkPassphrase !== MAINNET.passphrase) {
+          toast.error(`Your wallet is on ${walletNet.network || 'a different network'}. Switch it to Mainnet (Public) and try again.`)
           return
         }
       }

@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useWalletKit } from '@/contexts/WalletKitContext'
 import { useNetwork } from '@/contexts/NetworkContext'
 import { networkApi } from '@/lib/mainnetApi'
-import { getNetwork } from '@/lib/networks'
+import { getNetwork, MAINNET } from '@/lib/networks'
 import { MainnetDeployDialog, type DeployConfirmDetails } from '@/components/network/mainnet-deploy-dialog'
 import { projectApi, compileApi, deployApi, testApi, jobsApi, Project, ProjectFile, Template, usageApi } from '@/lib/api'
 import { pathOf, baseName } from '@/lib/paths'
@@ -144,10 +144,19 @@ function IDEPageContent() {
   const pendingSaveRef = useRef<null | (() => Promise<void>)>(null)
 
   const { user, loading: authLoading, isAuthenticated, refreshUser } = useAuth()
-  const { address, openWalletModal, signTransaction } = useWalletKit()
+  const { address, openWalletModal, signTransaction, getWalletNetwork, isConnected, walletNetworkPassphrase } = useWalletKit()
   const { network } = useNetwork()
   const searchParams = useSearchParams()
   const router = useRouter()
+
+  // Advisory Deploy-button warning: on mainnet, if the connected wallet is on a
+  // different network, flag it early. Non-blocking (custodial deploys don't use
+  // the browser wallet, and the signing mode isn't known until deploy time); the
+  // hard block lives in the non-custodial sign path.
+  const deployWarning =
+    network === 'mainnet' && isConnected && !!walletNetworkPassphrase && walletNetworkPassphrase !== MAINNET.passphrase
+      ? 'Your connected wallet is on the wrong network. Switch it to Mainnet (Public) before deploying.'
+      : undefined
 
   // The IDE is dark-only. The catalog (/projects) has its own theme toggle that
   // can leave `light` on the document via client-side nav — force dark here.
@@ -894,6 +903,19 @@ mod tests {
       return;
     }
 
+    // Guard: the connected wallet must actually be on Mainnet (Public). A wallet
+    // silently left on Testnet otherwise fails at sign/submit with a confusing
+    // error and real fees on the wrong network. Block early, only on a positive
+    // mismatch (if the wallet won't report its network, defer to submit-time).
+    const walletNet = await getWalletNetwork();
+    if (walletNet && walletNet.networkPassphrase !== MAINNET.passphrase) {
+      const label = walletNet.network || 'a different network';
+      const msg = `Your wallet is on ${label}. Switch it to Mainnet (Public) in the wallet, then try again.`;
+      appendLog('error', msg);
+      toast.error(msg);
+      return;
+    }
+
     appendLog('info', `Preparing mainnet upload — signer ${signer.slice(0, 6)}…${signer.slice(-4)}`);
     const up = await networkApi.deployPrepare({ projectId: proj._id, wasmBase64, sourcePk: signer, network: 'mainnet', step: 'upload' });
     let balance: number | undefined;
@@ -1145,6 +1167,40 @@ mod tests {
     } catch (error) {
       console.error("Failed to delete file:", error);
       toast.error("Failed to delete file");
+    }
+  };
+
+  // Delete a folder = drop every file whose path lives under the folder prefix,
+  // then persist the trimmed file set (same PUT the single-file delete uses).
+  const handleDeleteFolder = async (dirPath: string) => {
+    if (!project) return;
+
+    const prefix = dirPath.endsWith("/") ? dirPath : `${dirPath}/`;
+
+    try {
+      const removed = project.files.filter(file => pathOf(file).startsWith(prefix));
+      if (removed.length === 0) return;
+
+      const updatedFiles = project.files.filter(file => !pathOf(file).startsWith(prefix));
+      const updatedProject = await projectApi.updateProject(project._id, { files: updatedFiles });
+      setProject(updatedProject);
+
+      // If the active file lived inside the deleted folder, switch to the first remaining file.
+      if (activeFile && pathOf(activeFile).startsWith(prefix)) {
+        const newActiveFile = updatedProject.files[0];
+        setActiveFile(newActiveFile);
+        if (typeof window !== 'undefined' && newActiveFile) {
+          localStorage.setItem('lastActiveFileName', pathOf(newActiveFile));
+          localStorage.setItem('lastProjectId', updatedProject._id);
+        }
+      } else if (typeof window !== 'undefined') {
+        localStorage.setItem('lastProjectId', updatedProject._id);
+      }
+
+      toast.success(`Deleted folder "${dirPath}" (${removed.length} ${removed.length === 1 ? "file" : "files"})`);
+    } catch (error) {
+      console.error("Failed to delete folder:", error);
+      toast.error("Failed to delete folder");
     }
   };
 
@@ -1555,6 +1611,7 @@ impl From<Error> for soroban_sdk::Error {
                     onRenameFile={handleRenameFile}
                     onSaveProject={handleSaveProject}
                     onDeleteFile={handleDeleteFile}
+                    onDeleteFolder={handleDeleteFolder}
                   />
                 </ResizablePanel>
 
@@ -1575,6 +1632,7 @@ impl From<Error> for soroban_sdk::Error {
                     isTesting={isTesting}
                     onCursorChange={setCursor}
                     diagnostics={diagnostics}
+                    deployWarning={deployWarning}
                   />
                 </ResizablePanel>
 
