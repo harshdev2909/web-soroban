@@ -10,17 +10,15 @@ import {
   PlatformPaymentItem,
   AdminUserItem,
   BillingSummaryResponse,
-  ApiError,
 } from "@/lib/api"
 import PlaygroundNavbar from "@/components/playground-navbar"
 import PlaygroundFooter from "@/components/playground-footer"
-import { LoginModal } from "@/components/login-modal"
 import { Reveal } from "@/components/reveal"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   BarChart3, Server, Receipt, ListTodo, ExternalLink, Copy, Check,
-  Activity, Hammer, Rocket, FlaskConical, Users, Zap, Search, ShieldAlert, LogIn,
+  Activity, Hammer, Rocket, FlaskConical, Users, Zap, Search,
   Coins, Wallet, DollarSign, Sparkles, ShoppingCart,
 } from "lucide-react"
 import {
@@ -59,9 +57,7 @@ export default function AnalyticsPage() {
   const [userQuery, setUserQuery] = useState("")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [accessDenied, setAccessDenied] = useState<{ status: number } | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
-  const [loginOpen, setLoginOpen] = useState(false)
 
   const copyContractAddress = (address: string, id: string) => {
     void navigator.clipboard.writeText(address)
@@ -74,7 +70,6 @@ export default function AnalyticsPage() {
       try {
         setLoading(true)
         setError(null)
-        setAccessDenied(null)
         const [usageResponse, healthResponse, activityRes, transactionsRes, usersRes, billingRes] = await Promise.all([
           analyticsApi.getUsageSummary(),
           systemApi.getHealth(),
@@ -92,13 +87,8 @@ export default function AnalyticsPage() {
         setUsersTotal(usersRes.total ?? 0)
         setBilling(billingRes?.success ? billingRes.billing : null)
       } catch (err: unknown) {
-        // 401 (not signed in) / 403 (not an admin) → show the gate, not a red error.
-        if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
-          setAccessDenied({ status: err.status })
-        } else {
-          console.error("Failed to load analytics:", err)
-          setError(err instanceof Error ? err.message : "Failed to load analytics")
-        }
+        console.error("Failed to load analytics:", err)
+        setError(err instanceof Error ? err.message : "Failed to load analytics")
       } finally {
         setLoading(false)
       }
@@ -151,13 +141,13 @@ export default function AnalyticsPage() {
   return (
     <div className="relative min-h-screen bg-background">
       <div className="pointer-events-none fixed inset-0 -z-10 bg-radial-fade" aria-hidden />
-      <PlaygroundNavbar onSignInClick={() => setLoginOpen(true)} />
+      <PlaygroundNavbar />
 
       <main className="mx-auto max-w-6xl px-4 sm:px-6">
         {/* Hero */}
         <section className="pb-8 pt-12 sm:pt-16">
           <Reveal>
-            <p className="eyebrow">Admin · Platform analytics</p>
+            <p className="eyebrow">Platform analytics</p>
             <h1 className="mt-3 font-display text-title font-semibold tracking-tight">
               WebSoroban <span className="text-gradient-brand">at a glance</span>
             </h1>
@@ -173,10 +163,6 @@ export default function AnalyticsPage() {
           </Alert>
         )}
 
-        {accessDenied ? (
-          <AdminGate status={accessDenied.status} onSignIn={() => setLoginOpen(true)} />
-        ) : (
-        <>
         {/* KPI tiles */}
         <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           {loading
@@ -459,12 +445,9 @@ export default function AnalyticsPage() {
             )}
           </Panel>
         </section>
-        </>
-        )}
       </main>
 
       <PlaygroundFooter />
-      <LoginModal open={loginOpen} onOpenChange={setLoginOpen} />
     </div>
   )
 }
@@ -503,35 +486,6 @@ function ListSkeleton() {
       {Array.from({ length: 4 }).map((_, i) => (
         <Skeleton key={i} className="h-12 w-full rounded-lg" />
       ))}
-    </div>
-  )
-}
-
-function AdminGate({ status, onSignIn }: { status: number; onSignIn: () => void }) {
-  const notSignedIn = status === 401
-  return (
-    <div className="mx-auto mb-16 flex max-w-md flex-col items-center gap-4 rounded-xl border border-border bg-card/40 px-6 py-14 text-center">
-      <span className="grid h-12 w-12 place-items-center rounded-xl bg-warning/12 text-warning">
-        <ShieldAlert className="h-6 w-6" />
-      </span>
-      <div>
-        <h2 className="font-display text-lg font-semibold text-foreground">
-          {notSignedIn ? "Sign in required" : "Admin access required"}
-        </h2>
-        <p className="mt-1.5 text-sm text-muted-foreground">
-          {notSignedIn
-            ? "The analytics dashboard is restricted to administrators. Sign in with an admin account to continue."
-            : "This account doesn't have access to the analytics dashboard. Contact an administrator if you think this is a mistake."}
-        </p>
-      </div>
-      {notSignedIn && (
-        <button
-          onClick={onSignIn}
-          className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white transition hover:bg-brand/90"
-        >
-          <LogIn className="h-4 w-4" /> Sign in
-        </button>
-      )}
     </div>
   )
 }

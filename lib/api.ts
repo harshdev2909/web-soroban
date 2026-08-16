@@ -1135,7 +1135,7 @@ export interface PlatformPaymentItem extends PaymentHistoryItem {
   user?: { email: string; name: string | null } | null;
 }
 
-/** Error carrying the HTTP status so callers can branch on 401/403 (admin gate). */
+/** Error carrying the HTTP status so callers can branch on specific codes. */
 export class ApiError extends Error {
   status: number;
   code?: string;
@@ -1145,31 +1145,6 @@ export class ApiError extends Error {
     this.status = status;
     this.code = code;
   }
-}
-
-// Admin endpoints require the caller's token + admin email (ADMIN_EMAILS).
-async function adminFetch<T>(path: string): Promise<T> {
-  const token = authApi.getToken();
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    cache: 'no-store',
-  });
-  if (!response.ok) {
-    let code: string | undefined;
-    let message = `Request failed (${response.status})`;
-    try {
-      const body = await response.json();
-      code = body?.code;
-      message = body?.error || message;
-    } catch {
-      /* non-JSON error body */
-    }
-    throw new ApiError(message, response.status, code);
-  }
-  return response.json();
 }
 
 export interface AdminUserItem {
@@ -1219,33 +1194,56 @@ export interface AdminUsersResponse {
   users: AdminUserItem[];
 }
 
+// Public platform analytics endpoints (page is noindex; not linked in nav).
+async function analyticsFetch<T>(path: string): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    cache: 'no-store',
+  });
+  if (!response.ok) {
+    let code: string | undefined;
+    let message = `Request failed (${response.status})`;
+    try {
+      const body = await response.json();
+      code = body?.code;
+      message = body?.error || message;
+    } catch {
+      /* non-JSON error body */
+    }
+    throw new ApiError(message, response.status, code);
+  }
+  return response.json();
+}
+
 export const analyticsApi = {
-  // Project-wide usage summary (admin only)
+  // Project-wide usage summary
   getUsageSummary(): Promise<UsageSummaryResponse> {
-    return adminFetch<UsageSummaryResponse>('/usage/summary');
+    return analyticsFetch<UsageSummaryResponse>('/usage/summary');
   },
 
-  // Platform-wide activity logs (admin only)
+  // Platform-wide activity logs
   getActivityLogs(limit = 50): Promise<{ success: boolean; logs: ActivityLogEntry[] }> {
-    return adminFetch(`/usage/activity?limit=${limit}`);
+    return analyticsFetch(`/usage/activity?limit=${limit}`);
   },
 
-  // Platform-wide AI credit + billing metrics (admin only)
+  // Platform-wide AI credit + billing metrics
   getBillingSummary(): Promise<BillingSummaryResponse> {
-    return adminFetch<BillingSummaryResponse>('/usage/billing');
+    return analyticsFetch<BillingSummaryResponse>('/usage/billing');
   },
 
-  // Platform-wide transaction history (admin only)
+  // Platform-wide transaction history
   getAllTransactions(limit = 50): Promise<{ success: boolean; payments: PlatformPaymentItem[] }> {
-    return adminFetch(`/payments/all?limit=${limit}`);
+    return analyticsFetch(`/payments/all?limit=${limit}`);
   },
 
-  // User directory with per-user aggregate counts (admin only)
+  // User directory with per-user aggregate counts
   getUsers(q = '', limit = 200): Promise<AdminUsersResponse> {
     const params = new URLSearchParams();
     if (q) params.set('q', q);
     params.set('limit', String(limit));
-    return adminFetch<AdminUsersResponse>(`/usage/users?${params.toString()}`);
+    return analyticsFetch<AdminUsersResponse>(`/usage/users?${params.toString()}`);
   },
 };
 
