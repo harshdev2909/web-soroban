@@ -102,7 +102,7 @@ const PlaygroundFooter = () => {
 
       <div className="relative border-t border-border/60">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 py-6 text-xs text-muted-foreground sm:flex-row">
-          <p>© {new Date().getFullYear()} WebSoroban. All rights reserved.</p>
+          <p>© 2026 BayLeaf OÜ. All rights reserved.</p>
           <div className="flex items-center gap-5">
             <span className="flex items-center gap-1.5">
               <span className="relative flex h-1.5 w-1.5">

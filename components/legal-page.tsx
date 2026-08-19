@@ -8,13 +8,14 @@ import { Reveal } from "@/components/reveal"
 
 interface LegalPageProps {
   title: string
+  effective?: string
   updated: string
   intro: string
   children: ReactNode
 }
 
 /** Shared chrome + readable typography for legal pages (privacy, terms). */
-export function LegalPage({ title, updated, intro, children }: LegalPageProps) {
+export function LegalPage({ title, effective, updated, intro, children }: LegalPageProps) {
   const [loginOpen, setLoginOpen] = useState(false)
   return (
     <div className="relative min-h-screen bg-background">
@@ -26,7 +27,10 @@ export function LegalPage({ title, updated, intro, children }: LegalPageProps) {
           <Reveal>
             <p className="eyebrow">Legal</p>
             <h1 className="mt-3 font-display text-title font-semibold tracking-tight">{title}</h1>
-            <p className="mt-2 font-mono text-xs text-muted-foreground">Last updated · {updated}</p>
+            <div className="mt-2 space-y-0.5 font-mono text-xs text-muted-foreground">
+              {effective && <p>Effective date · {effective}</p>}
+              <p>Last updated · {updated}</p>
+            </div>
             <p className="lead mt-4 max-w-2xl text-[15px]">{intro}</p>
           </Reveal>
         </section>
@@ -63,5 +67,41 @@ export function Bullets({ items }: { items: ReactNode[] }) {
         </li>
       ))}
     </ul>
+  )
+}
+
+/** Responsive table for legal pages. */
+export function LegalTable({
+  headers,
+  rows,
+}: {
+  headers: string[]
+  rows: ReactNode[][]
+}) {
+  return (
+    <div className="overflow-x-auto rounded-lg border border-border">
+      <table className="w-full min-w-[32rem] text-left text-sm">
+        <thead>
+          <tr className="border-b border-border bg-muted/30">
+            {headers.map((h) => (
+              <th key={h} className="px-3 py-2.5 font-medium text-foreground">
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => (
+            <tr key={i} className="border-b border-border/60 last:border-0">
+              {row.map((cell, j) => (
+                <td key={j} className="px-3 py-2.5 align-top text-foreground/75">
+                  {cell}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   )
 }
