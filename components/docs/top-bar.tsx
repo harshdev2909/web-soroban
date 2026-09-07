@@ -4,6 +4,7 @@ import Link from "next/link"
 import { ArrowUpRight, Menu } from "lucide-react"
 import { DocsSearch, type SearchEntry } from "./search"
 import { ThemeToggle } from "./theme"
+import { NovaMark } from "@/components/nova-mark"
 
 /** Sticky top bar: logo, version, ⌘K search, theme toggle, link back to the IDE. */
 export function DocsTopBar({
@@ -27,7 +28,7 @@ export function DocsTopBar({
       </button>
 
       <Link href="/docs" className="flex items-center gap-2">
-        <img src="/websoroban_logo.png" alt="" className="h-6 w-6 object-contain" aria-hidden />
+        <NovaMark className="h-6 w-6" />
         <span className="font-display text-sm font-semibold tracking-tight text-foreground">WebSoroban</span>
         <span className="rounded-md border border-border bg-muted/50 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
           docs {version}

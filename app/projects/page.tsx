@@ -20,6 +20,7 @@ import {
 } from '@/lib/catalog'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { NovaMark } from '@/components/nova-mark'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -235,7 +236,7 @@ export default function ProjectsPage() {
         <div className="pointer-events-none absolute inset-0 grain" aria-hidden />
         <div className="relative max-w-md text-center">
           <LoginModal open={loginOpen} onOpenChange={setLoginOpen} />
-          <img src="/websoroban_logo.png" alt="" className="mx-auto mb-6 h-14 w-14 object-contain" aria-hidden />
+          <NovaMark className="mx-auto mb-6 h-14 w-14" />
           <h1 className="font-display text-3xl font-semibold tracking-tight">
             Sign in to <span className="text-gradient-brand">WebSoroban</span>
           </h1>

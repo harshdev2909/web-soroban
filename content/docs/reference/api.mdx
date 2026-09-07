@@ -121,6 +121,44 @@ test runs.
 Returns `403` with `upgradeRequired: true` when over the function-test limit. See
 [Plans and limits](/docs/plans-and-limits).
 
+## Payments
+
+### GET /api/pay/resource/:slug
+
+<Badge tone="signed">x402 payment</Badge>
+
+Public hosted resource. An unpaid request returns HTTP `402`, a
+`PAYMENT-REQUIRED` header, and a JSON summary containing `endpoint`, `price`,
+`asset`, and `network`. Retry with a valid `PAYMENT-SIGNATURE` to receive the
+configured JSON response and a `PAYMENT-RESPONSE` settlement header.
+
+### GET /api/pay/overview
+
+<Badge tone="read-only">read-only</Badge>
+
+Return Payment Studio metrics, configured endpoints, and recent request,
+verification, and settlement events.
+
+### POST /api/pay/endpoints
+
+Create a hosted endpoint. The request accepts `name`, `slug`, `price`, `payTo`,
+`responseMessage`, and optional `projectId`. The response returns the endpoint
+key once; store it as a server-side secret.
+
+### PATCH /api/pay/endpoints/:id
+
+Pause or resume an endpoint with `{ "active": boolean }`.
+
+### POST /api/pay/endpoints/:id/rotate-key
+
+Invalidate the existing endpoint key and return its replacement once.
+
+### `/api/pay/facilitator/supported`, `/verify`, and `/settle`
+
+Endpoint-key-authenticated proxy to the managed x402 facilitator. Developer
+credentials are removed before the server adds its own facilitator credentials.
+See [x402 payments](/docs/payments) for the complete browser flow.
+
 ## Wallet
 
 ### POST /api/wallet/fund

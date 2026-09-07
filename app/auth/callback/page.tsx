@@ -9,6 +9,12 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { cn, copyToClipboard, formatXlm, truncateAddress } from '@/lib/utils'
 import { Loader2, Wallet, Check, Copy, ArrowRight, AlertTriangle } from 'lucide-react'
 
+const AUTH_RETURN_TO_KEY = 'websoroban.auth.returnTo'
+
+function safeReturnTo(value: string | null) {
+  return value?.startsWith('/') && !value.startsWith('//') ? value : '/projects'
+}
+
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative grid min-h-screen place-items-center overflow-hidden bg-background px-4">
@@ -26,6 +32,7 @@ function AuthCallbackContent() {
   const [phase, setPhase] = useState<'auth' | 'wallet' | 'ready' | 'error'>('auth')
   const [wallet, setWallet] = useState<WalletInfo | null>(null)
   const [copied, setCopied] = useState(false)
+  const [returnTo, setReturnTo] = useState('/projects')
   const ranRef = useRef(false)
 
   useEffect(() => {
@@ -38,6 +45,9 @@ function AuthCallbackContent() {
       const token = searchParams.get('token')
       const success = searchParams.get('success')
       const error = searchParams.get('error')
+      const destination = safeReturnTo(window.sessionStorage.getItem(AUTH_RETURN_TO_KEY))
+      window.sessionStorage.removeItem(AUTH_RETURN_TO_KEY)
+      setReturnTo(destination)
 
       if (error || success !== 'true' || !token) {
         router.push(error ? `/?error=${encodeURIComponent(error)}` : '/')
@@ -50,6 +60,10 @@ function AuthCallbackContent() {
         setPhase('wallet')
         const w = await walletApi.ensure()
         setWallet(w)
+        if (destination !== '/projects') {
+          router.replace(destination)
+          return
+        }
         setPhase('ready')
       } catch (err) {
         console.error('Auth callback failed:', err)
@@ -100,8 +114,8 @@ function AuthCallbackContent() {
           <p className="mt-1.5 text-sm text-muted-foreground">
             Your wallet will finish provisioning in a moment.
           </p>
-          <Button className="mt-6 w-full gap-2" onClick={() => router.push('/projects')}>
-            Continue to your projects <ArrowRight className="h-4 w-4" />
+          <Button className="mt-6 w-full gap-2" onClick={() => router.push(returnTo)}>
+            {returnTo === '/pay' ? 'Continue to payment studio' : 'Continue to your projects'} <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
       </Shell>

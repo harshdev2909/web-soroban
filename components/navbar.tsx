@@ -33,6 +33,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { User } from '@/lib/api'
 import { billingApi } from '@/lib/billingApi'
 import { CREDITS_UPDATED_EVENT } from '@/components/billing/credit-badge'
+import { NovaMark } from '@/components/nova-mark'
 
 interface NavbarProps {
   projectSelector?: React.ReactNode
@@ -64,7 +65,7 @@ export function Navbar({
       {/* Left: brand + project */}
       <div className="flex min-w-0 items-center gap-3">
         <Link href="/" className="flex items-center gap-2 shrink-0" aria-label="WebSoroban home">
-          <img src="/websoroban_logo.png" alt="" className="h-7 w-7 object-contain" aria-hidden />
+          <NovaMark className="h-7 w-7" />
           <span className="hidden font-display text-base font-semibold tracking-tight sm:inline">
             WebSoroban
           </span>

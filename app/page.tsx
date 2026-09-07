@@ -1,382 +1,180 @@
 'use client'
 
-/* ─────────────────────────────────────────────────────────
- * LANDING ENTRANCE STORYBOARD
- *
- * Nav is static and interactive immediately (never held blank).
- *    60ms   eyebrow fades in
- *  140ms   headline lines rise
- *  240ms   subhead rises
- *  320ms   CTAs rise (primary actionable)
- *  400ms   trust row rises
- *  520ms   IDE preview rises + settles
- * Below the fold: sections reveal on scroll (Reveal).
- * ───────────────────────────────────────────────────────── */
-
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import Link from 'next/link'
-import { motion, useReducedMotion, type Variants } from 'framer-motion'
+import { useRouter } from 'next/navigation'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import {
+  ArrowRight, ArrowUpRight, Bot, Braces, Check, ChevronRight, CircleDollarSign,
+  DatabaseZap, EyeOff, FileCode2, Fingerprint, Globe2, Layers3,
+  MessageSquareText, Play, Sparkles, TerminalSquare, TestTube2, WandSparkles, Zap,
+} from 'lucide-react'
 import PlaygroundNavbar from '@/components/playground-navbar'
 import PlaygroundFooter from '@/components/playground-footer'
 import PlaygroundSubscription from '@/components/playground-subscription'
 import { LoginModal } from '@/components/login-modal'
+import { NovaOrbitArt, NovaOrbitBackdrop, PaymentConstellation } from '@/components/landing/nova-art'
+import { WorkspaceOrbitRail } from '@/components/landing/workspace-orbit-rail'
 import { Reveal } from '@/components/reveal'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/AuthContext'
-import {
-  ArrowRight,
-  Wallet,
-  Globe,
-  Rocket,
-  KeyRound,
-  Check,
-  Sparkles,
-  Bot,
-  Bug,
-  Layers,
-  ListChecks,
-  MessageCircleQuestion,
-  Command,
-  AtSign,
-  ShieldCheck,
-  GitCompareArrows,
-  FileCode2,
-  Hammer,
-} from 'lucide-react'
+import { cn } from '@/lib/utils'
 
-const EASE = [0.16, 1, 0.3, 1] as const
-
-const container: Variants = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.08, delayChildren: 0.06 } },
-}
-const item: Variants = {
-  hidden: { opacity: 0, y: 14 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.55, ease: EASE } },
+const STELLAR_DOCS = {
+  mpp: 'https://developers.stellar.org/docs/build/agentic-payments/mpp',
+  x402: 'https://developers.stellar.org/docs/build/agentic-payments/x402/built-on-stellar',
+  ingest: 'https://developers.stellar.org/docs/build/apps/ingest-sdk',
+  privacy: 'https://developers.stellar.org/docs/build/apps/privacy',
+  zk: 'https://developers.stellar.org/docs/build/apps/zk',
 }
 
-// The five Copilot modes, shown on the showcase + bento.
-const MODES = [
-  { icon: Bot, label: 'Agent', desc: 'Generates & edits, then self-corrects against compile + tests' },
-  { icon: MessageCircleQuestion, label: 'Ask', desc: 'Read-only answers about your contract' },
-  { icon: ListChecks, label: 'Plan', desc: 'Researches, then writes an editable build plan' },
-  { icon: Bug, label: 'Debug', desc: 'Finds the root cause, proposes a minimal fix' },
-  { icon: Layers, label: 'Multitask', desc: 'Runs several agents in parallel' },
+const infrastructure = [
+  { index: '01', icon: CircleDollarSign, title: 'x402 facilitator', label: 'Agentic payments', copy: 'Add paid API routes with verification, settlement, and Stellar-native USDC flows built into the workspace.', href: STELLAR_DOCS.x402, status: 'Building' },
+  { index: '02', icon: Zap, title: 'MPP on Stellar', label: 'Machine payments', copy: 'Prototype per-request charges and high-frequency sessions with Soroban SAC transfers and payment channels.', href: STELLAR_DOCS.mpp, status: 'Building' },
+  { index: '03', icon: DatabaseZap, title: 'Ingest pipelines', label: 'Ledger data', copy: 'Create lightweight, event-driven data services from Stellar ledger metadata without leaving the project.', href: STELLAR_DOCS.ingest, status: 'Planned' },
+  { index: '04', icon: EyeOff, title: 'Privacy primitives', label: 'Private applications', copy: 'Start with privacy-pool and confidential-token patterns designed for programmable compliance.', href: STELLAR_DOCS.privacy, status: 'Planned' },
+  { index: '05', icon: Fingerprint, title: 'ZK workspace', label: 'Proof-ready tooling', copy: 'Build around BN254 and Poseidon primitives, verifier contracts, and higher-level proof systems.', href: STELLAR_DOCS.zk, status: 'Planned' },
 ]
+
+/* Hero entrance storyboard (absolute): 60ms eyebrow; 120ms headline; 190ms copy;
+ * 240ms actions; 280ms product window; 330ms proof. Total: 430ms. */
+const HERO_TIMING = { eyebrow: 0.06, headline: 0.12, copy: 0.19, actions: 0.24, product: 0.28, proof: 0.33 }
+const spring = { type: 'spring' as const, stiffness: 310, damping: 29, mass: 0.82 }
 
 export default function HomePage() {
   const router = useRouter()
   const { isAuthenticated } = useAuth()
   const [loginOpen, setLoginOpen] = useState(false)
   const reduce = useReducedMotion()
-
-  const startBuilding = () => {
-    if (isAuthenticated) router.push('/projects')
-    else setLoginOpen(true)
-  }
-
-  const motionProps = reduce
-    ? {}
-    : { variants: container, initial: 'hidden' as const, animate: 'show' as const }
+  const startBuilding = () => isAuthenticated ? router.push('/projects') : setLoginOpen(true)
+  const enter = (delay: number, distance = 12) => ({
+    initial: reduce ? false as const : { opacity: 0, y: distance, scale: 0.985 },
+    animate: reduce ? undefined : { opacity: 1, y: 0, scale: 1 },
+    transition: { ...spring, delay },
+  })
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
+    <main className="nova-landing min-h-screen overflow-hidden bg-background text-foreground">
       <LoginModal open={loginOpen} onOpenChange={setLoginOpen} />
       <PlaygroundNavbar onSignInClick={() => setLoginOpen(true)} />
 
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0 bg-radial-fade" aria-hidden />
-        <div className="pointer-events-none absolute inset-0 grain" aria-hidden />
-        {/* hairline grid wash */}
-        <div
-          className="pointer-events-none absolute inset-x-0 top-0 h-[420px] opacity-[0.5] [mask-image:linear-gradient(to_bottom,black,transparent)]"
-          aria-hidden
-        >
-          <div className="h-full w-full bg-grid-faint [background-size:64px_64px]" />
-        </div>
-
-        <div className="mx-auto max-w-6xl px-6 pb-16 pt-20 md:pb-24 md:pt-28">
-          <motion.div className="mx-auto flex max-w-3xl flex-col items-center text-center" {...motionProps}>
-            {/* Live-on-mainnet announcement (amber, to match the IDE's mainnet treatment) */}
-            <motion.div variants={reduce ? undefined : item}>
-              <Link
-                href="/docs/networks"
-                className="group inline-flex items-center gap-2 rounded-full border border-warning/40 bg-warning/10 px-3 py-1 text-xs font-medium text-warning backdrop-blur transition-colors hover:bg-warning/15"
-              >
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-warning opacity-60" />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-warning" />
-                </span>
-                Now live on Stellar Mainnet
-                <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+      <section className="relative pb-10 pt-4 sm:pt-8" id="product">
+        <div className="nova-grid pointer-events-none absolute inset-x-0 -top-24 h-[48rem]" aria-hidden="true" />
+        <div className="nova-aurora pointer-events-none absolute -right-56 top-0 h-[36rem] w-[36rem] rounded-full" aria-hidden="true" />
+        <div className="nova-wash pointer-events-none absolute -left-48 top-64 h-80 w-80 rounded-full" aria-hidden="true" />
+        <div className="relative mx-auto grid max-w-7xl gap-14 px-6 pb-16 pt-12 lg:grid-cols-[0.86fr_1.14fr] lg:items-center lg:gap-10 lg:pb-24 lg:pt-20">
+          <div className="relative z-10 max-w-2xl">
+            <motion.div {...enter(HERO_TIMING.eyebrow)}>
+              <Link href="#stellar-stack" className="group inline-flex min-h-10 items-center gap-2 rounded-full border border-foreground/15 bg-card/85 px-4 font-mono text-[0.68rem] font-medium uppercase tracking-[0.18em] text-foreground shadow-xs backdrop-blur-md transition-[border-color,background-color] duration-150 hover:border-brand/50 hover:bg-card">
+                <span className="whitespace-nowrap">Built natively for</span>
+                <span className="h-4 w-px bg-foreground/15" aria-hidden="true" />
+                <Image src="/stellar-logo-black.svg" alt="Stellar" width={106} height={26} priority className="h-4 w-auto" />
+                <ChevronRight className="h-3.5 w-3.5 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden="true" />
               </Link>
             </motion.div>
-
-            <motion.span
-              variants={reduce ? undefined : item}
-              className="mt-3 inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-3 py-1 backdrop-blur"
-            >
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand opacity-60" />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-brand" />
+            <motion.h1 {...enter(HERO_TIMING.headline)} className="mt-7 max-w-[12ch] font-display text-[clamp(3.35rem,7vw,6.6rem)] font-semibold leading-[0.9] tracking-[-0.055em]">
+              Idea to orbit,
+              <span className="relative mt-2 block w-fit text-brand">
+                on Stellar.
+                <svg className="absolute -bottom-3 left-0 h-4 w-full overflow-visible text-brand/45" viewBox="0 0 300 18" fill="none" aria-hidden="true">
+                  <motion.path d="M4 12C58 3 128 16 185 8C229 2 263 7 296 4" stroke="currentColor" strokeWidth="3" strokeLinecap="round" initial={reduce ? false : { pathLength: 0, opacity: 0 }} animate={reduce ? undefined : { pathLength: 1, opacity: 1 }} transition={{ duration: 0.42, delay: 0.38, ease: [0.16, 1, 0.3, 1] }} />
+                </svg>
               </span>
-              <span className="eyebrow flex items-center gap-1.5">
-                <Sparkles className="h-3 w-3 text-brand" /> AI Copilot for Soroban
-              </span>
-            </motion.span>
-
-            <motion.h1
-              variants={reduce ? undefined : item}
-              className="font-display mt-6 text-display-lg font-semibold"
-            >
-              Generate, debug, and deploy
-              <br />
-              <span className="text-brand">Soroban contracts</span> with AI.
             </motion.h1>
-
-            <motion.p variants={reduce ? undefined : item} className="lead mt-6 max-w-xl text-base md:text-lg">
-              A web IDE with a Cursor-style Copilot for Stellar. Describe a contract in plain English and
-              it writes the Rust, compiles to WASM, fixes its own errors, and deploys to testnet (or
-              mainnet with your connected wallet). Every edit is validated against the real build and
-              security pipeline.
+            <motion.p {...enter(HERO_TIMING.copy)} className="mt-8 max-w-[36rem] text-lg leading-8 text-muted-foreground sm:text-xl">
+              Describe the product. WebSoroban creates the interface, Soroban contracts, data layer, and payment rails—then opens every file in a real web IDE.
             </motion.p>
-
-            <motion.div
-              variants={reduce ? undefined : item}
-              className="mt-8 flex flex-col items-center gap-3 sm:flex-row"
-            >
-              <motion.div whileTap={reduce ? undefined : { scale: 0.98 }}>
-                <Button size="lg" className="gap-2" onClick={startBuilding}>
-                  {isAuthenticated ? 'Open your projects' : 'Start building free'}
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </motion.div>
-              <Button asChild size="lg" variant="outline">
-                <Link href="/marketplace">Browse templates</Link>
+            <motion.div {...enter(HERO_TIMING.actions)} className="mt-9 flex flex-col gap-3 sm:flex-row">
+              <Button size="lg" className="nova-button h-12 gap-2 rounded-full px-6 shadow-md" onClick={startBuilding}>
+                <WandSparkles className="h-4 w-4" aria-hidden="true" /> {isAuthenticated ? 'Open WebSoroban' : 'Build with WebSoroban'}
+              </Button>
+              <Button asChild size="lg" variant="outline" className="h-12 rounded-full border-foreground/20 bg-background/70 px-6 backdrop-blur-sm hover:bg-card">
+                <Link href="/ide">Explore the IDE <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
               </Button>
             </motion.div>
-
-            <motion.ul
-              variants={reduce ? undefined : item}
-              className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-muted-foreground"
-            >
-              {['No install', 'Testnet + Mainnet', 'Every edit compiled + audited'].map((t) => (
-                <li key={t} className="flex items-center gap-1.5">
-                  <Check className="h-3.5 w-3.5 text-success" /> {t}
-                </li>
+            <motion.ul {...enter(HERO_TIMING.proof, 8)} className="mt-8 flex max-w-xl flex-wrap gap-x-6 gap-y-3 text-sm text-muted-foreground">
+              {['No local setup', 'Compile-verified', 'You own the code'].map((item) => (
+                <li key={item} className="flex items-center gap-2"><span className="grid h-5 w-5 place-items-center rounded-full bg-brand/10"><Check className="h-3 w-3 text-brand" aria-hidden="true" /></span>{item}</li>
               ))}
             </motion.ul>
-          </motion.div>
+          </div>
 
-          <motion.div
-            initial={reduce ? undefined : { opacity: 0, y: 24 }}
-            animate={reduce ? undefined : { opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.5, ease: EASE }}
-            className="mt-16"
-          >
-            <IdePreview />
+          <motion.div {...enter(HERO_TIMING.product, 16)} className="relative isolate mx-auto w-full max-w-3xl lg:mx-0">
+            <NovaOrbitArt className="pointer-events-none absolute -inset-x-16 -inset-y-24 -z-10 hidden xl:block" />
+            <NovaOrbitBackdrop className="pointer-events-none absolute left-1/2 top-[-5rem] -z-10 w-[calc(100%+4rem)] -translate-x-1/2 sm:top-[-6rem] sm:w-[calc(100%+6rem)] xl:hidden" />
+            <div className="nova-float-chip absolute -left-3 top-24 z-20 hidden items-center gap-2 rounded-full border border-foreground/10 bg-card/90 px-3 py-2 font-mono text-[0.68rem] shadow-md backdrop-blur-md sm:flex lg:-left-8"><span className="h-2 w-2 rounded-full bg-success" /> contract compiled</div>
+            <div className="nova-float-chip-delayed absolute -right-3 bottom-16 z-20 hidden items-center gap-2 rounded-full bg-foreground px-3 py-2 font-mono text-[0.68rem] text-background shadow-lg sm:flex lg:-right-7"><Zap className="h-3.5 w-3.5 text-brand" /> 0.01 USDC settled</div>
+            <NovaBuilderPreview />
           </motion.div>
+        </div>
+
+        <motion.div {...enter(0.38, 8)} className="relative z-10 mx-auto max-w-7xl px-6">
+          <WorkspaceOrbitRail />
+        </motion.div>
+      </section>
+
+      <section className="relative border-b border-border/60" id="platform">
+        <div className="mx-auto max-w-7xl px-6 py-24 lg:py-32">
+          <Reveal className="grid gap-8 lg:grid-cols-[0.72fr_1fr] lg:items-end">
+            <div><p className="eyebrow text-brand">From sentence to software</p><h2 className="mt-4 max-w-2xl font-display text-4xl font-semibold leading-[1.02] sm:text-6xl">Build visually. Drop into the code at any moment.</h2></div>
+            <p className="max-w-xl text-lg leading-8 text-muted-foreground lg:justify-self-end">The ease of a product builder with the transparency of a full IDE. WebSoroban plans in small, reviewable changes, runs the project, and keeps you in control.</p>
+          </Reveal>
+          <Reveal className="mt-14" delay={0.04}><BuildWorkspace /></Reveal>
         </div>
       </section>
 
-      {/* AI Copilot showcase */}
-      <section className="relative overflow-hidden border-t border-border/60">
-        <div className="pointer-events-none absolute inset-0 bg-radial-fade opacity-60" aria-hidden />
-        <div className="mx-auto grid max-w-6xl items-center gap-12 px-6 py-20 md:py-28 lg:grid-cols-2">
+      <section className="py-8 sm:py-12" id="payments">
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="nova-dark-island relative overflow-hidden rounded-3xl bg-foreground px-5 py-8 text-background shadow-xl sm:px-9 sm:py-12 lg:px-14 lg:py-16">
+            <div className="nova-dark-grid pointer-events-none absolute inset-0" aria-hidden="true" />
+            <Reveal className="relative grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
+              <div><p className="font-mono text-[0.68rem] font-medium uppercase tracking-[0.2em] text-brand">Agentic payments</p><h2 className="mt-4 max-w-xl font-display text-4xl font-semibold leading-[1.02] sm:text-6xl">Give software a native way to pay.</h2><p className="mt-6 max-w-lg text-base leading-7 text-background/65">Design, generate, and test paid endpoints where agents and services settle on Stellar. The payment layer belongs in the product workflow—not in a second dashboard.</p><Button asChild className="mt-7 rounded-full bg-brand text-brand-foreground hover:bg-brand/90"><Link href="/pay">Open WebSoroban Pay <ArrowRight className="h-4 w-4" /></Link></Button></div>
+              <PaymentConstellation className="mx-auto w-full max-w-2xl" />
+            </Reveal>
+            <Reveal className="relative mt-12 grid gap-4 lg:grid-cols-2" delay={0.06}>
+              <PaymentRow number="01" title="x402 facilitator" copy="Protect an endpoint, verify its payment, and settle Stellar USDC from one guided flow." tag="HTTP 402" href={STELLAR_DOCS.x402} />
+              <PaymentRow number="02" title="MPP charge + session" copy="Create single charges or high-frequency agent sessions using Soroban assets and channels." tag="@stellar/mpp" href={STELLAR_DOCS.mpp} />
+            </Reveal>
+            <Reveal className="relative mt-7 flex flex-col gap-5 rounded-2xl border border-background/15 bg-background/[0.045] p-5 sm:flex-row sm:items-center sm:justify-between" delay={0.08}>
+              <p className="max-w-lg font-display text-xl">From payment policy to a locally verified request.</p>
+              <ol className="flex flex-wrap gap-x-6 gap-y-3">{['Define', 'Generate', 'Verify'].map((title, index) => <li key={title} className="flex items-center gap-2 font-mono text-xs text-background/60"><span className="grid h-6 w-6 place-items-center rounded-full bg-brand text-[0.62rem] text-brand-foreground">{index + 1}</span>{title}</li>)}</ol>
+            </Reveal>
+          </div>
+        </div>
+      </section>
+
+      <section className="relative border-b border-border/60" id="stellar-local">
+        <div className="nova-wash pointer-events-none absolute -right-28 top-24 h-72 w-72 rounded-full opacity-70" aria-hidden="true" />
+        <div className="relative mx-auto grid max-w-7xl gap-14 px-6 py-24 lg:grid-cols-[0.82fr_1.18fr] lg:items-center lg:py-32">
           <Reveal>
-            <p className="eyebrow flex items-center gap-1.5">
-              <Sparkles className="h-3.5 w-3.5 text-brand" /> The Copilot
-            </p>
-            <h2 className="font-display mt-3 text-title font-semibold">An agent that actually builds</h2>
-            <p className="lead mt-3 max-w-md">
-              Not autocomplete. A real tool-using agent: it reads your project, writes diffs you review,
-              runs the compiler, reads the errors, and fixes them, looping until it builds clean and the
-              tests pass.
-            </p>
-            <ul className="mt-7 space-y-2.5">
-              {MODES.map((m) => {
-                const Icon = m.icon
-                return (
-                  <li key={m.label} className="flex items-start gap-3">
-                    <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-md border border-border bg-card text-brand">
-                      <Icon className="h-3.5 w-3.5" />
-                    </span>
-                    <p className="text-sm text-muted-foreground">
-                      <span className="font-medium text-foreground">{m.label}.</span> {m.desc}
-                    </p>
-                  </li>
-                )
-              })}
-            </ul>
+            <div className="inline-flex min-h-10 items-center gap-2 rounded-full border border-brand/20 bg-brand/10 px-4 font-mono text-[0.68rem] font-medium uppercase tracking-[0.18em] text-brand"><TerminalSquare className="h-4 w-4" aria-hidden="true" /> Now building</div>
+            <h2 className="mt-6 max-w-xl font-display text-4xl font-semibold leading-[1.02] sm:text-6xl">A local Stellar that keeps up with you.</h2>
+            <p className="mt-6 max-w-lg text-lg leading-8 text-muted-foreground">WebSoroban Local is our Surfpool-inspired development network: a fast, drop-in environment built for repeatable Stellar application testing.</p>
+            <ul className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">{['Snapshots + instant resets', 'Funded test fixtures', 'Readable transaction traces', 'WebSoroban and terminal workflows'].map((item) => <li key={item} className="flex items-center gap-3 text-sm"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-foreground text-background"><Check className="h-3.5 w-3.5" aria-hidden="true" /></span>{item}</li>)}</ul>
           </Reveal>
-
-          <Reveal delay={0.1}>
-            <CopilotPreview reduce={reduce} />
-          </Reveal>
+          <Reveal delay={0.06}><LocalnetTerminal /></Reveal>
         </div>
       </section>
 
-      {/* Features (asymmetric bento) */}
-      <section className="mx-auto max-w-6xl px-6 py-20 md:py-28">
-        <Reveal className="max-w-2xl">
-          <p className="eyebrow">Everything in one tab</p>
-          <h2 className="font-display mt-3 text-title font-semibold">
-            From a prompt to a deployed contract
-          </h2>
-          <p className="lead mt-3 max-w-lg">
-            The Copilot and the toolchain share one workspace. Generate, compile, audit, and ship
-            without a local setup or a context switch.
-          </p>
-        </Reveal>
-
-        <div className="mt-10 grid auto-rows-[minmax(0,1fr)] grid-cols-1 gap-3 md:grid-cols-6">
-          {/* Wide: Copilot / five modes */}
-          <BentoCard className="md:col-span-4" icon={Sparkles} title="AI Copilot, five real modes" reduce={reduce}>
-            <p className="lead max-w-md text-sm">
-              Ask, Agent, Plan, Debug, and Multitask, enforced by tool permissions, not labels. Agent
-              writes diffs you review and self-corrects against the compiler.
-            </p>
-            <div className="mt-5 flex flex-wrap gap-1.5">
-              {MODES.map((m) => {
-                const Icon = m.icon
-                return (
-                  <span
-                    key={m.label}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/70 px-2.5 py-1 font-mono text-[11px] text-muted-foreground"
-                  >
-                    <Icon className="h-3 w-3 text-brand" /> {m.label}
-                  </span>
-                )
-              })}
-            </div>
-          </BentoCard>
-
-          {/* Model switching */}
-          <BentoCard className="md:col-span-2" icon={Bot} title="Bring any model" reduce={reduce}>
-            <p className="lead text-sm">
-              Claude, GPT, Gemini, DeepSeek. Switch per chat or let Auto route, and MAX Mode dials up
-              reasoning.
-            </p>
-            <div className="mt-5 space-y-1.5 rounded-lg border border-border bg-background/70 p-3">
-              {[
-                ['Claude Opus 4.8', 'High'],
-                ['GPT-5.1', 'High'],
-                ['Auto', 'Routing'],
-              ].map(([m, tag]) => (
-                <div key={m} className="flex items-center justify-between">
-                  <span className="font-mono text-[11px] text-foreground/90">{m}</span>
-                  <span className="rounded bg-brand/12 px-1.5 py-0.5 font-mono text-[9px] text-brand">{tag}</span>
-                </div>
-              ))}
-            </div>
-          </BentoCard>
-
-          {/* Row 2 */}
-          <BentoCard className="md:col-span-2" icon={Command} title="Slash commands & @-context" reduce={reduce}>
-            <p className="lead text-sm">
-              <span className="font-mono text-foreground/90">/generate</span>,{' '}
-              <span className="font-mono text-foreground/90">/fix</span>,{' '}
-              <span className="font-mono text-foreground/90">/audit</span>. Attach{' '}
-              <span className="inline-flex items-center gap-0.5 font-mono text-foreground/90"><AtSign className="h-3 w-3" />file</span>,{' '}
-              <span className="font-mono text-foreground/90">@errors</span>, or your selection as context.
-            </p>
-          </BentoCard>
-          <BentoCard className="md:col-span-2" icon={Hammer} title="Validated, not hallucinated" reduce={reduce}>
-            <p className="lead text-sm">
-              Every generation runs the real pipeline (compile, clippy, tests) and loops on the
-              errors until it builds for the testnet WASM target.
-            </p>
-          </BentoCard>
-          <BentoCard className="md:col-span-2" icon={ShieldCheck} title="Security audit built in" reduce={reduce}>
-            <p className="lead text-sm">
-              A Soroban rule check flags missing{' '}
-              <span className="font-mono text-foreground/90">require_auth</span>, unchecked math, risky
-              storage TTL, and reachable panics, each with a fix.
-            </p>
-          </BentoCard>
-
-          {/* Wide platform strip */}
-          <BentoCard className="md:col-span-6" icon={Rocket} title="A real Stellar workflow underneath" reduce={reduce}>
-            <p className="lead max-w-2xl text-sm">
-              Server-side WASM builds, a funded testnet wallet provisioned on first login, and one-click
-              deploy with the contract id inline. Ship on testnet with the faucet, or connect your own
-              wallet to deploy and invoke on <span className="text-warning">mainnet</span>. Your key
-              never leaves the browser.
-            </p>
-            <div className="mt-5 grid gap-3 sm:grid-cols-3">
-              {[
-                { icon: Globe, label: 'Testnet & Mainnet', sub: 'Faucet on testnet · connect for mainnet' },
-                { icon: Wallet, label: 'Funded testnet wallet', sub: '10,000 XLM on first login' },
-                { icon: KeyRound, label: 'Keys encrypted · exportable', sub: 'Self-custody anytime' },
-              ].map((x) => {
-                const Icon = x.icon
-                return (
-                  <div key={x.label} className="flex items-center gap-3 rounded-lg border border-border bg-background/70 p-3">
-                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-brand/12 text-brand">
-                      <Icon className="h-4 w-4" />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="truncate text-xs font-medium text-foreground">{x.label}</p>
-                      <p className="truncate text-[11px] text-muted-foreground">{x.sub}</p>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </BentoCard>
+      <section className="border-b border-border/60" id="stellar-stack">
+        <div className="mx-auto max-w-7xl px-6 py-24 lg:py-32">
+          <Reveal className="grid gap-8 lg:grid-cols-2 lg:items-end">
+            <div><p className="eyebrow text-brand">The Stellar-native layer</p><h2 className="mt-4 max-w-2xl font-display text-4xl font-semibold leading-[1.02] sm:text-6xl">The edges of the network, inside one workspace.</h2></div>
+            <p className="max-w-xl text-base leading-7 text-muted-foreground lg:justify-self-end">Explore the infrastructure WebSoroban is bringing into the builder. “Planned” means product direction, not a production release.</p>
+          </Reveal>
+          <div className="mt-14 rounded-3xl border border-foreground/15 bg-card/70 p-2 shadow-sm backdrop-blur-sm sm:p-3">
+            {infrastructure.map((item) => { const Icon = item.icon; return <Reveal key={item.title}><a href={item.href} target="_blank" rel="noreferrer" className="group grid gap-5 rounded-2xl px-4 py-6 transition-[background-color,transform] duration-150 hover:bg-background hover:shadow-sm sm:px-5 md:grid-cols-[3rem_1fr_1.35fr_auto] md:items-center"><span className="font-mono text-xs text-muted-foreground">{item.index}</span><div className="flex items-center gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand/10 text-brand transition-transform duration-200 group-hover:-rotate-3"><Icon className="h-4 w-4" aria-hidden="true" /></span><div><h3 className="font-display text-xl font-medium">{item.title}</h3><p className="mt-1 font-mono text-[0.62rem] uppercase tracking-[0.16em] text-muted-foreground">{item.label}</p></div></div><p className="max-w-xl text-sm leading-6 text-muted-foreground">{item.copy}</p><div className="flex items-center justify-between gap-5 md:justify-end"><span className={cn('rounded-full px-3 py-1.5 font-mono text-[0.65rem]', item.status === 'Building' ? 'bg-brand/10 text-brand' : 'bg-muted text-muted-foreground')}>{item.status}</span><ArrowUpRight className="h-5 w-5 transition-transform duration-150 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden="true" /></div></a></Reveal>})}
+          </div>
         </div>
       </section>
 
-      {/* CTA panel (intentional, not a flat gradient slab) */}
-      <section className="mx-auto max-w-6xl px-6 py-20 md:py-28">
+      <section className="mx-auto max-w-7xl px-6 py-24 lg:py-32">
         <Reveal>
-          <div className="relative overflow-hidden rounded-2xl border border-border bg-card">
-            <div className="pointer-events-none absolute inset-0 bg-radial-fade" aria-hidden />
-            <div className="pointer-events-none absolute inset-0 grain" aria-hidden />
-            <div
-              className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full opacity-30 blur-3xl"
-              style={{ background: 'hsl(var(--brand))' }}
-              aria-hidden
-            />
-            <div className="relative grid items-center gap-8 p-8 md:grid-cols-[1.4fr_1fr] md:p-12">
-              <div>
-                <p className="eyebrow">Ready when you are</p>
-                <h2 className="font-display mt-3 text-title font-semibold">
-                  Describe it. The Copilot builds it.
-                </h2>
-                <p className="lead mt-3 max-w-md">
-                  Sign in, get a funded testnet wallet, and let the Copilot generate, fix, and deploy
-                  your first Soroban contract on testnet, in minutes.
-                </p>
-                <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-                  <motion.div whileTap={reduce ? undefined : { scale: 0.98 }}>
-                    <Button size="lg" className="gap-2" onClick={startBuilding}>
-                      {isAuthenticated ? 'Open your projects' : 'Start building free'}
-                      <ArrowRight className="h-4 w-4" />
-                    </Button>
-                  </motion.div>
-                  <Button asChild size="lg" variant="outline">
-                    <Link href="/docs">Read the docs</Link>
-                  </Button>
-                </div>
-              </div>
-              <div className="hidden md:block">
-                <div className="ml-auto w-full max-w-xs rounded-xl border border-border bg-background/70 p-4">
-                  <div className="flex items-center justify-between">
-                    <span className="eyebrow">Deploy</span>
-                    <span className="rounded-full border border-success/30 bg-success/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-success">
-                      Testnet
-                    </span>
-                  </div>
-                  <div className="mt-3 flex items-center gap-2 text-sm text-success">
-                    <Check className="h-4 w-4" /> Deployed in 1.2s
-                  </div>
-                  <code className="mt-2 block truncate rounded bg-muted px-2 py-1 font-mono text-xs">CDLZ…F7QK</code>
-                </div>
-              </div>
-            </div>
+          <div className="nova-cta relative overflow-hidden rounded-3xl bg-brand px-6 py-14 text-brand-foreground shadow-xl sm:px-10 lg:grid lg:grid-cols-[1fr_auto] lg:items-end lg:px-14 lg:py-16">
+            <div className="nova-cta-grid pointer-events-none absolute inset-0 opacity-20" aria-hidden="true" /><div className="nova-cta-orbit pointer-events-none absolute -right-28 -top-40 h-96 w-96 rounded-full border border-brand-foreground/25" aria-hidden="true" />
+            <div className="relative"><p className="font-mono text-[0.68rem] font-medium uppercase tracking-[0.2em] text-brand-foreground/70">WebSoroban / public beta</p><h2 className="mt-4 max-w-3xl font-display text-4xl font-semibold leading-[1.02] sm:text-6xl">Bring the idea. Leave with a Stellar product.</h2><p className="mt-5 max-w-xl text-base leading-7 text-brand-foreground/80">Generate the app, inspect the code, run the contracts, and deploy—without giving up control of the engineering workflow.</p></div>
+            <Button size="lg" variant="secondary" className="relative mt-8 h-12 rounded-full bg-foreground px-6 text-background shadow-md hover:bg-foreground/90 lg:mt-0" onClick={startBuilding}>{isAuthenticated ? 'Open WebSoroban' : 'Start building'} <ArrowRight className="h-4 w-4" aria-hidden="true" /></Button>
           </div>
         </Reveal>
       </section>
@@ -387,234 +185,44 @@ export default function HomePage() {
   )
 }
 
-function BentoCard({
-  className = '',
-  icon: Icon,
-  title,
-  children,
-  reduce,
-}: {
-  className?: string
-  icon: React.ComponentType<{ className?: string }>
-  title: string
-  children: React.ReactNode
-  reduce: boolean | null
-}) {
+function NovaBuilderPreview() {
+  const [mode, setMode] = useState<'preview' | 'code'>('preview')
+  const reduce = useReducedMotion()
   return (
-    <Reveal className={`${className} h-full`}>
-      <motion.div
-        whileHover={reduce ? undefined : { y: -3 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 26 }}
-        className="group flex h-full flex-col rounded-2xl border border-border bg-card p-6 hover:border-brand/40"
-      >
-        <div className="flex items-center gap-3">
-          <span className="grid h-9 w-9 place-items-center rounded-lg bg-brand/12 text-brand transition-colors duration-200 group-hover:bg-brand/20">
-            <Icon className="h-5 w-5" />
-          </span>
-          <h3 className="font-display text-base font-semibold">{title}</h3>
-        </div>
-        <div className="mt-3 flex-1">{children}</div>
-      </motion.div>
-    </Reveal>
-  )
-}
-
-/** Static, "live-looking" IDE mock used in the hero. */
-function IdePreview() {
-  return (
-    <div className="mx-auto max-w-4xl overflow-hidden rounded-xl border border-border bg-card shadow-lg">
-      <div className="flex items-center gap-2 border-b border-border bg-muted/40 px-4 py-2.5">
-        <span className="h-3 w-3 rounded-full bg-destructive/60" />
-        <span className="h-3 w-3 rounded-full bg-warning/60" />
-        <span className="h-3 w-3 rounded-full bg-success/60" />
-        <span className="ml-3 font-mono text-xs text-muted-foreground">websoroban / ide</span>
-        <span className="ml-auto rounded border border-success/30 bg-success/10 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wide text-success">
-          testnet
-        </span>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-[180px_1fr]">
-        <div className="hidden border-r border-border bg-background/40 p-3 md:block">
-          <p className="eyebrow px-1">Explorer</p>
-          <ul className="mt-2 space-y-0.5 text-sm">
-            {['lib.rs', 'Cargo.toml', '.cargo/config.toml'].map((f, i) => (
-              <li
-                key={f}
-                className={`flex items-center gap-2 rounded px-2 py-1 font-mono text-xs ${
-                  i === 0 ? 'bg-brand/10 text-foreground' : 'text-muted-foreground'
-                }`}
-              >
-                <span className={`h-1.5 w-1.5 rounded-full ${i === 0 ? 'bg-brand' : 'bg-border'}`} />
-                {f}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="bg-background/60">
-          <div className="flex items-center gap-1 border-b border-border px-3 py-1.5">
-            <span className="rounded-t-md border-x border-t border-border bg-card px-3 py-1 font-mono text-xs text-foreground">
-              lib.rs
-            </span>
-          </div>
-          <pre className="overflow-x-auto p-4 font-mono text-[12.5px] leading-relaxed">
-            <code>
-              <span className="text-muted-foreground">{'#![no_std]'}</span>{'\n'}
-              <span className="text-cosmic">use</span> soroban_sdk::{'{'}contract, contractimpl, Env, Symbol, symbol_short{'}'};{'\n\n'}
-              <span className="text-cosmic">#[contract]</span>{'\n'}
-              <span className="text-cosmic">pub struct</span> <span className="text-brand">HelloContract</span>;{'\n\n'}
-              <span className="text-cosmic">#[contractimpl]</span>{'\n'}
-              <span className="text-cosmic">impl</span> <span className="text-brand">HelloContract</span> {'{'}{'\n'}
-              {'  '}<span className="text-cosmic">pub fn</span> <span className="text-success">hello</span>(env: Env, to: Symbol) {'->'} Symbol {'{'}{'\n'}
-              {'    '}symbol_short!(<span className="text-warning">"Hello"</span>){'\n'}
-              {'  '}{'}'}{'\n'}
-              {'}'}
-            </code>
-          </pre>
-          <div className="flex flex-wrap items-center gap-2 border-t border-border px-4 py-3 text-xs">
-            <span className="flex items-center gap-1.5 font-medium text-success">
-              <Check className="h-3.5 w-3.5" /> Deployed
-            </span>
-            <span className="text-muted-foreground">contract</span>
-            <code className="rounded bg-muted px-2 py-0.5 font-mono text-foreground">CDLZ…F7QK</code>
-            <span className="ml-auto flex items-center gap-1.5 text-muted-foreground">
-              <Wallet className="h-3.5 w-3.5" /> GBZX…Q4WM
-            </span>
-          </div>
+    <div className="nova-product-window overflow-hidden rounded-3xl border border-foreground/15 bg-card/90 shadow-xl backdrop-blur-xl">
+      <div className="flex min-h-14 items-center justify-between gap-3 border-b border-border/70 px-4 sm:px-5"><div className="flex items-center gap-2.5"><span className="grid h-7 w-7 place-items-center rounded-lg bg-brand text-brand-foreground"><Sparkles className="h-3.5 w-3.5" /></span><div><p className="font-display text-sm font-semibold">payments-app</p><p className="hidden font-mono text-[0.58rem] text-muted-foreground sm:block">WebSoroban workspace · live</p></div></div><div className="flex items-center gap-1 rounded-xl bg-muted p-1" role="group" aria-label="Preview mode">{(['preview', 'code'] as const).map((value) => <button key={value} type="button" onClick={() => setMode(value)} className={cn('min-h-9 rounded-lg px-3 font-mono text-[0.68rem] capitalize transition-[background-color,color,box-shadow] duration-150', mode === value ? 'bg-card text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground')} aria-pressed={mode === value}>{value}</button>)}</div></div>
+      <div className="grid min-h-[25rem] md:grid-cols-[9rem_1fr]">
+        <div className="hidden border-r border-border/70 bg-muted/45 p-3 md:block"><p className="px-2 pt-2 font-mono text-[0.58rem] uppercase tracking-[0.18em] text-muted-foreground">Project</p><div className="mt-4 space-y-1 font-mono text-[0.68rem]">{[['app', Layers3], ['api/pay', Zap], ['contracts', Braces], ['schema.ts', FileCode2]].map(([label, RawIcon], index) => { const Icon = RawIcon as typeof Layers3; return <div key={label as string} className={cn('flex h-9 items-center gap-2 rounded-lg px-2 transition-colors duration-150', index === 1 && 'bg-card text-foreground shadow-xs')}><Icon className={cn('h-3.5 w-3.5', index === 1 ? 'text-brand' : 'text-muted-foreground')} aria-hidden="true" />{label as string}</div> })}</div><div className="mt-7 rounded-xl border border-border/70 bg-card/70 p-3"><div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-success" /><span className="font-mono text-[0.6rem]">Preview live</span></div><p className="mt-2 text-[0.62rem] leading-4 text-muted-foreground">Stellar testnet synced</p></div></div>
+        <div className="relative min-w-0 bg-background/55">
+          <AnimatePresence mode="wait" initial={false}>{mode === 'preview' ? <motion.div key="preview" initial={reduce ? false : { opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={reduce ? undefined : { opacity: 0, y: -3 }} transition={{ duration: reduce ? 0 : 0.14 }} className="p-4 sm:p-6"><div className="mx-auto max-w-md rounded-2xl border border-border/75 bg-card p-5 shadow-sm"><div className="flex items-start justify-between gap-4"><div><p className="font-mono text-[0.6rem] uppercase tracking-[0.16em] text-muted-foreground">AI research endpoint</p><p className="mt-2 font-display text-2xl font-semibold">Generate market brief</p></div><span className="rounded-full bg-foreground px-2.5 py-1.5 font-mono text-[0.62rem] text-background">x402</span></div><div className="mt-8 flex flex-col gap-4 border-t border-border pt-5 sm:flex-row sm:items-end sm:justify-between"><div><p className="font-mono text-[0.58rem] text-muted-foreground">PRICE / REQUEST</p><p className="mt-1 font-mono text-xl font-medium">0.01 USDC</p></div><button type="button" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full bg-brand px-4 text-sm font-medium text-brand-foreground shadow-sm transition-[background-color,transform] duration-150 hover:-translate-y-0.5 hover:bg-brand/90"><Play className="h-4 w-4" aria-hidden="true" /> Run endpoint</button></div></div><div className="mt-4 rounded-2xl bg-foreground p-4 font-mono text-[0.68rem] text-background shadow-sm"><p><span className="text-brand">websoroban</span> generated 8 files</p><div className="mt-2 space-y-1 text-background/60"><p>✓ payment middleware attached</p><p>✓ contract compiled · 0 warnings</p><p>✓ preview running on Stellar Testnet</p></div></div></motion.div> : <motion.pre key="code" initial={reduce ? false : { opacity: 0 }} animate={{ opacity: 1 }} exit={reduce ? undefined : { opacity: 0 }} transition={{ duration: reduce ? 0 : 0.12 }} className="absolute inset-0 overflow-auto bg-foreground p-5 font-mono text-xs leading-6 text-background sm:p-7"><code><span className="text-brand">import</span> {'{'} facilitator {'}'} <span className="text-brand">from</span> &apos;@websoroban/x402&apos;{`\n\n`}<span className="text-brand">export const</span> POST = facilitator({'{'}{`\n  `}network: &apos;stellar-testnet&apos;,{`\n  `}asset: &apos;USDC&apos;,{`\n  `}amount: &apos;0.01&apos;,{`\n  `}handler: generateBrief,{`\n`}{'}'})</code></motion.pre>}</AnimatePresence>
         </div>
       </div>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/70 px-4 py-3 font-mono text-[0.65rem] text-muted-foreground sm:px-5"><span className="flex items-center gap-2"><span className="relative flex h-2 w-2"><span className="nova-pulse absolute inset-0 rounded-full bg-success/30" /><span className="relative h-2 w-2 rounded-full bg-success" /></span> Changes saved</span><span>main · Stellar testnet</span></div>
     </div>
   )
 }
 
-/** Animated mock of the docked Copilot (the showcase centerpiece). */
-const PREVIEW_STEPS: { icon: React.ComponentType<{ className?: string }>; label: string; tone: string }[] = [
-  { icon: FileCode2, label: 'Read lib.rs', tone: 'muted' },
-  { icon: Hammer, label: 'Ran compile · 2 errors', tone: 'error' },
-  { icon: GitCompareArrows, label: 'Edited storage.rs', tone: 'brand' },
-  { icon: Hammer, label: 'Ran compile · clean', tone: 'success' },
-  { icon: ShieldCheck, label: 'Security audit · 0 findings', tone: 'success' },
-]
-const TONE: Record<string, string> = {
-  muted: 'text-muted-foreground',
-  error: 'text-destructive',
-  brand: 'text-brand',
-  success: 'text-success',
-}
-const DOT: Record<string, string> = {
-  muted: 'bg-muted-foreground/50',
-  error: 'bg-destructive',
-  brand: 'bg-brand',
-  success: 'bg-success',
-}
-
-function CopilotPreview({ reduce }: { reduce: boolean | null }) {
-  const list: Variants = { hidden: {}, show: { transition: { staggerChildren: 0.12, delayChildren: 0.15 } } }
-  const stepItem: Variants = {
-    hidden: { opacity: 0, x: -8 },
-    show: { opacity: 1, x: 0, transition: { duration: 0.35, ease: EASE } },
-  }
-  const listMotion = reduce
-    ? {}
-    : {
-        variants: list,
-        initial: 'hidden' as const,
-        whileInView: 'show' as const,
-        viewport: { once: true, margin: '-60px' },
-      }
-
+function BuildWorkspace() {
+  const reduce = useReducedMotion()
+  const steps = [
+    { icon: MessageSquareText, title: 'Describe', copy: 'A payment-gated research app with a private results view.', tone: 'bg-card' },
+    { icon: Sparkles, title: 'Generate', copy: 'Frontend, API route, Soroban contract, and data model.', tone: 'bg-brand text-brand-foreground lg:mt-12' },
+    { icon: TestTube2, title: 'Verify', copy: 'Compile, test, simulate, and inspect each proposed change.', tone: 'bg-foreground text-background lg:mt-4' },
+    { icon: Globe2, title: 'Ship', copy: 'Preview instantly, then deploy to testnet or mainnet.', tone: 'bg-card lg:mt-16' },
+  ]
   return (
-    <div className="relative">
-      {/* soft brand glow */}
-      <div
-        className="pointer-events-none absolute -inset-4 -z-10 rounded-[2rem] bg-gradient-to-br from-brand/20 via-cosmic/10 to-transparent blur-2xl"
-        aria-hidden
-      />
-      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
-        {/* dock header: segmented + mode + model */}
-        <div className="flex items-center gap-2 border-b border-border px-3 py-2">
-          <span className="flex items-center gap-1.5 rounded-md bg-background px-2 py-1 text-xs font-medium text-foreground shadow-sm">
-            <Sparkles className="h-3.5 w-3.5 text-brand" /> Copilot
-          </span>
-          <span className="rounded-md px-2 py-1 text-xs text-muted-foreground">Contract</span>
-          <span className="ml-auto flex items-center gap-1 rounded-md border border-border bg-card px-2 py-1 text-[11px] text-muted-foreground">
-            <Bot className="h-3 w-3 text-brand" /> Agent
-          </span>
-          <span className="hidden items-center rounded-md border border-border bg-card px-2 py-1 text-[11px] text-muted-foreground sm:flex">
-            Claude · Auto
-          </span>
-        </div>
-
-        <div className="space-y-3 p-3.5">
-          {/* user turn */}
-          <div className="flex justify-end">
-            <div className="max-w-[88%] rounded-2xl rounded-br-md border border-brand/20 bg-gradient-to-br from-brand/15 to-brand/5 px-3 py-2 text-[13px] leading-relaxed text-foreground">
-              Make the token pausable by an admin, and write tests.
-            </div>
-          </div>
-
-          {/* assistant */}
-          <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-            <span className="grid h-5 w-5 place-items-center rounded-md bg-brand/15 text-brand">
-              <Bot className="h-3 w-3" />
-            </span>
-            <span className="font-medium text-foreground/80">Assistant</span>
-          </div>
-
-          {/* tool-step timeline (staggers in on view) */}
-          <motion.ul className="space-y-1.5" {...listMotion}>
-            {PREVIEW_STEPS.map((s) => {
-              const Icon = s.icon
-              return (
-                <motion.li
-                  key={s.label}
-                  variants={reduce ? undefined : stepItem}
-                  className="flex items-center gap-2 rounded-md border border-border/60 bg-background/50 px-2.5 py-1.5"
-                >
-                  <Icon className={`h-3.5 w-3.5 ${TONE[s.tone]}`} />
-                  <span className="text-[12px] text-foreground/90">{s.label}</span>
-                  <span className={`ml-auto h-1.5 w-1.5 rounded-full ${DOT[s.tone]}`} />
-                </motion.li>
-              )
-            })}
-          </motion.ul>
-
-          {/* summary with blinking caret */}
-          <p className="text-[13px] leading-relaxed text-foreground/90">
-            Added a{' '}
-            <code className="rounded bg-muted px-1 py-0.5 font-mono text-[0.85em] text-brand">paused</code> flag gated by{' '}
-            <code className="rounded bg-muted px-1 py-0.5 font-mono text-[0.85em] text-brand">admin.require_auth()</code>, plus
-            4 tests. Builds clean.
-            {!reduce && (
-              <span className="ml-0.5 inline-block h-3.5 w-[2px] translate-y-[2px] animate-pulse bg-brand align-middle" aria-hidden />
-            )}
-          </p>
-
-          {/* diff */}
-          <div className="overflow-hidden rounded-lg border border-border bg-background/70">
-            <div className="flex items-center justify-between border-b border-border px-3 py-1.5">
-              <span className="font-mono text-[10px] text-muted-foreground">src/storage.rs</span>
-              <span className="font-mono text-[10px]">
-                <span className="text-success">+18</span> <span className="text-destructive">−2</span>
-              </span>
-            </div>
-            <pre className="overflow-x-auto px-3 py-2 font-mono text-[11px] leading-[1.6]">
-              <div className="text-destructive"><span className="select-none opacity-60">- </span>pub fn set_paused(e: Env, p: bool) {'{'}</div>
-              <div className="text-success"><span className="select-none opacity-60">+ </span>pub fn set_paused(e: Env, p: bool) {'{'}</div>
-              <div className="text-success"><span className="select-none opacity-60">+ </span>{'  '}admin(&e).require_auth();</div>
-              <div className="text-muted-foreground"><span className="select-none opacity-60">{'  '}</span>{'  '}e.storage().instance().set(&PAUSED, &p);</div>
-            </pre>
-          </div>
-
-          {/* apply bar */}
-          <div className="flex items-center justify-between rounded-lg border border-border bg-card/60 px-3 py-2">
-            <span className="text-[11px] text-muted-foreground">1 file changed · review as a diff</span>
-            <span className="inline-flex items-center gap-1.5 rounded-md bg-brand px-2.5 py-1 text-[11px] font-medium text-white">
-              <Check className="h-3 w-3" /> Apply
-            </span>
-          </div>
-        </div>
-      </div>
+    <div className="nova-workspace relative overflow-hidden rounded-3xl border border-foreground/15 bg-card/70 p-3 shadow-lg backdrop-blur-sm sm:p-5 lg:p-7">
+      <div className="flex flex-col gap-4 rounded-2xl border border-border/70 bg-background/85 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5"><div className="flex min-w-0 items-center gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand/10 text-brand"><MessageSquareText className="h-4 w-4" /></span><p className="truncate text-sm text-muted-foreground"><span className="font-medium text-foreground">You:</span> Build an agent research app that charges per brief…</p></div><span className="flex shrink-0 items-center gap-2 rounded-full bg-foreground px-3 py-2 font-mono text-[0.65rem] text-background"><span className="h-1.5 w-1.5 rounded-full bg-success" /> WebSoroban is planning</span></div>
+      <div className="relative mt-5 grid gap-4 lg:grid-cols-[1fr_0.94fr_1.04fr_0.92fr] lg:gap-5 lg:pb-16"><svg className="pointer-events-none absolute left-[7%] top-24 hidden h-32 w-[86%] overflow-visible text-brand/35 lg:block" viewBox="0 0 1000 150" preserveAspectRatio="none" aria-hidden="true"><motion.path d="M0 32 C120 32 135 120 285 112 C435 104 430 22 585 28 C740 35 770 126 1000 120" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="7 8" initial={reduce ? false : { pathLength: 0, opacity: 0 }} whileInView={reduce ? undefined : { pathLength: 1, opacity: 1 }} viewport={{ once: true, margin: '-80px' }} transition={{ duration: 0.8, delay: 0.12, ease: [0.16, 1, 0.3, 1] }} /></svg>{steps.map((step, index) => { const Icon = step.icon; const inverted = index === 1 || index === 2; return <motion.div key={step.title} initial={reduce ? false : { opacity: 0, y: 10 }} whileInView={reduce ? undefined : { opacity: 1, y: 0 }} viewport={{ once: true, margin: '-60px' }} transition={{ ...spring, delay: 0.06 * index }} className={cn('group relative min-h-52 rounded-2xl border p-5 shadow-sm transition-transform duration-200 hover:-translate-y-1', step.tone, inverted ? 'border-transparent' : 'border-border/75')}><div className="flex items-center justify-between"><span className={cn('grid h-10 w-10 place-items-center rounded-xl', inverted ? 'bg-background/10' : 'bg-brand/10 text-brand')}><Icon className="h-4 w-4" aria-hidden="true" /></span><span className={cn('font-mono text-[0.65rem]', inverted ? 'text-current opacity-55' : 'text-muted-foreground')}>0{index + 1}</span></div><h3 className="mt-9 font-display text-2xl font-medium">{step.title}</h3><p className={cn('mt-3 text-sm leading-6', inverted ? 'text-current opacity-65' : 'text-muted-foreground')}>{step.copy}</p></motion.div>})}</div>
+      <div className="flex flex-col gap-4 rounded-2xl bg-foreground px-5 py-4 text-background sm:flex-row sm:items-center sm:justify-between"><div className="flex items-center gap-3"><Bot className="h-5 w-5 text-brand" aria-hidden="true" /><p className="font-mono text-xs sm:text-sm">WebSoroban works in diffs. You choose what reaches the codebase.</p></div><div className="flex gap-1 rounded-xl bg-background/10 p-1">{['Agent', 'Plan', 'Debug'].map((mode, index) => <span key={mode} className={cn('rounded-lg px-3 py-2 font-mono text-[0.62rem]', index === 0 ? 'bg-background text-foreground' : 'text-background/55')}>{mode}</span>)}</div></div>
     </div>
   )
+}
+
+function PaymentRow({ number, title, copy, tag, href }: { number: string; title: string; copy: string; tag: string; href: string }) {
+  return <a href={href} target="_blank" rel="noreferrer" className="group flex min-h-56 flex-col rounded-2xl border border-background/15 bg-background/[0.045] p-5 transition-[background-color,transform,border-color] duration-200 hover:-translate-y-1 hover:border-brand/35 hover:bg-background/[0.07] sm:p-6"><div className="flex items-center justify-between"><span className="font-mono text-xs text-brand">{number}</span><span className="rounded-full border border-background/15 px-2.5 py-1.5 font-mono text-[0.62rem] text-background/65">{tag}</span></div><h3 className="mt-8 font-display text-2xl font-medium">{title}</h3><p className="mt-3 max-w-xl text-sm leading-6 text-background/60">{copy}</p><div className="mt-auto flex items-center justify-between pt-6 font-mono text-[0.65rem] text-background/45"><span>Open Stellar docs</span><span className="grid h-9 w-9 place-items-center rounded-full bg-background/10 text-background transition-[background-color,transform] duration-150 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:bg-brand"><ArrowUpRight className="h-4 w-4" aria-hidden="true" /></span></div></a>
+}
+
+function LocalnetTerminal() {
+  return <div className="nova-terminal-shell relative"><div className="absolute -inset-3 -z-10 rotate-2 rounded-3xl border border-brand/20 bg-brand/10" aria-hidden="true" /><div className="overflow-hidden rounded-3xl border border-foreground/15 bg-foreground text-background shadow-xl"><div className="flex h-14 items-center justify-between border-b border-background/15 px-5"><div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-background/20" /><span className="h-2.5 w-2.5 rounded-full bg-background/20" /><span className="h-2.5 w-2.5 rounded-full bg-brand" /></div><span className="font-mono text-[0.65rem] text-background/45">websoroban-local — zsh</span></div><div className="min-h-80 p-5 font-mono text-sm leading-7 sm:p-7"><p><span className="text-brand">$</span> websoroban local</p><div className="mt-5 space-y-1 text-background/55"><p>booting Stellar development network…</p><p>rpc&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;http://127.0.0.1:8000</p><p>network&nbsp;&nbsp;&nbsp;&nbsp;local / standalone</p><p>accounts&nbsp;&nbsp;&nbsp;3 funded</p><p>contracts&nbsp;&nbsp;4 restored</p></div><p className="mt-5 text-background"><span className="text-success">✓</span> ready in 1.8s</p><p className="mt-5"><span className="text-brand">$</span> websoroban test --watch</p><p className="mt-2 text-background/55">4 passed · watching src/**/*.rs</p></div><div className="grid grid-cols-3 gap-px border-t border-background/15 bg-background/15 text-center font-mono text-[0.65rem] text-background/45"><span className="bg-foreground py-4">ledger 128</span><span className="bg-foreground py-4">3 accounts</span><span className="bg-foreground py-4">0 errors</span></div></div></div>
 }

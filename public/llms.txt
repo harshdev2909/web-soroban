@@ -18,6 +18,11 @@
 ## AI Copilot
 
 - [AI Copilot](/docs/copilot): Generate, debug, and optimize Soroban contracts from chat, five modes, slash commands, @-context, model switching, and reviewable diffs.
+- [Skills](/docs/copilot/skills): Reusable Soroban/Stellar knowledge and instruction packs the Copilot loads as context — official packs plus your own, with progressive loading and an @skill mention.
+
+## Payments
+
+- [x402 payments](/docs/payments): Price an HTTP endpoint in USDC, pay with Freighter, and inspect the Stellar testnet settlement.
 
 ## Networks
 
