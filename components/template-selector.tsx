@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Plus, FileText, Code, Coins, Lock, ExternalLink } from "lucide-react"
+import { Plus, FileText, Code, Coins, Lock, ExternalLink, WalletCards } from "lucide-react"
 import { templatesApi, Template, TemplateDoc } from "@/lib/api"
 import { TemplatePurchaseModal } from "@/components/template-purchase-modal"
 
@@ -73,6 +73,8 @@ export function TemplateSelector({ onTemplateSelect, onClose }: TemplateSelector
         return <FileText className="w-6 h-6 text-red-500" />
       case 'marketplace':
         return <FileText className="w-6 h-6 text-orange-500" />
+      case 'payments':
+        return <WalletCards className="w-6 h-6 text-violet-500" />
       default:
         return <FileText className="w-6 h-6 text-gray-500" />
     }
@@ -94,6 +96,8 @@ export function TemplateSelector({ onTemplateSelect, onClose }: TemplateSelector
         return 'bg-red-500/10 text-red-500 border-red-500/20'
       case 'marketplace':
         return 'bg-orange-500/10 text-orange-500 border-orange-500/20'
+      case 'payments':
+        return 'bg-violet-500/10 text-violet-500 border-violet-500/20'
       default:
         return 'bg-gray-500/10 text-gray-500 border-gray-500/20'
     }
@@ -199,4 +203,4 @@ export function TemplateSelector({ onTemplateSelect, onClose }: TemplateSelector
       />
     </Dialog>
   )
-} 
+}
