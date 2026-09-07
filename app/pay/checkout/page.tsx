@@ -37,8 +37,15 @@ function trustedResource(value: string | null) {
     const resource = new URL(value)
     const api = new URL(PAY_API_BASE_URL)
     const apiPath = api.pathname.replace(/\/$/, '')
-    if (resource.origin !== api.origin || !resource.pathname.startsWith(`${apiPath}/pay/resource/`)) return null
-    return resource.toString()
+    const expectedPath = `${apiPath}/pay/resource/`
+    const legacyLocalOrigins = new Set(['http://localhost:3001', 'http://127.0.0.1:3001'])
+    if (!resource.pathname.startsWith(expectedPath)) return null
+    if (resource.origin !== api.origin && !legacyLocalOrigins.has(resource.origin)) return null
+
+    // Early production endpoints were serialized with the backend's local
+    // fallback origin. Preserve the validated resource path while replacing
+    // that unreachable origin with the configured public API origin.
+    return new URL(`${resource.pathname}${resource.search}`, api.origin).toString()
   } catch {
     return null
   }
