@@ -20,6 +20,7 @@ const columns = [
     title: 'Resources',
     links: [
       { label: 'Docs', href: '/docs' },
+      { label: 'Idea Bank', href: '/hackmeridian' },
       { label: 'Playground', href: '/contract' },
     ],
   },

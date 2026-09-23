@@ -15,6 +15,7 @@ interface PlaygroundNavbarProps {
 
 const links = [
   { href: '/marketplace', label: 'Templates' },
+  { href: '/hackmeridian', label: 'Idea Bank' },
   { href: '/docs', label: 'Docs' },
 ]
 
@@ -59,7 +60,7 @@ export default function PlaygroundNavbar({ onSignInClick }: PlaygroundNavbarProp
           onMouseLeave={() => setHovered(null)}
         >
           {links.map((l) => {
-            const active = pathname === l.href
+            const active = pathname === l.href || pathname.startsWith(`${l.href}/`)
             return (
               <Link
                 key={l.href}

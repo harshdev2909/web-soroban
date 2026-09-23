@@ -66,6 +66,11 @@ const config: Config = {
           muted: "hsl(var(--brand-muted))",
         },
         cosmic: "hsl(var(--cosmic))",
+        hm: {
+          DEFAULT: "hsl(var(--hm))",
+          foreground: "hsl(var(--hm-foreground))",
+          cream: "hsl(var(--hm-cream))",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

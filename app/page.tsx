@@ -22,6 +22,7 @@ import PlaygroundFooter from '@/components/playground-footer'
 import PlaygroundSubscription from '@/components/playground-subscription'
 import { LoginModal } from '@/components/login-modal'
 import { Reveal } from '@/components/reveal'
+import { HackMeridianBand } from '@/components/hackmeridian/landing-band'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/AuthContext'
 import {
@@ -328,6 +329,8 @@ export default function HomePage() {
           </BentoCard>
         </div>
       </section>
+
+      <HackMeridianBand />
 
       {/* CTA panel (intentional, not a flat gradient slab) */}
       <section className="mx-auto max-w-6xl px-6 py-20 md:py-28">
