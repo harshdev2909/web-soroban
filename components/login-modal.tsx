@@ -3,7 +3,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { authApi } from '@/lib/api'
 import { Github, Wallet, Sparkles } from 'lucide-react'
-import { NovaMark } from '@/components/nova-mark'
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -27,7 +26,6 @@ function DiscordIcon({ className }: { className?: string }) {
 interface LoginModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  returnTo?: string
 }
 
 const providers = [
@@ -36,23 +34,14 @@ const providers = [
   { id: 'discord', label: 'Continue with Discord', icon: DiscordIcon, onClick: () => authApi.discordLogin() },
 ]
 
-export function LoginModal({ open, onOpenChange, returnTo }: LoginModalProps) {
-  const beginLogin = (login: () => void) => {
-    if (returnTo?.startsWith('/') && !returnTo.startsWith('//')) {
-      window.sessionStorage.setItem('websoroban.auth.returnTo', returnTo)
-    } else {
-      window.sessionStorage.removeItem('websoroban.auth.returnTo')
-    }
-    login()
-  }
-
+export function LoginModal({ open, onOpenChange }: LoginModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="overflow-hidden p-0 sm:max-w-[420px]">
         {/* Brand header */}
         <div className="relative border-b border-border bg-radial-fade px-6 pb-5 pt-6">
           <div className="flex items-center gap-2.5">
-            <NovaMark />
+            <img src="/websoroban_logo.png" alt="" className="h-8 w-8 object-contain" aria-hidden />
             <span className="font-display text-lg font-semibold tracking-tight">WebSoroban</span>
           </div>
           <DialogHeader className="mt-4 space-y-1.5 text-left">
@@ -69,7 +58,7 @@ export function LoginModal({ open, onOpenChange, returnTo }: LoginModalProps) {
             return (
               <button
                 key={p.id}
-                onClick={() => beginLogin(p.onClick)}
+                onClick={p.onClick}
                 className="flex h-11 w-full items-center justify-center gap-3 rounded-lg border border-border bg-card text-sm font-medium text-foreground transition-[transform,background-color,border-color] duration-200 hover:border-brand/40 hover:bg-accent active:scale-[0.99]"
               >
                 <Icon className="h-5 w-5" />
