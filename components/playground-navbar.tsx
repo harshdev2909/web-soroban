@@ -15,7 +15,7 @@ interface PlaygroundNavbarProps {
 
 const links = [
   { href: '/marketplace', label: 'Templates' },
-  { href: '/hackmeridian', label: 'Idea Bank' },
+  { href: '/ideas', label: 'Idea Bank' },
   { href: '/docs', label: 'Docs' },
 ]
 

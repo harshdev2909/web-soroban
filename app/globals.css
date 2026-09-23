@@ -40,12 +40,6 @@
     --brand-muted: 250 70% 92%;
     --cosmic: 280 70% 60%;
 
-    /* HackMeridian partner brand — official yellow #fdda24 and cream #f7f6f2.
-       Event identity only. WebSoroban product UI stays on the iris accent. */
-    --hm: 50 98% 57%;
-    --hm-foreground: 0 0% 0%;
-    --hm-cream: 48 24% 96%;
-
     --border: 225 20% 89%;
     --input: 225 20% 89%;
     --ring: 250 80% 58%;

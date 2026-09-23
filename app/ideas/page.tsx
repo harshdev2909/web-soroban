@@ -1,21 +1,13 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ArrowRight, ArrowUpRight } from 'lucide-react'
-import { HackMeridianFrame } from '@/components/hackmeridian/frame'
-import { PartnerMarks } from '@/components/hackmeridian/marks'
-import {
-  APPLY_URL,
-  EVENT_META,
-  ideas,
-  themeLabel,
-  themes,
-  type ThemeId,
-} from '@/lib/hackmeridian'
+import { ArrowRight } from 'lucide-react'
+import { IdeaBankFrame } from '@/components/ideas/frame'
+import { ideas, themeLabel, themes, type ThemeId } from '@/lib/ideas'
 
 export const metadata: Metadata = {
-  title: 'HackMeridian Idea Bank · WebSoroban',
+  title: 'Idea Bank · WebSoroban',
   description:
-    'Ten buildable Stellar briefs for HackMeridian: RWA credit, PayFi, private payroll, agent wallets, and cross-border treasury.',
+    'Ten buildable Stellar briefs: RWA credit, PayFi, private payroll, agent wallets, and cross-border treasury.',
 }
 
 const themeIds = new Set(themes.map((theme) => theme.id))
@@ -23,10 +15,10 @@ const themeIds = new Set(themes.map((theme) => theme.id))
 function difficultyClass(difficulty: string) {
   if (difficulty.startsWith('Beginner')) return 'border-success/30 bg-success/10 text-success'
   if (difficulty === 'Intermediate') return 'border-brand/30 bg-brand/10 text-brand'
-  return 'border-hm/40 bg-hm/10 text-hm'
+  return 'border-border bg-muted text-foreground'
 }
 
-export default async function HackMeridianPage({
+export default async function IdeasPage({
   searchParams,
 }: {
   searchParams: Promise<{ theme?: string }>
@@ -37,34 +29,24 @@ export default async function HackMeridianPage({
   const activeTheme = themes.find((item) => item.id === theme) ?? themes[0]
 
   return (
-    <HackMeridianFrame>
+    <IdeaBankFrame>
       <section className="relative overflow-hidden border-b border-border/60">
         <div className="pointer-events-none absolute inset-0 bg-radial-fade" aria-hidden />
         <div className="pointer-events-none absolute inset-0 grain" aria-hidden />
         <div className="relative mx-auto max-w-6xl px-6 pb-14 pt-16 md:pb-20 md:pt-20">
-          <PartnerMarks />
-          <p className="eyebrow mt-8 text-hm">Idea Bank · {EVENT_META}</p>
+          <p className="eyebrow text-brand">Idea Bank</p>
           <h1 className="font-display mt-4 max-w-3xl text-display font-semibold">
             Build something worth shipping.
           </h1>
           <p className="lead mt-5 max-w-2xl text-base md:text-lg">
-            Ten HackMeridian briefs organized the way Stellar is actually moving: RWA finance, PayFi,
+            Ten briefs organized the way Stellar is actually moving: RWA finance, PayFi,
             agentic commerce, privacy, and cross-border infrastructure. Each one is a contract plan,
             not a slogan.
           </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <a
-              href={APPLY_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-hm px-5 text-sm font-semibold text-hm-foreground transition-colors duration-200 hover:bg-hm/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-            >
-              Apply to HackMeridian
-              <ArrowUpRight className="h-4 w-4" />
-            </a>
+          <div className="mt-8">
             <Link
               href="/docs"
-              className="inline-flex h-11 items-center justify-center rounded-full border border-border bg-card px-5 text-sm font-medium transition-colors duration-200 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="inline-flex h-11 items-center justify-center rounded-full bg-brand px-5 text-sm font-semibold text-brand-foreground transition-colors duration-200 hover:bg-brand/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               Read the Soroban docs
             </Link>
@@ -79,12 +61,12 @@ export default async function HackMeridianPage({
             return (
               <Link
                 key={item.id}
-                href={item.id === 'all' ? '/hackmeridian' : `/hackmeridian?theme=${item.id}`}
+                href={item.id === 'all' ? '/ideas' : `/ideas?theme=${item.id}`}
                 role="tab"
                 aria-selected={selected}
                 className={
                   selected
-                    ? 'inline-flex h-10 shrink-0 items-center rounded-full bg-hm px-4 text-sm font-semibold text-hm-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background'
+                    ? 'inline-flex h-10 shrink-0 items-center rounded-full bg-brand px-4 text-sm font-semibold text-brand-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background'
                     : 'inline-flex h-10 shrink-0 items-center rounded-full border border-border px-4 text-sm text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background'
                 }
               >
@@ -98,10 +80,10 @@ export default async function HackMeridianPage({
         {visible.length === 0 ? (
           <div className="mt-10 rounded-xl border border-border bg-card px-6 py-12 text-center">
             <p className="font-display text-lg font-semibold">No briefs in this theme</p>
-            <p className="mt-2 text-sm text-muted-foreground">The bank has ten ideas across the five tracks.</p>
+            <p className="mt-2 text-sm text-muted-foreground">The bank has ten ideas across five themes.</p>
             <Link
-              href="/hackmeridian"
-              className="mt-5 inline-flex h-10 items-center rounded-full bg-hm px-4 text-sm font-semibold text-hm-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              href="/ideas"
+              className="mt-5 inline-flex h-10 items-center rounded-full bg-brand px-4 text-sm font-semibold text-brand-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               Show all ideas
             </Link>
@@ -111,11 +93,11 @@ export default async function HackMeridianPage({
             {visible.map((idea) => (
               <li key={idea.slug}>
                 <Link
-                  href={`/hackmeridian/${idea.slug}`}
-                  className="group flex h-full flex-col rounded-xl border border-border bg-card p-5 transition-[border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-hm/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:hover:translate-y-0"
+                  href={`/ideas/${idea.slug}`}
+                  className="group flex h-full flex-col rounded-xl border border-border bg-card p-5 transition-[border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-brand/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:hover:translate-y-0"
                 >
                   <div className="flex items-start justify-between gap-4">
-                    <span className="font-mono text-sm text-hm">{idea.number}</span>
+                    <span className="font-mono text-sm text-brand">{idea.number}</span>
                     <span className={`rounded-full border px-2.5 py-1 text-[11px] font-medium ${difficultyClass(idea.difficulty)}`}>
                       {idea.difficulty}
                     </span>
@@ -144,6 +126,6 @@ export default async function HackMeridianPage({
           </ul>
         )}
       </section>
-    </HackMeridianFrame>
+    </IdeaBankFrame>
   )
 }
