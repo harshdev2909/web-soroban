@@ -5,7 +5,7 @@ import PlaygroundNavbar from '@/components/playground-navbar'
 import PlaygroundFooter from '@/components/playground-footer'
 import { LoginModal } from '@/components/login-modal'
 
-export function HackMeridianFrame({ children }: { children: ReactNode }) {
+export function IdeaBankFrame({ children }: { children: ReactNode }) {
   const [loginOpen, setLoginOpen] = useState(false)
 
   return (

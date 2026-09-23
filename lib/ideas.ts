@@ -18,20 +18,17 @@ export type Idea = {
   contracts: { name: string; role: string }[]
   stellarFeatures: string[]
   integrations: string[]
-  plan: { hours: string; title: string; detail: string }[]
+  plan: { step: string; title: string; detail: string }[]
   stretch: string[]
   resources: { label: string; href: string }[]
   caution?: string
 }
 
-export const APPLY_URL = 'https://hackmeridian.com'
-export const EVENT_META = '25–26 October 2026 · ONE16, Lisbon'
-
 export const themes: { id: ThemeId | 'all'; label: string; blurb: string }[] = [
   {
     id: 'all',
     label: 'All ideas',
-    blurb: 'Ten briefs you can start building in a 36-hour window.',
+    blurb: 'Ten Stellar briefs, from a first contract to a demo.',
   },
   {
     id: 'rwa',
@@ -119,11 +116,11 @@ export const ideas: Idea[] = [
     ],
     integrations: ['Centrifuge RWA tokens', 'Blend', 'DeFindex', 'A Stellar price oracle', 'USDC'],
     plan: [
-      { hours: '0–4h', title: 'Asset + vault', detail: 'Allowlist one SAC collateral token and a vault that can lock and return it.' },
-      { hours: '4–12h', title: 'Value + borrow', detail: 'Oracle read, LTV check, and a USDC borrow against the locked balance.' },
-      { hours: '12–20h', title: 'Interest + repay', detail: 'Accrue interest and clear debt before collateral can leave.' },
-      { hours: '20–28h', title: 'Liquidation', detail: 'A keeper path that closes positions below the health threshold.' },
-      { hours: '28–36h', title: 'Risk dashboard', detail: 'Health factor, debt, and collateral value in a demo UI.' },
+      { step: '01', title: 'Asset + vault', detail: 'Allowlist one SAC collateral token and a vault that can lock and return it.' },
+      { step: '02', title: 'Value + borrow', detail: 'Oracle read, LTV check, and a USDC borrow against the locked balance.' },
+      { step: '03', title: 'Interest + repay', detail: 'Accrue interest and clear debt before collateral can leave.' },
+      { step: '04', title: 'Liquidation', detail: 'A keeper path that closes positions below the health threshold.' },
+      { step: '05', title: 'Risk dashboard', detail: 'Health factor, debt, and collateral value in a demo UI.' },
     ],
     stretch: [
       'Let the collateral keep earning RWA yield while it secures the loan.',
@@ -134,7 +131,6 @@ export const ideas: Idea[] = [
       { label: 'Soroban docs', href: soroban },
       { label: 'Blend', href: blend },
       { label: 'DeFindex', href: defindex },
-      { label: 'Apply to HackMeridian', href: APPLY_URL },
     ],
   },
   {
@@ -184,11 +180,11 @@ export const ideas: Idea[] = [
     ],
     integrations: ['USDC', 'A KYC’d verifier', 'Anchor or fiat off-ramp for the debtor payment'],
     plan: [
-      { hours: '0–6h', title: 'Invoice record', detail: 'Submit amount, term, and debtor. Persist a hash of the document.' },
-      { hours: '6–12h', title: 'Verifier', detail: 'An approver address that must sign before financing opens.' },
-      { hours: '12–22h', title: 'Pool + advance', detail: 'LPs deposit USDC. Approval releases the discounted advance.' },
-      { hours: '22–30h', title: 'Repayment', detail: 'Incoming USDC retires principal and pays the spread to LPs.' },
-      { hours: '30–36h', title: 'Demo', detail: 'One invoice, one LP, one repayment, shown end to end.' },
+      { step: '01', title: 'Invoice record', detail: 'Submit amount, term, and debtor. Persist a hash of the document.' },
+      { step: '02', title: 'Verifier', detail: 'An approver address that must sign before financing opens.' },
+      { step: '03', title: 'Pool + advance', detail: 'LPs deposit USDC. Approval releases the discounted advance.' },
+      { step: '04', title: 'Repayment', detail: 'Incoming USDC retires principal and pays the spread to LPs.' },
+      { step: '05', title: 'Demo', detail: 'One invoice, one LP, one repayment, shown end to end.' },
     ],
     stretch: [
       'A marketplace where investors filter invoices by duration, geography, and risk score.',
@@ -197,7 +193,6 @@ export const ideas: Idea[] = [
       { label: 'Stellar docs', href: docs },
       { label: 'Stellar Asset Contract', href: sac },
       { label: 'Soroban docs', href: soroban },
-      { label: 'Apply to HackMeridian', href: APPLY_URL },
     ],
   },
   {
@@ -243,13 +238,13 @@ export const ideas: Idea[] = [
     ],
     integrations: ['USDC', 'An offchain prover', 'HR export that produces the batch'],
     plan: [
-      { hours: '0–6h', title: 'Pool + batch', detail: 'Fund a contract and store a list of payment commitments.' },
-      { hours: '6–16h', title: 'Proof', detail: 'Prove the commitments sum to the deposit and were signed by payroll.' },
-      { hours: '16–26h', title: 'Withdraw', detail: 'An employee opens their commitment and receives USDC once.' },
-      { hours: '26–36h', title: 'Public view', detail: 'A page that shows funded and executed, and hides amounts.' },
+      { step: '01', title: 'Pool + batch', detail: 'Fund a contract and store a list of payment commitments.' },
+      { step: '02', title: 'Proof', detail: 'Prove the commitments sum to the deposit and were signed by payroll.' },
+      { step: '03', title: 'Withdraw', detail: 'An employee opens their commitment and receives USDC once.' },
+      { step: '04', title: 'Public view', detail: 'A page that shows funded and executed, and hides amounts.' },
     ],
     stretch: [
-      'Swap the demo commitments for confidential-token transfers once that preview is stable enough for your track.',
+      'Swap the demo commitments for confidential-token transfers once that preview is stable.',
     ],
     caution:
       'Treat confidential-token components as experimental. They are in developer preview, not a production payroll rail today. The MVP should stand on commitments plus a ZK verifier.',
@@ -257,7 +252,6 @@ export const ideas: Idea[] = [
       { label: 'Privacy on Stellar', href: privacy },
       { label: 'ZK primitives', href: zk },
       { label: 'Stellar Asset Contract', href: sac },
-      { label: 'Apply to HackMeridian', href: APPLY_URL },
     ],
   },
   {
@@ -305,11 +299,11 @@ export const ideas: Idea[] = [
     ],
     integrations: ['x402', 'MPP', 'USDC', 'Stellar SDK', 'An LLM tool that pays the 402'],
     plan: [
-      { hours: '0–4h', title: 'Wallet + contract', detail: 'Deploy the wallet and a policy skeleton the agent must call.' },
-      { hours: '4–10h', title: 'Policy engine', detail: 'Daily cap, USDC only, merchant allowlist, per-call max, no EOA transfers.' },
-      { hours: '10–18h', title: 'x402 payments', detail: 'One paid request that the policy can allow or deny.' },
-      { hours: '18–28h', title: 'AI agent', detail: 'An LLM tool that attempts the purchase and reads the denial reason.' },
-      { hours: '28–36h', title: 'UI + demo', detail: 'Show the policy, a successful $5 call, and a rejected transfer.' },
+      { step: '01', title: 'Wallet + contract', detail: 'Deploy the wallet and a policy skeleton the agent must call.' },
+      { step: '02', title: 'Policy engine', detail: 'Daily cap, USDC only, merchant allowlist, per-call max, no EOA transfers.' },
+      { step: '03', title: 'x402 payments', detail: 'One paid request that the policy can allow or deny.' },
+      { step: '04', title: 'AI agent', detail: 'An LLM tool that attempts the purchase and reads the denial reason.' },
+      { step: '05', title: 'UI + demo', detail: 'Show the policy, a successful $5 call, and a rejected transfer.' },
     ],
     stretch: [
       'Add an MPP session channel for a burst of calls under the same daily cap.',
@@ -319,7 +313,6 @@ export const ideas: Idea[] = [
       { label: 'x402 on Stellar', href: x402 },
       { label: 'MPP', href: mpp },
       { label: 'Stellar SDK docs', href: docs },
-      { label: 'Apply to HackMeridian', href: APPLY_URL },
     ],
   },
   {
@@ -364,10 +357,10 @@ export const ideas: Idea[] = [
     ],
     integrations: ['x402', 'MPP', 'USDC', '@stellar/mpp'],
     plan: [
-      { hours: '0–6h', title: 'Listing', detail: 'A catalog entry: endpoint, USDC price, seller address.' },
-      { hours: '6–16h', title: '402 + x402', detail: 'One endpoint that challenges, gets paid, and returns data.' },
-      { hours: '16–26h', title: 'MPP session', detail: 'A second path that opens a channel for repeated calls.' },
-      { hours: '26–36h', title: 'Agent demo', detail: 'An agent discovers the FX API and pays without an API key.' },
+      { step: '01', title: 'Listing', detail: 'A catalog entry: endpoint, USDC price, seller address.' },
+      { step: '02', title: '402 + x402', detail: 'One endpoint that challenges, gets paid, and returns data.' },
+      { step: '03', title: 'MPP session', detail: 'A second path that opens a channel for repeated calls.' },
+      { step: '04', title: 'Agent demo', detail: 'An agent discovers the FX API and pays without an API key.' },
     ],
     stretch: [
       'Reputation, discovery, SLA history, and a machine-readable service manifest.',
@@ -376,7 +369,6 @@ export const ideas: Idea[] = [
       { label: 'x402 on Stellar', href: x402 },
       { label: 'MPP', href: mpp },
       { label: 'Soroban docs', href: soroban },
-      { label: 'Apply to HackMeridian', href: APPLY_URL },
     ],
   },
   {
@@ -423,11 +415,11 @@ export const ideas: Idea[] = [
     ],
     integrations: ['USDC', 'A local stablecoin', 'A fiat off-ramp'],
     plan: [
-      { hours: '0–6h', title: 'Agreement', detail: 'Create the job and three milestone amounts that sum to the deposit.' },
-      { hours: '6–14h', title: 'Deposit', detail: 'Lock USDC. Reject releases before the deposit lands.' },
-      { hours: '14–24h', title: 'Release', detail: 'Both signatures pay the milestone to the freelancer.' },
-      { hours: '24–32h', title: 'Dispute + refund', detail: 'Either party can open a dispute. Undisbursed funds return to the client.' },
-      { hours: '32–36h', title: 'Demo', detail: 'Fund, approve design, show $400 out and $1,600 still locked.' },
+      { step: '01', title: 'Agreement', detail: 'Create the job and three milestone amounts that sum to the deposit.' },
+      { step: '02', title: 'Deposit', detail: 'Lock USDC. Reject releases before the deposit lands.' },
+      { step: '03', title: 'Release', detail: 'Both signatures pay the milestone to the freelancer.' },
+      { step: '04', title: 'Dispute + refund', detail: 'Either party can open a dispute. Undisbursed funds return to the client.' },
+      { step: '05', title: 'Demo', detail: 'Fund, approve design, show $400 out and $1,600 still locked.' },
     ],
     stretch: [
       'Let the freelancer choose settlement: USDC, a local stablecoin, or a fiat off-ramp.',
@@ -436,7 +428,6 @@ export const ideas: Idea[] = [
       { label: 'Stellar Asset Contract', href: sac },
       { label: 'Soroban docs', href: soroban },
       { label: 'Stellar docs', href: docs },
-      { label: 'Apply to HackMeridian', href: APPLY_URL },
     ],
   },
   {
@@ -484,10 +475,10 @@ export const ideas: Idea[] = [
     ],
     integrations: ['Blend', 'DeFindex', 'USDC'],
     plan: [
-      { hours: '0–6h', title: 'Treasury', detail: 'Accept USDC and record a liquid floor.' },
-      { hours: '6–16h', title: 'Sweep', detail: 'Deposit only the surplus into one yield venue.' },
-      { hours: '16–26h', title: 'Unwind', detail: 'Withdraw enough USDC to cover a listed payout.' },
-      { hours: '26–36h', title: 'Payroll demo', detail: 'Show $10k staying liquid and a payout leaving on schedule.' },
+      { step: '01', title: 'Treasury', detail: 'Accept USDC and record a liquid floor.' },
+      { step: '02', title: 'Sweep', detail: 'Deposit only the surplus into one yield venue.' },
+      { step: '03', title: 'Unwind', detail: 'Withdraw enough USDC to cover a listed payout.' },
+      { step: '04', title: 'Payroll demo', detail: 'Show $10k staying liquid and a payout leaving on schedule.' },
     ],
     stretch: [
       'Support more than one yield venue and pick by a declared liquidity rule.',
@@ -497,7 +488,6 @@ export const ideas: Idea[] = [
       { label: 'Blend', href: blend },
       { label: 'DeFindex', href: defindex },
       { label: 'Stellar Asset Contract', href: sac },
-      { label: 'Apply to HackMeridian', href: APPLY_URL },
     ],
   },
   {
@@ -543,11 +533,11 @@ export const ideas: Idea[] = [
     ],
     integrations: ['BENJI or a treasury SAC', 'USDC', 'A gold token such as XAUm', 'A private-credit token', 'An oracle'],
     plan: [
-      { hours: '0–6h', title: 'Bucket map', detail: 'Four assets, four labels, balances read from the account.' },
-      { hours: '6–14h', title: 'Valuation', detail: 'Dollar value per bucket and a current mix.' },
-      { hours: '14–24h', title: 'Targets', detail: 'Weights that must sum to 100. Reject anything else.' },
-      { hours: '24–32h', title: 'Rebalance', detail: 'Compute deltas and execute the smallest set of transfers.' },
-      { hours: '32–36h', title: 'Demo', detail: 'Show the balance-sheet view before and after one rebalance.' },
+      { step: '01', title: 'Bucket map', detail: 'Four assets, four labels, balances read from the account.' },
+      { step: '02', title: 'Valuation', detail: 'Dollar value per bucket and a current mix.' },
+      { step: '03', title: 'Targets', detail: 'Weights that must sum to 100. Reject anything else.' },
+      { step: '04', title: 'Rebalance', detail: 'Compute deltas and execute the smallest set of transfers.' },
+      { step: '05', title: 'Demo', detail: 'Show the balance-sheet view before and after one rebalance.' },
     ],
     stretch: [
       'Savings modes — Conservative, Income, Inflation Hedge — described as asset rules. Do not promise a return.',
@@ -558,7 +548,6 @@ export const ideas: Idea[] = [
       { label: 'Stellar Asset Contract', href: sac },
       { label: 'Stellar docs', href: docs },
       { label: 'Soroban docs', href: soroban },
-      { label: 'Apply to HackMeridian', href: APPLY_URL },
     ],
   },
   {
@@ -603,10 +592,10 @@ export const ideas: Idea[] = [
     ],
     integrations: ['A KYC issuer', 'An RWA purchase flow', 'A compliant liquidity pool'],
     plan: [
-      { hours: '0–6h', title: 'Credential', detail: 'Provider signs a commitment to age band, KYC flag, and jurisdiction.' },
-      { hours: '6–18h', title: 'Proofs', detail: 'Three statements the user can prove without revealing the source fields.' },
-      { hours: '18–28h', title: 'Gate', detail: 'A purchase or deposit that reverts when verification fails.' },
-      { hours: '28–36h', title: 'Demo', detail: 'Pass with an allowed jurisdiction. Fail with a blocked one. Show that storage has no passport data.' },
+      { step: '01', title: 'Credential', detail: 'Provider signs a commitment to age band, KYC flag, and jurisdiction.' },
+      { step: '02', title: 'Proofs', detail: 'Three statements the user can prove without revealing the source fields.' },
+      { step: '03', title: 'Gate', detail: 'A purchase or deposit that reverts when verification fails.' },
+      { step: '04', title: 'Demo', detail: 'Pass with an allowed jurisdiction. Fail with a blocked one. Show that storage has no passport data.' },
     ],
     stretch: [
       'Reuse one credential across RWA purchase, private credit, a compliant pool, and payroll.',
@@ -615,7 +604,6 @@ export const ideas: Idea[] = [
       { label: 'Privacy on Stellar', href: privacy },
       { label: 'ZK primitives', href: zk },
       { label: 'Soroban docs', href: soroban },
-      { label: 'Apply to HackMeridian', href: APPLY_URL },
     ],
   },
   {
@@ -663,11 +651,11 @@ export const ideas: Idea[] = [
     ],
     integrations: ['USDC', 'A BRL stablecoin', 'Blend or DeFindex', 'x402', 'MPP'],
     plan: [
-      { hours: '0–6h', title: 'Balances + policies', detail: 'Read two assets. Store the five rules.' },
-      { hours: '6–14h', title: 'Proposals', detail: 'The agent submits pay, swap, or yield. The engine returns allow, deny, or needs approval.' },
-      { hours: '14–24h', title: 'Payments', detail: 'A Friday supplier payment that passes, and a transfer over $5k that waits.' },
-      { hours: '24–32h', title: 'FX + yield', detail: 'Block a swap that would push BRL over 20%. Sweep USD above $20k.' },
-      { hours: '32–36h', title: 'Demo', detail: 'One allowed payment, one queued payment, one blocked FX move.' },
+      { step: '01', title: 'Balances + policies', detail: 'Read two assets. Store the five rules.' },
+      { step: '02', title: 'Proposals', detail: 'The agent submits pay, swap, or yield. The engine returns allow, deny, or needs approval.' },
+      { step: '03', title: 'Payments', detail: 'A Friday supplier payment that passes, and a transfer over $5k that waits.' },
+      { step: '04', title: 'FX + yield', detail: 'Block a swap that would push BRL over 20%. Sweep USD above $20k.' },
+      { step: '05', title: 'Demo', detail: 'One allowed payment, one queued payment, one blocked FX move.' },
     ],
     stretch: [
       'Add India and Mexico corridors with the same policy shape.',
@@ -678,7 +666,6 @@ export const ideas: Idea[] = [
       { label: 'MPP', href: mpp },
       { label: 'Blend', href: blend },
       { label: 'DeFindex', href: defindex },
-      { label: 'Apply to HackMeridian', href: APPLY_URL },
     ],
   },
 ]

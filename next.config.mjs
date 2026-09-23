@@ -17,6 +17,12 @@ const nextConfig = {
   // The contract wizard's generator (@openzeppelin/wizard-stellar) and its deps
   // ship as CommonJS; transpile them so they bundle for the client generator.
   transpilePackages: ['@openzeppelin/wizard-stellar', '@openzeppelin/wizard-common'],
+  async redirects() {
+    return [
+      { source: '/hackmeridian', destination: '/ideas', permanent: false },
+      { source: '/hackmeridian/:slug', destination: '/ideas/:slug', permanent: false },
+    ]
+  },
 }
 
 const withMDX = createMDX()
