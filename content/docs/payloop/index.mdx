@@ -20,7 +20,7 @@ or revoke from their own wallet at any time.
 | --- | --- |
 | Merchant | Charges can only pay this address. |
 | Amount | Every charge is exactly this amount of USDC. |
-| Interval | A charge is accepted only once it is due (minimum one minute). |
+| Interval | A charge is accepted only once it is due (one minute to 90 days). Consecutive charges are always nearly a full interval apart. |
 | Safety cap | Total charges never exceed it. The policy completes when less than one charge remains. |
 
 **Atomic first charge.** `create_policy` grants the allowance and takes the
@@ -29,23 +29,26 @@ for example because the wallet lacks USDC, the whole call reverts: no policy,
 no allowance.
 
 **Non-custodial.** The contract never holds funds. It holds a USDC allowance
-equal to what the subscriber's live policies may still charge. Every charge
-consumes exactly one amount of it, and revoking a policy shrinks it again.
+covering what the subscriber's live policies may still charge. Every charge
+consumes exactly one amount of it. Allowance left over from an ended policy
+cannot be spent, because every policy is capped, and **Renew allowance**
+(`refresh_allowance`) trims it.
 
 **Permissionless charging.** Anyone may call `charge(policy_id)`. That is safe
 because the policy fixes the recipient, amount, schedule, and cap. A charge the
-subscriber cannot cover is recorded on-chain (`ChargeFailed`) instead of
-failing silently. Missed periods are never back-billed: after downtime, the
-next charge starts a fresh period.
+subscriber cannot cover is recorded on-chain (`ChargeFailed`, at most once a
+day) instead of failing silently. Missed periods are never back-billed: a late
+charge starts a fresh period, so it is never followed by another charge
+moments later.
 
 | Action | Who signs | Effect |
 | --- | --- | --- |
 | `create_policy` | Subscriber | Validates terms, grants the allowance, takes the first charge. |
 | `charge` | Anyone (the relayer) | Takes a due charge. |
 | `pause` / `resume` | Subscriber | Stops and restarts charges. Resuming after a missed date starts a new period now. |
-| `revoke` | Subscriber | Ends the policy and shrinks the allowance. Final. |
+| `revoke` | Subscriber | Ends the policy. Final. It never fails because of activity on the subscriber's other policies. |
 | `cancel` | Merchant | Ends the policy from the merchant side. Final. |
-| `refresh_allowance` | Subscriber | Re-grants the committed allowance with a fresh expiry. |
+| `refresh_allowance` | Subscriber | Re-grants exactly the committed allowance with a fresh expiry (renew or trim). |
 
 Allowances are granted for about 100 days. Long-running subscriptions call
 `refresh_allowance` before then; until they do, the relayer reports the charge

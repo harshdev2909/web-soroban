@@ -63,9 +63,9 @@ export interface PayLoopCharge {
 const CONTRACT_ERRORS: Record<number, string> = {
   1: 'That policy does not exist.',
   2: 'The amount must be greater than zero.',
-  3: 'The interval must be between one minute and one year.',
-  4: 'The safety cap must cover at least one charge.',
-  5: 'The merchant must be a different account from the subscriber.',
+  3: 'The interval must be between one minute and 90 days.',
+  4: 'The safety cap must cover at least one charge and stay under 100 million USDC.',
+  5: 'The merchant must be a different account from the subscriber and not the token itself.',
   6: 'This policy is not active.',
   7: 'This policy is not paused.',
   8: 'This policy has already ended.',

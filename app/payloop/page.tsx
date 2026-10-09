@@ -119,13 +119,19 @@ export default function PayLoopPage() {
 
   const act = (policy: PayLoopPolicy, method: 'pause' | 'resume' | 'revoke') => run(`${method}-${policy.policyId}`, async () => {
     if (!wallet || !config) return
-    const { allowanceLiveUntil, invokePayLoop, scv } = await chain()
-    const args = method === 'revoke'
-      ? [scv.u64(policy.policyId), scv.u32(await allowanceLiveUntil(config))]
-      : [scv.u64(policy.policyId)]
-    const result = await invokePayLoop(config, wallet, method, args)
+    const { invokePayLoop, scv } = await chain()
+    const result = await invokePayLoop(config, wallet, method, [scv.u64(policy.policyId)])
     const verb = method === 'pause' ? 'paused' : method === 'resume' ? 'resumed' : 'revoked'
-    return { text: `Policy ${policy.policyId} ${verb}.`, hash: result.hash }
+    const trim = method === 'revoke' ? ' It can never charge again; use Renew allowance to trim what it had left.' : ''
+    return { text: `Policy ${policy.policyId} ${verb}.${trim}`, hash: result.hash }
+  })
+
+  // Re-grant exactly what live policies may still charge, with a fresh ~100-day expiry.
+  const renewAllowance = () => run('renew', async () => {
+    if (!wallet || !config) return
+    const { allowanceLiveUntil, invokePayLoop, scv } = await chain()
+    const result = await invokePayLoop(config, wallet, 'refresh_allowance', [scv.address(wallet.address), scv.u32(await allowanceLiveUntil(config))])
+    return { text: 'Allowance renewed and trimmed to what your live policies may still charge.', hash: result.hash }
   })
 
   const disabledReason = !config?.enabled ? 'PayLoop is not deployed on this server.' : null
@@ -233,7 +239,10 @@ export default function PayLoopPage() {
               <div className="rounded-3xl border border-foreground/15 bg-card p-5 shadow-sm sm:p-7">
                 <div className="flex items-center justify-between gap-4">
                   <div><p className="font-mono text-[0.65rem] uppercase tracking-[0.18em] text-brand">04 · Live</p><h2 className="mt-2 font-display text-2xl font-semibold">Your policies</h2></div>
-                  <Button type="button" variant="outline" size="sm" disabled={!address} onClick={() => void refresh()} className="rounded-xl"><RefreshCw className="h-4 w-4" /> Refresh</Button>
+                  <div className="flex flex-wrap gap-2">
+                    {policies.length ? <Button type="button" variant="outline" size="sm" disabled={Boolean(busy)} onClick={renewAllowance} className="rounded-xl">{busy === 'renew' ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />} Renew allowance</Button> : null}
+                    <Button type="button" variant="outline" size="sm" disabled={!address} onClick={() => void refresh()} className="rounded-xl"><RefreshCw className="h-4 w-4" /> Refresh</Button>
+                  </div>
                 </div>
                 {!policies.length ? <p className="mt-8 rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">{address ? 'No policies yet. Sign one to see charges arrive here.' : 'Connect a wallet to see its policies.'}</p> : (
                   <ul className="mt-6 space-y-4">
@@ -311,7 +320,7 @@ function PolicyCard({ policy, busy, explorerBase, onAct }: { policy: PayLoopPoli
         <span>{policy.spentUsdc} of {policy.capUsdc} USDC · {policy.charges} charges</span>
         {policy.status === 'active' ? <span className="inline-flex items-center gap-1"><Clock3 className="h-3.5 w-3.5" /> next {countdown}</span> : null}
       </div>
-      {policy.failedAttempts > 0 ? <p className="mt-2 text-xs text-destructive">Last {policy.failedAttempts} charge{policy.failedAttempts === 1 ? '' : 's'} could not be covered ({policy.lastAttemptError?.replace(/_/g, ' ') || 'insufficient funds'}). Add USDC and the relayer retries.</p> : null}
+      {policy.failedAttempts > 0 ? <p className="mt-2 text-xs text-destructive">Last {policy.failedAttempts} charge{policy.failedAttempts === 1 ? '' : 's'} could not be covered ({policy.lastAttemptError?.replace(/_/g, ' ') || 'insufficient funds'}). {policy.lastAttemptError === 'insufficient_allowance' ? 'Use Renew allowance' : 'Add USDC'} and the relayer retries.</p> : null}
       {live ? (
         <div className="mt-4 flex flex-wrap gap-2">
           {policy.status === 'active'
