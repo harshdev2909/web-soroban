@@ -1,6 +1,25 @@
 import { authApi } from '@/lib/api'
+import { MAINNET, TESTNET, type FrontendNetwork } from '@/lib/networks'
 
 export const PAY_API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://backend-ide-production.up.railway.app/api'
+
+export type PayNetwork = 'stellar:testnet' | 'stellar:pubnet'
+
+/** Frontend network config (passphrase, explorer, badge colors) for an x402 network. */
+export function payNetwork(network: string | null | undefined): FrontendNetwork {
+  return network === 'stellar:pubnet' ? MAINNET : TESTNET
+}
+
+export function isPayNetwork(value: unknown): value is PayNetwork {
+  return value === 'stellar:testnet' || value === 'stellar:pubnet'
+}
+
+/** Soroban RPC used by the browser x402 client to build the payment. */
+export function payRpcUrl(network: PayNetwork): string {
+  return network === 'stellar:pubnet'
+    ? process.env.NEXT_PUBLIC_MAINNET_SOROBAN_RPC_URL || 'https://mainnet.sorobanrpc.com'
+    : 'https://soroban-testnet.stellar.org'
+}
 
 export interface PayEndpoint {
   id: string
@@ -10,7 +29,7 @@ export interface PayEndpoint {
   method: 'GET'
   price: string
   asset: 'USDC'
-  network: 'stellar:testnet'
+  network: PayNetwork
   payTo: string
   responseBody: { message?: string; [key: string]: unknown }
   apiKeyPrefix: string
@@ -25,6 +44,7 @@ export interface PayEvent {
   endpointId: string
   endpointName: string
   endpointSlug: string
+  network: PayNetwork
   type: 'request' | 'verification' | 'settlement'
   status: 'payment_required' | 'payment_submitted' | 'verified' | 'settled' | 'failed'
   transaction?: string | null
@@ -43,6 +63,7 @@ export interface PayWallet {
   name: string
   platform: string
   authEntry: boolean
+  checkout: boolean
   guidance: string
 }
 
@@ -53,6 +74,20 @@ export interface PayErrorInfo {
   fix: string
 }
 
+export interface PayFailureReason extends PayErrorInfo {
+  count: number
+}
+
+export interface PayWebhookDelivery {
+  id: string
+  eventType: string
+  status: 'pending' | 'delivered' | 'failed' | 'cancelled'
+  attempts: number
+  lastStatusCode?: number | null
+  lastError?: string | null
+  createdAt: string
+}
+
 export interface PayWebhook {
   id: string
   endpointId?: string | null
@@ -61,6 +96,7 @@ export interface PayWebhook {
   secretPrefix: string
   active: boolean
   createdAt: string
+  lastDelivery: PayWebhookDelivery | null
 }
 
 export interface PayAgentWallet {
@@ -77,17 +113,34 @@ export interface PayAgentWallet {
   createdAt: string
 }
 
+export interface PayNetworkStatus {
+  network: PayNetwork
+  label: string
+  enabled: boolean
+  facilitator: { name: string; managed: boolean } | null
+}
+
+export interface SettlementWindow {
+  label: '24h' | '7d' | '30d'
+  attempts: number
+  settled: number
+  failed: number
+  successRate: number | null
+}
+
 export interface PayOverview {
   success: true
-  mode: 'testnet'
-  facilitator: { name: string; managed: boolean }
+  networks: PayNetworkStatus[]
+  facilitator: { name: string; managed: boolean } | null
   metrics: {
     endpoints: number
     requests: number
     settled: number
     failed: number
     revenueUsdc: string
+    settlement: SettlementWindow[]
   }
+  failureReasons: PayFailureReason[]
   endpoints: PayEndpoint[]
   events: PayEvent[]
   wallets: PayWallet[]
@@ -96,11 +149,47 @@ export interface PayOverview {
   agentWallets: PayAgentWallet[]
 }
 
+export type TrustlineStatus =
+  | 'ready'
+  | 'missing_account'
+  | 'missing_trustline'
+  | 'not_authorized'
+  | 'not_applicable'
+  | 'unknown'
+
+export interface TrustlineReport {
+  address: string
+  network: PayNetwork
+  status: TrustlineStatus
+  ready: boolean
+  balance: string | null
+  message: string
+  fix: string | null
+}
+
 export interface CreatedPayEndpoint {
   success: true
   endpoint: PayEndpoint
   apiKey: string
   warning: string
+  trustline?: TrustlineReport
+}
+
+/** Error carrying the API's machine code and its suggested fix, when present. */
+export class PayApiError extends Error {
+  constructor(message: string, readonly code?: string, readonly fix?: string | null) {
+    super(message)
+    this.name = 'PayApiError'
+  }
+}
+
+async function readJson(response: Response) {
+  const data = await response.json().catch(() => ({}))
+  if (!response.ok) {
+    const message = data.message || data.error || 'WebSoroban Pay request failed.'
+    throw new PayApiError(message, typeof data.error === 'string' ? data.error : undefined, data.fix)
+  }
+  return data
 }
 
 async function authenticatedRequest<T>(path: string, init?: RequestInit): Promise<T> {
@@ -112,14 +201,23 @@ async function authenticatedRequest<T>(path: string, init?: RequestInit): Promis
       ...init?.headers,
     },
   })
-  const data = await response.json().catch(() => ({}))
-  if (!response.ok) throw new Error(data.error || data.message || 'WebSoroban Pay request failed.')
-  return data as T
+  return readJson(response) as Promise<T>
 }
 
 export const payApi = {
   getOverview() {
     return authenticatedRequest<PayOverview>('/pay/overview')
+  },
+
+  async getWallets(): Promise<PayWallet[]> {
+    const data = await readJson(await fetch(`${PAY_API_BASE_URL}/pay/wallets`))
+    return Array.isArray(data.wallets) ? data.wallets : []
+  },
+
+  async checkTrustline(address: string, network: PayNetwork, signal?: AbortSignal): Promise<TrustlineReport> {
+    const params = new URLSearchParams({ address, network })
+    const data = await readJson(await fetch(`${PAY_API_BASE_URL}/pay/trustline?${params}`, { signal }))
+    return data.trustline as TrustlineReport
   },
 
   createEndpoint(input: {
@@ -128,6 +226,7 @@ export const payApi = {
     price: string
     payTo: string
     responseMessage: string
+    network: PayNetwork
     projectId?: string
   }) {
     return authenticatedRequest<CreatedPayEndpoint>('/pay/endpoints', {
@@ -143,11 +242,26 @@ export const payApi = {
     })
   },
 
+  rotateEndpointKey(id: string) {
+    return authenticatedRequest<CreatedPayEndpoint>(`/pay/endpoints/${id}/rotate-key`, { method: 'POST' })
+  },
+
   createWebhook(input: { url: string; events: string[]; endpointId?: string }) {
     return authenticatedRequest<{ success: true; secret: string; warning: string; webhook: PayWebhook }>('/pay/webhooks', {
       method: 'POST',
       body: JSON.stringify(input),
     })
+  },
+
+  setWebhookActive(id: string, active: boolean) {
+    return authenticatedRequest<{ success: true; webhook: { id: string; active: boolean } }>(`/pay/webhooks/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ active }),
+    })
+  },
+
+  testWebhook(id: string) {
+    return authenticatedRequest<{ success: true; delivery: PayWebhookDelivery | null }>(`/pay/webhooks/${id}/test`, { method: 'POST' })
   },
 
   deleteWebhook(id: string) {

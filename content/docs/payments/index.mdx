@@ -1,67 +1,100 @@
 ---
 title: x402 payments
-description: Price an HTTP endpoint in USDC, pay with Freighter, and inspect the Stellar testnet settlement.
+description: Price an HTTP endpoint in USDC, take payment from a Stellar wallet, and watch it settle.
 ---
 
 WebSoroban Pay turns a normal HTTP endpoint into an x402 v2 resource settled in
-USDC on Stellar testnet. The seller creates and monitors the endpoint in Payment
-Studio. A buyer can open its public checkout, approve one authorization in
-Freighter, and receive the protected response with an on-chain receipt.
+USDC on Stellar. You create and monitor the endpoint in Payment Studio. A buyer
+opens its public checkout, approves one authorization in their wallet, and gets
+the protected response with an on-chain receipt.
 
-<Callout type="note" title="Testnet only">
-  This release never requests mainnet funds. The checkout displays **TESTNET**
-  before Freighter asks for approval.
+<Callout type="note" title="Testnet first">
+  New endpoints default to **Stellar Testnet**. Mainnet appears in Payment Studio
+  only when the WebSoroban server has a mainnet facilitator configured, and
+  every mainnet screen is marked in amber before a wallet asks for approval.
 </Callout>
 
 ## Create a paid endpoint
 
 1. Sign in and open [Payment Studio](/pay).
-2. Choose a name and URL slug.
-3. Set a USDC price, payout `G…` address, and JSON response message.
-4. Create the endpoint and store its endpoint key. The key is shown once; the
-   backend stores only its SHA-256 hash.
-5. Use **Inspect 402** to confirm the resource returns HTTP `402` and a
+2. Pick the network, then a name and URL slug.
+3. Set a USDC price, a payout address, and the JSON response message.
+4. Studio checks that the payout address exists and holds a **USDC trustline**.
+   Settlement to an address without one always fails, so creation is blocked
+   until the check passes.
+5. Create the endpoint and store its endpoint key. The key is shown once, and the
+   backend stores only its SHA-256 hash. Testnet keys start with `wsp_test_` and
+   mainnet keys with `wsp_live_`.
+6. Use **Inspect 402** to confirm the resource returns HTTP `402` and a
    `PAYMENT-REQUIRED` header.
 
 Hosted resources use this shape:
 
 ```text
-GET https://YOUR_API/api/pay/resource/YOUR_SLUG
+GET https://YOUR_API/api/pay/resource/YOUR_SLUG        # testnet
+GET https://YOUR_API/api/pay/live/resource/YOUR_SLUG   # mainnet
 ```
 
-Opening the resource in a browser shows a WebSoroban Pay handoff. It links to the
-public checkout, so the buyer does not need a WebSoroban account.
+Opening the resource in a browser shows a WebSoroban Pay handoff to the public
+checkout, so the buyer does not need a WebSoroban account.
 
-## Pay with Freighter
+## Protect your own API
 
-Before testing, the buyer needs:
+```bash
+npm install @websoroban/pay @x402/core @x402/express @x402/stellar express
+```
 
-- the Freighter browser extension;
-- Freighter set to **Testnet**;
-- the selected account funded with Stellar testnet USDC.
+```ts
+import { createWebSorobanPay } from '@websoroban/pay'
 
-The facilitator sponsors the network fee, so the payer does not need XLM for the
-x402 settlement itself.
+const pay = createWebSorobanPay({
+  apiUrl: process.env.WEBSOROBAN_API_URL!,
+  apiKey: process.env.WEBSOROBAN_PAY_KEY,
+  endpointId: process.env.WEBSOROBAN_ENDPOINT_ID!,
+  payTo: process.env.STELLAR_PAY_TO!,
+})
 
-1. Open the endpoint's **Pay with Freighter** action, or continue from its raw
+app.use(pay.protect('GET /brief', '$0.01'))
+
+const report = await pay.preflight() // key accepted? payout has a USDC trustline?
+```
+
+The network comes from the key prefix, so a testnet key can never guard a
+mainnet route. The fastest start is the **Paid API endpoint** template. It runs
+the preflight on startup and includes `pnpm pay`, which makes a real paid
+testnet request from your terminal.
+
+## Pay from a wallet
+
+x402 on Stellar asks the wallet to sign one Soroban **authorization entry**.
+
+| Wallet | Hosted checkout |
+| --- | --- |
+| Freighter (browser extension) | Yes |
+| Hana | Yes |
+| HOT | Yes |
+| Klever | Yes |
+| Albedo, OneKey | Sign from your own x402 client |
+| Freighter Mobile | Not supported (cannot sign auth entries) |
+
+1. Open the endpoint's **Open checkout** action, or continue from its raw
    `402 Payment Required` page.
-2. Select **Connect Freighter**.
-3. Review the exact asset, amount, recipient, and network in Freighter.
-4. Approve the single-use Soroban authorization.
-5. Wait for the checkout to show **Payment settled**.
-6. Select **View settlement receipt** to open the transaction on Stellar Expert.
+2. Choose a wallet. Set it to the network shown on the checkout.
+3. The checkout checks the paying account's USDC trustline and balance before
+   asking for anything.
+4. Review the exact asset, amount, recipient, and network, then approve.
+5. Wait for **Payment settled**, then open the receipt on Stellar Expert.
 
-The authorization binds the exact token transfer arguments. The facilitator can
-submit and sponsor that transfer, but it cannot change its asset, amount, payer,
-or recipient.
+The facilitator sponsors the network fee. The authorization binds the exact
+token transfer: the facilitator can submit it, but cannot change the asset,
+amount, payer, or recipient. The checkout also verifies each signature against
+the exact authorization and your account before sending it.
 
 ## Use an x402 client
 
-Programmatic clients should read the `PAYMENT-REQUIRED` response, create an
-`exact` Stellar payment payload, then retry with `PAYMENT-SIGNATURE`. Successful
+Programmatic clients read the `PAYMENT-REQUIRED` response, create an `exact`
+Stellar payment payload, then retry with `PAYMENT-SIGNATURE`. Successful
 responses expose `PAYMENT-RESPONSE`, which includes the settlement transaction.
-
-For browser integrations, use compatible releases of the official clients:
 
 ```bash
 npm install @x402/core@^2.25.0 @x402/fetch@^2.25.0 \
@@ -74,26 +107,44 @@ npm install @x402/core@^2.25.0 @x402/fetch@^2.25.0 \
   hosted endpoints are already configured for these headers.
 </Callout>
 
-## Common failures
+## Reliability and failures
 
-- **Switch Freighter to Testnet** — change the active network in Freighter,
-  reconnect, and retry.
-- **Freighter returned a signature for a different authorization** — update
-  `@stellar/freighter-api`, reconnect the active account, and approve again.
-- **Failed to fetch** after approval — the protected API's CORS policy is not
-  allowing the signed retry. Check the headers described above.
-- **HTTP 402 after approval** — inspect `PAYMENT-ERROR` and the Payment Studio
-  activity feed for the facilitator's verification or settlement reason.
-- **Freighter Mobile** cannot sign auth entries. Use the Freighter browser
-  extension, or Albedo, Hana, HOT, Klever, or OneKey.
-- **Spend cap** — an agent signer over its daily USDC limit is rejected before
-  settlement. Raise or wait out the cap in Payment Studio.
+Payment Studio shows the settlement success rate for the last 24 hours, 7 days,
+and 30 days. It also lists why payments failed, each reason with its fix.
+Failures that never reached the facilitator, such as spend caps and rate limits,
+are listed but do not count against the success rate.
 
-Payment Studio can register `payment.settled` and `payment.failed` webhooks.
-Each delivery includes `X-WebSoroban-Signature` (`t=<unix>,v1=<hmac>`).
+- **No USDC trustline**: add USDC from the wallet's asset list, then retry.
+- **Insufficient USDC**: fund the paying account. Testnet USDC is available at
+  [faucet.circle.com](https://faucet.circle.com).
+- **Switch Freighter to Testnet/Mainnet**: change the active network in the
+  extension and approve again.
+- **Signature for a different authorization**: reconnect the active account and
+  approve again.
+- **Network mismatch**: the key, wallet, or client is set to the other network.
+- **Failed to fetch after approval**: the protected API's CORS policy is
+  blocking the signed retry. Check the headers above.
+- **Spend cap**: an agent signer over its daily USDC limit is rejected before
+  settlement. Raise the cap or wait for the window to reset.
+
+## Webhooks
+
+Register `payment.settled`, `payment.failed`, or `wallet.spend_limit_exceeded`
+in Payment Studio, then use **Test** to send a signed `webhook.test` delivery.
+Deliveries are retried for about two hours. Each one carries
+`X-WebSoroban-Signature` (`t=<unix>,v1=<hmac>`). Verify it against the raw body:
+
+```ts
+import { constructWebhookEvent } from '@websoroban/pay'
+
+app.post('/webhooks/pay', express.raw({ type: 'application/json' }), (req, res) => {
+  const event = constructWebhookEvent(secret, req.header('X-WebSoroban-Signature'), req.body)
+  res.sendStatus(204)
+})
+```
 
 ## Next
 
-- [API reference](/docs/reference/api), hosted resource and management routes.
-- [Wallets & faucet](/docs/wallets), wallet and network basics.
-- [Troubleshooting](/docs/troubleshooting), errors across the IDE.
+- [API reference](/docs/reference/api): hosted resource and management routes.
+- [Wallets & faucet](/docs/wallets): wallet and network basics.
+- [Troubleshooting](/docs/troubleshooting): errors across the IDE.
