@@ -84,6 +84,13 @@ npm install @x402/core@^2.25.0 @x402/fetch@^2.25.0 \
   allowing the signed retry. Check the headers described above.
 - **HTTP 402 after approval** — inspect `PAYMENT-ERROR` and the Payment Studio
   activity feed for the facilitator's verification or settlement reason.
+- **Freighter Mobile** cannot sign auth entries. Use the Freighter browser
+  extension, or Albedo, Hana, HOT, Klever, or OneKey.
+- **Spend cap** — an agent signer over its daily USDC limit is rejected before
+  settlement. Raise or wait out the cap in Payment Studio.
+
+Payment Studio can register `payment.settled` and `payment.failed` webhooks.
+Each delivery includes `X-WebSoroban-Signature` (`t=<unix>,v1=<hmac>`).
 
 ## Next
 

@@ -14,7 +14,7 @@ import { NovaMark } from '@/components/nova-mark'
 import { StellarMark } from '@/components/stellar-mark'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useWalletKit } from '@/contexts/WalletKitContext'
-import { PAY_API_BASE_URL } from '@/lib/payApi'
+import { PAY_API_BASE_URL, PayWallet } from '@/lib/payApi'
 import { explorerTx, TESTNET } from '@/lib/networks'
 import { truncateAddress } from '@/lib/utils'
 
@@ -63,6 +63,16 @@ function CheckoutContent() {
   const [paying, setPaying] = useState(false)
   const [error, setError] = useState('')
   const [receipt, setReceipt] = useState<Receipt | null>(null)
+  const [wallets, setWallets] = useState<PayWallet[]>([])
+  const [mobileWallet, setMobileWallet] = useState(false)
+
+  useEffect(() => {
+    setMobileWallet(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent))
+    fetch(`${PAY_API_BASE_URL}/pay/wallets`)
+      .then((response) => response.json())
+      .then((body) => { if (Array.isArray(body.wallets)) setWallets(body.wallets) })
+      .catch(() => undefined)
+  }, [])
 
   const loadChallenge = useCallback(async () => {
     if (!resourceUrl) {
@@ -199,16 +209,42 @@ function CheckoutContent() {
 
               {address ? <div className="mt-5 flex items-center justify-between gap-4 rounded-2xl border border-brand/20 bg-brand/5 p-4"><div className="min-w-0"><p className="text-xs text-muted-foreground">Paying with Freighter</p><p className="mt-1 truncate font-mono text-sm">{truncateAddress(address)}</p></div><button type="button" onClick={disconnect} className="min-h-10 rounded-xl px-3 text-xs text-muted-foreground transition-colors hover:bg-brand/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">Disconnect</button></div> : null}
 
-              {error ? <div role="alert" className="mt-5 flex gap-2 rounded-2xl border border-destructive/25 bg-destructive/5 p-4 text-sm text-destructive"><XCircle className="mt-0.5 h-4 w-4 shrink-0" /><span>{error}</span></div> : null}
+              {error ? <div role="alert" className="mt-5 rounded-2xl border border-destructive/25 bg-destructive/5 p-4 text-sm text-destructive"><div className="flex gap-2"><XCircle className="mt-0.5 h-4 w-4 shrink-0" /><span>{error}</span></div>{checkoutFix(error) ? <p className="mt-2 text-xs leading-5 text-foreground">{checkoutFix(error)}</p> : null}</div> : null}
 
               {!address ? <Button type="button" size="lg" disabled={!isInitialized || connecting} onClick={connect} className="mt-6 h-12 w-full rounded-full">{connecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wallet2 className="h-4 w-4" />} {connecting ? 'Connecting Freighter…' : 'Connect Freighter'}</Button> : <Button type="button" size="lg" disabled={paying || !connectedToTestnet} aria-busy={paying} onClick={pay} className="mt-6 h-12 w-full rounded-full">{paying ? <Loader2 className="h-4 w-4 animate-spin" /> : <CircleDollarSign className="h-4 w-4" />} {paying ? 'Waiting for approval…' : `Pay ${challenge?.price.replace(/^\$/, '')} ${challenge?.asset}`}</Button>}
               <p className="mt-3 text-center text-xs leading-5 text-muted-foreground">Testnet assets only. Freighter will show the authorization before anything settles.</p>
             </div>}
           </div>
         </div>
+        <section className="relative mt-8 rounded-3xl border border-foreground/15 bg-card p-5 shadow-sm sm:p-7">
+          <p className="font-mono text-[0.65rem] uppercase tracking-[0.18em] text-brand">Wallet compatibility</p>
+          <h2 className="mt-2 font-display text-2xl font-semibold">Auth entries, not a transaction signature</h2>
+          {mobileWallet ? <p role="status" className="mt-4 rounded-2xl border border-warning/30 bg-warning/10 p-4 text-sm leading-6">Freighter Mobile cannot sign auth entries. Open this checkout in a desktop browser with the Freighter extension.</p> : <p className="mt-4 text-sm leading-6 text-muted-foreground">This checkout signs with the Freighter extension. These wallets can also sign the same auth entry from your own client.</p>}
+          <ul className="mt-5 grid gap-3 sm:grid-cols-2">
+            {(wallets.length ? wallets : FALLBACK_WALLETS).map((wallet) => (
+              <li key={wallet.id} className="text-sm">
+                <p className="font-medium">{wallet.name}</p>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">{wallet.guidance}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
       </section>
     </main>
   )
+}
+
+const FALLBACK_WALLETS: PayWallet[] = [
+  { id: 'freighter', name: 'Freighter', platform: 'browser', authEntry: true, guidance: 'Supported in this checkout. Set the extension to Stellar Testnet.' },
+  { id: 'freighter-mobile', name: 'Freighter Mobile', platform: 'ios-android', authEntry: false, guidance: 'Cannot sign auth entries. Use the desktop extension.' },
+]
+
+function checkoutFix(message: string) {
+  const text = message.toLowerCase()
+  if (text.includes('signature')) return 'The signature does not match this challenge. Reconnect Freighter on testnet and approve the authorization again.'
+  if (text.includes('unsupported') || text.includes('auth entry') || text.includes('mobile')) return 'Use Freighter on desktop, or Albedo, Hana, HOT, Klever, or OneKey.'
+  if (text.includes('balance') || text.includes('allowance') || text.includes('trustline')) return 'Add a testnet USDC trustline and fund the account before retrying.'
+  return ''
 }
 
 export default function CheckoutPage() {

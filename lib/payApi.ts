@@ -32,7 +32,48 @@ export interface PayEvent {
   amount?: string | null
   errorCode?: string | null
   errorMessage?: string | null
+  errorCause?: string | null
+  errorFix?: string | null
   latencyMs?: number | null
+  createdAt: string
+}
+
+export interface PayWallet {
+  id: string
+  name: string
+  platform: string
+  authEntry: boolean
+  guidance: string
+}
+
+export interface PayErrorInfo {
+  code: string
+  message: string
+  cause: string
+  fix: string
+}
+
+export interface PayWebhook {
+  id: string
+  endpointId?: string | null
+  url: string
+  events: string[]
+  secretPrefix: string
+  active: boolean
+  createdAt: string
+}
+
+export interface PayAgentWallet {
+  id: string
+  endpointId?: string | null
+  name: string
+  publicKey: string
+  spendLimitUsdc: string
+  spentUsdc: string
+  periodSeconds: number
+  periodLedgers: number
+  asset: string
+  active: boolean
   createdAt: string
 }
 
@@ -49,6 +90,10 @@ export interface PayOverview {
   }
   endpoints: PayEndpoint[]
   events: PayEvent[]
+  wallets: PayWallet[]
+  errors: PayErrorInfo[]
+  webhooks: PayWebhook[]
+  agentWallets: PayAgentWallet[]
 }
 
 export interface CreatedPayEndpoint {
@@ -93,6 +138,31 @@ export const payApi = {
 
   setEndpointActive(id: string, active: boolean) {
     return authenticatedRequest<{ success: true; endpoint: PayEndpoint }>(`/pay/endpoints/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ active }),
+    })
+  },
+
+  createWebhook(input: { url: string; events: string[]; endpointId?: string }) {
+    return authenticatedRequest<{ success: true; secret: string; warning: string; webhook: PayWebhook }>('/pay/webhooks', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    })
+  },
+
+  deleteWebhook(id: string) {
+    return authenticatedRequest<{ success: true }>(`/pay/webhooks/${id}`, { method: 'DELETE' })
+  },
+
+  createAgentWallet(input: { name: string; publicKey: string; spendLimit: string; endpointId?: string }) {
+    return authenticatedRequest<{ success: true; wallet: { id: string; policy: { spendingLimitStroops: string; periodLedgers: number } } }>('/pay/agent-wallets', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    })
+  },
+
+  setAgentWalletActive(id: string, active: boolean) {
+    return authenticatedRequest<{ success: true; wallet: { id: string; active: boolean } }>(`/pay/agent-wallets/${id}`, {
       method: 'PATCH',
       body: JSON.stringify({ active }),
     })
