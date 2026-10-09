@@ -17,6 +17,7 @@ interface PlaygroundNavbarProps {
 const links = [
   { href: '/#platform', label: 'Platform' },
   { href: '/pay', label: 'Payments' },
+  { href: '/payloop', label: 'PayLoop' },
   { href: '/#stellar-local', label: 'WebSoroban Local' },
   { href: '/docs', label: 'Docs' },
 ]

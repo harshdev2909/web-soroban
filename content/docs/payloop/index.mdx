@@ -1,0 +1,113 @@
+---
+title: PayLoop subscriptions
+description: Non-custodial USDC subscriptions on Soroban, and how a merchant accepts them.
+---
+
+PayLoop is a Soroban contract for recurring USDC payments. A subscriber signs
+one **policy**: which merchant to pay, how much, how often, and a safety cap on
+the total. Funds stay in the subscriber's wallet until a charge is due. A
+relayer submits each charge on schedule, and the subscriber can pause, resume,
+or revoke from their own wallet at any time.
+
+<Callout type="note" title="Testnet">
+  PayLoop runs on Stellar Testnet. Mainnet deployment is blocked until an
+  independent security review of the contract is complete.
+</Callout>
+
+## How a policy works
+
+| Term | Enforced on-chain |
+| --- | --- |
+| Merchant | Charges can only pay this address. |
+| Amount | Every charge is exactly this amount of USDC. |
+| Interval | A charge is accepted only once it is due (minimum one minute). |
+| Safety cap | Total charges never exceed it. The policy completes when less than one charge remains. |
+
+**Atomic first charge.** `create_policy` grants the allowance and takes the
+first charge in one invocation under one signature. If the first charge fails,
+for example because the wallet lacks USDC, the whole call reverts: no policy,
+no allowance.
+
+**Non-custodial.** The contract never holds funds. It holds a USDC allowance
+equal to what the subscriber's live policies may still charge. Every charge
+consumes exactly one amount of it, and revoking a policy shrinks it again.
+
+**Permissionless charging.** Anyone may call `charge(policy_id)`. That is safe
+because the policy fixes the recipient, amount, schedule, and cap. A charge the
+subscriber cannot cover is recorded on-chain (`ChargeFailed`) instead of
+failing silently. Missed periods are never back-billed: after downtime, the
+next charge starts a fresh period.
+
+| Action | Who signs | Effect |
+| --- | --- | --- |
+| `create_policy` | Subscriber | Validates terms, grants the allowance, takes the first charge. |
+| `charge` | Anyone (the relayer) | Takes a due charge. |
+| `pause` / `resume` | Subscriber | Stops and restarts charges. Resuming after a missed date starts a new period now. |
+| `revoke` | Subscriber | Ends the policy and shrinks the allowance. Final. |
+| `cancel` | Merchant | Ends the policy from the merchant side. Final. |
+| `refresh_allowance` | Subscriber | Re-grants the committed allowance with a fresh expiry. |
+
+Allowances are granted for about 100 days. Long-running subscriptions call
+`refresh_allowance` before then; until they do, the relayer reports the charge
+as `insufficient_allowance`.
+
+## Try it
+
+Open [PayLoop](/payloop) on testnet. Connect a wallet, fund it with test USDC
+in one click, then sign a one-minute policy. Within a minute or two you will
+see the relayer's charges arrive, each with its Stellar Expert receipt. Pause,
+resume, or revoke from the same page.
+
+## Accept PayLoop as a merchant
+
+A merchant does not run any chain infrastructure. The WebSoroban relayer
+submits charges, and the indexer exposes policies and payments.
+
+### 1. Read a subscriber's policies
+
+```http
+GET /api/payloop/policies?merchant=G…YOUR_MERCHANT&status=active
+GET /api/payloop/policies?subscriber=G…CUSTOMER
+GET /api/payloop/policies/:policyId        # policy + its charge history
+```
+
+Treat a customer as subscribed when they have an `active` policy to your
+merchant address whose `amount` and `intervalSeconds` match your plan.
+
+### 2. Prove the customer owns the wallet
+
+A wallet address in a request proves nothing on its own. Ask the customer's
+wallet to sign a short message (SEP-53 `signMessage`, supported by Freighter),
+then verify it server-side before granting access:
+
+```ts
+import { Keypair, hash } from '@stellar/stellar-sdk'
+
+function ownsWallet(address: string, message: string, signatureBase64: string) {
+  const digest = hash(Buffer.from(`Stellar Signed Message:\n${message}`))
+  return Keypair.fromPublicKey(address).verify(digest, Buffer.from(signatureBase64, 'base64'))
+}
+```
+
+Include a timestamp or nonce in the message and reject stale ones.
+
+### 3. React to charges
+
+Each policy's `charges` count and `nextChargeAt` update as the relayer
+charges. Poll `/api/payloop/policies?merchant=…` and compare `charges` with
+what you last saw. Failed attempts appear as charge rows with outcome
+`insufficient_balance` or `insufficient_allowance`, and the relayer retries
+them with backoff.
+
+The **PayLoop merchant** template in the IDE implements all three steps as a
+runnable Express app.
+
+## Reliability
+
+- `GET /api/payloop/stats` reports policies by status, charge outcomes, and how
+  many recurring charges landed within a minute of their due time (p50 and p95
+  lateness).
+- A reconciliation job compares every policy and its charge history in the
+  index against the contract and exits non-zero on any difference.
+- Only one relayer instance submits charges at a time (a database lease), so
+  extra replicas add availability without double-submitting.
