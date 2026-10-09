@@ -108,7 +108,7 @@ export default function PayPage() {
     } catch { setError('Copy failed. Select the text and copy it manually.') }
   }
 
-  const snippet = created ? `import { createWebSorobanPay } from '@websoroban/pay'\n\nconst pay = createWebSorobanPay({\n  apiUrl: '${apiOrigin(created.endpoint.resourceUrl)}',\n  apiKey: process.env.WEBSOROBAN_PAY_KEY, // ${created.endpoint.network}\n  endpointId: '${created.endpoint.id}',\n  payTo: '${created.endpoint.payTo}',\n})\n\napp.use(pay.protect('GET /brief', '${created.endpoint.price}'))` : ''
+  const snippet = created ? `import { createWebSorobanPay } from '@web-soroban/pay'\n\nconst pay = createWebSorobanPay({\n  apiUrl: '${apiOrigin(created.endpoint.resourceUrl)}',\n  apiKey: process.env.WEBSOROBAN_PAY_KEY, // ${created.endpoint.network}\n  endpointId: '${created.endpoint.id}',\n  payTo: '${created.endpoint.payTo}',\n})\n\napp.use(pay.protect('GET /brief', '${created.endpoint.price}'))` : ''
 
   return (
     <main className="nova-landing min-h-screen overflow-hidden bg-background text-foreground">

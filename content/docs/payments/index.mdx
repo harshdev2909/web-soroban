@@ -41,11 +41,11 @@ checkout, so the buyer does not need a WebSoroban account.
 ## Protect your own API
 
 ```bash
-npm install @websoroban/pay @x402/core @x402/express @x402/stellar express
+npm install @web-soroban/pay @x402/core @x402/express @x402/stellar express
 ```
 
 ```ts
-import { createWebSorobanPay } from '@websoroban/pay'
+import { createWebSorobanPay } from '@web-soroban/pay'
 
 const pay = createWebSorobanPay({
   apiUrl: process.env.WEBSOROBAN_API_URL!,
@@ -135,7 +135,7 @@ Deliveries are retried for about two hours. Each one carries
 `X-WebSoroban-Signature` (`t=<unix>,v1=<hmac>`). Verify it against the raw body:
 
 ```ts
-import { constructWebhookEvent } from '@websoroban/pay'
+import { constructWebhookEvent } from '@web-soroban/pay'
 
 app.post('/webhooks/pay', express.raw({ type: 'application/json' }), (req, res) => {
   const event = constructWebhookEvent(secret, req.header('X-WebSoroban-Signature'), req.body)

@@ -89,7 +89,7 @@ export function PayControls({ overview, onChange }: { overview: PayOverview; onC
         <form onSubmit={createWebhook} className="rounded-3xl border border-foreground/15 bg-card p-5 shadow-sm sm:p-7">
           <p className="font-mono text-[0.65rem] uppercase tracking-[0.18em] text-brand">Delivery</p>
           <h3 className="mt-2 font-display text-2xl font-semibold">Payment webhooks</h3>
-          <p className="mt-3 text-sm leading-6 text-muted-foreground">Every delivery is signed and retried for about two hours. Verify <span className="font-mono">X-WebSoroban-Signature</span> with <span className="font-mono">constructWebhookEvent</span> from <span className="font-mono">@websoroban/pay</span> before you trust the body.</p>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">Every delivery is signed and retried for about two hours. Verify <span className="font-mono">X-WebSoroban-Signature</span> with <span className="font-mono">constructWebhookEvent</span> from <span className="font-mono">@web-soroban/pay</span> before you trust the body.</p>
           <div className="mt-6">
             <Label htmlFor="webhook-url">Endpoint URL</Label>
             <Input id="webhook-url" required type="url" value={webhookUrl} onChange={(e) => setWebhookUrl(e.target.value)} placeholder="https://example.com/webhooks/pay" className="mt-2 h-11 rounded-xl" />
