@@ -4,7 +4,8 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft, ArrowRight, ArrowUpRight } from 'lucide-react'
 import { IdeaBankFrame } from '@/components/ideas/frame'
-import { getIdea, ideas, neighbors, themeLabel } from '@/lib/ideas'
+import { SubmitIdeaButton } from '@/components/ideas/submit-idea'
+import { getIdea, ideas, neighbors, themeLabel, type Idea } from '@/lib/ideas'
 
 type Params = { slug: string }
 
@@ -26,26 +27,23 @@ export async function generateMetadata({
   }
 }
 
-const sections = [
-  ['problem', 'Problem'],
-  ['idea', 'Idea'],
-  ['why', 'Why now'],
-  ['story', 'User story'],
-  ['flow', 'Architecture'],
-  ['mvp', 'MVP'],
-  ['contracts', 'Contracts'],
-  ['stellar', 'Stellar features'],
-  ['integrations', 'Integrations'],
-  ['plan', 'Build sequence'],
-  ['stretch', 'Stretch goals'],
-  ['resources', 'Resources'],
-] as const
+function sectionsFor(idea: Idea) {
+  return [
+    ['goal', 'Goal'],
+    ['description', 'Description'],
+    ['features', 'Key features'],
+    ...(idea.technical ? [['technical', 'Technical direction']] : []),
+    ['alignment', 'Stellar alignment'],
+    ...(idea.useCases?.length ? [['use-cases', 'Use cases']] : []),
+  ] as [string, string][]
+}
 
 export default async function IdeaPage({ params }: { params: Promise<Params> }) {
   const { slug } = await params
   const idea = getIdea(slug)
   if (!idea) notFound()
   const { prev, next } = neighbors(idea.slug)
+  const sections = sectionsFor(idea)
 
   return (
     <IdeaBankFrame>
@@ -67,14 +65,16 @@ export default async function IdeaPage({ params }: { params: Promise<Params> }) 
               <dt className="sr-only">Category</dt>
               <dd>{idea.category}</dd>
             </div>
-            <div className="rounded-full border border-border bg-muted px-3 py-1.5">
-              <dt className="sr-only">Difficulty</dt>
-              <dd>{idea.difficulty}</dd>
-            </div>
             <div className="rounded-full border border-border px-3 py-1.5 text-muted-foreground">
               <dt className="sr-only">Theme</dt>
               <dd>{themeLabel(idea.theme)}</dd>
             </div>
+            {idea.by && (
+              <div className="rounded-full border border-border bg-muted px-3 py-1.5">
+                <dt className="sr-only">Proposed by</dt>
+                <dd>by {idea.by}</dd>
+              </div>
+            )}
           </dl>
           <ul className="mt-4 flex flex-wrap gap-1.5">
             {idea.buildWith.map((tool) => (
@@ -104,40 +104,16 @@ export default async function IdeaPage({ params }: { params: Promise<Params> }) 
           </nav>
 
           <div className="min-w-0 space-y-12">
-            {idea.caution && (
-              <p className="rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm leading-relaxed text-foreground">
-                {idea.caution}
-              </p>
-            )}
-
-            <Section id="problem" label="Problem">
-              <p className="text-base leading-relaxed text-muted-foreground">{idea.problem}</p>
+            <Section id="goal" label="Goal">
+              <p className="text-base leading-relaxed text-muted-foreground">{idea.goal}</p>
             </Section>
-            <Section id="idea" label="Idea">
-              <p className="text-base leading-relaxed text-muted-foreground">{idea.idea}</p>
-            </Section>
-            <Section id="why" label="Why now">
-              <p className="text-base leading-relaxed text-muted-foreground">{idea.whyNow}</p>
-            </Section>
-            <Section id="story" label="User story">
-              <p className="text-base leading-relaxed text-muted-foreground">{idea.userStory}</p>
+            <Section id="description" label="Description">
+              <p className="text-base leading-relaxed text-muted-foreground">{idea.description}</p>
             </Section>
 
-            <Section id="flow" label="Architecture">
-              <ol className="border-l-2 border-brand/70 pl-5">
-                {idea.flow.map((step, index) => (
-                  <li key={step} className="relative pb-5 last:pb-0">
-                    <span className="absolute -left-6 top-1 h-2.5 w-2.5 rounded-full bg-brand" aria-hidden />
-                    <p className="font-mono text-[11px] text-brand">{String(index + 1).padStart(2, '0')}</p>
-                    <p className="mt-1 text-sm text-foreground">{step}</p>
-                  </li>
-                ))}
-              </ol>
-            </Section>
-
-            <Section id="mvp" label="MVP">
+            <Section id="features" label="Key features">
               <ul className="space-y-2">
-                {idea.mvp.map((item) => (
+                {idea.features.map((item) => (
                   <li key={item} className="flex gap-3 text-sm leading-relaxed text-muted-foreground">
                     <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand" aria-hidden />
                     <span>{item}</span>
@@ -146,85 +122,51 @@ export default async function IdeaPage({ params }: { params: Promise<Params> }) 
               </ul>
             </Section>
 
-            <Section id="contracts" label="Soroban contracts">
-              <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border">
-                {idea.contracts.map((contract) => (
-                  <li key={contract.name} className="grid gap-1 bg-card px-4 py-3 sm:grid-cols-[160px_1fr] sm:gap-4">
-                    <p className="font-mono text-xs text-brand">{contract.name}</p>
-                    <p className="text-sm text-muted-foreground">{contract.role}</p>
-                  </li>
-                ))}
-              </ul>
+            {idea.technical && (
+              <Section id="technical" label="Technical direction">
+                <p className="rounded-xl border border-border bg-card p-4 text-sm leading-relaxed text-muted-foreground">
+                  {idea.technical}
+                </p>
+              </Section>
+            )}
+
+            <Section id="alignment" label="Stellar alignment">
+              <p className="text-base leading-relaxed text-muted-foreground">{idea.alignment}</p>
             </Section>
 
-            <Section id="stellar" label="Stellar features">
-              <ul className="grid gap-2 sm:grid-cols-2">
-                {idea.stellarFeatures.map((feature) => (
-                  <li key={feature} className="rounded-lg border border-border bg-card px-3 py-3 text-sm text-foreground">
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-            </Section>
-
-            <Section id="integrations" label="Suggested integrations">
-              <ul className="flex flex-wrap gap-2">
-                {idea.integrations.map((item) => (
-                  <li key={item} className="rounded-full border border-border px-3 py-1.5 text-sm text-muted-foreground">
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </Section>
-
-            <Section id="plan" label="Build sequence">
-              <ol className="grid gap-3">
-                {idea.plan.map((block) => (
-                  <li key={block.step} className="grid gap-2 rounded-xl border border-border bg-card p-4 sm:grid-cols-[48px_1fr] sm:gap-4">
-                    <p className="font-mono text-xs text-brand">{block.step}</p>
-                    <div>
-                      <p className="text-sm font-medium">{block.title}</p>
-                      <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{block.detail}</p>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            </Section>
-
-            <Section id="stretch" label="Stretch goals">
-              <ul className="space-y-2">
-                {idea.stretch.map((item) => (
-                  <li key={item} className="text-sm leading-relaxed text-muted-foreground">
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </Section>
-
-            <Section id="resources" label="Resources">
-              <ul className="grid gap-2 sm:grid-cols-2">
-                {idea.resources.map((resource) => {
-                  const external = resource.href.startsWith('http')
-                  const className =
-                    'inline-flex h-11 items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 text-sm transition-colors duration-200 hover:border-brand/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background'
-                  return (
-                    <li key={resource.href}>
-                      {external ? (
-                        <a href={resource.href} target="_blank" rel="noreferrer" className={className}>
-                          {resource.label}
-                          <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
-                        </a>
-                      ) : (
-                        <Link href={resource.href} className={className}>
-                          {resource.label}
-                          <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                        </Link>
-                      )}
+            {idea.useCases && idea.useCases.length > 0 && (
+              <Section id="use-cases" label="Use cases">
+                <ul className="flex flex-wrap gap-2">
+                  {idea.useCases.map((item) => (
+                    <li key={item} className="rounded-full border border-border px-3 py-1.5 text-sm text-muted-foreground">
+                      {item}
                     </li>
-                  )
-                })}
-              </ul>
-            </Section>
+                  ))}
+                </ul>
+              </Section>
+            )}
+
+            {(idea.source || idea.credit) && (
+              <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                {idea.credit && <p>{idea.credit}</p>}
+                {idea.source && (
+                  <a
+                    href={idea.source}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex h-11 items-center gap-2 rounded-lg border border-border bg-card px-3 text-foreground transition-colors duration-200 hover:border-brand/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  >
+                    Discuss on the Stellar Discord
+                    <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
+                  </a>
+                )}
+              </div>
+            )}
+
+            <div className="flex flex-col items-start gap-4 rounded-xl border border-border bg-card p-5 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-muted-foreground">Have an idea of your own? Send it in for the Idea Bank.</p>
+              <SubmitIdeaButton />
+            </div>
 
             <nav aria-label="More ideas" className="grid gap-3 border-t border-border pt-8 sm:grid-cols-2">
               {prev ? (

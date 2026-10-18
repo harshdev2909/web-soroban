@@ -1,6 +1,20 @@
 import { createMDX } from 'fumadocs-mdx/next';
 
 /** @type {import('next').NextConfig} */
+// Briefs from the first version of the Idea Bank. Their links still circulate.
+const retiredIdeaSlugs = [
+  'rwa-credit-line',
+  'payfi-invoice-market',
+  'private-payroll',
+  'agent-wallet',
+  'api-marketplace',
+  'freelancer-escrow',
+  'merchant-treasury',
+  'rwa-portfolio',
+  'compliance-passport',
+  'treasury-agent',
+]
+
 const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
@@ -20,7 +34,8 @@ const nextConfig = {
   async redirects() {
     return [
       { source: '/hackmeridian', destination: '/ideas', permanent: false },
-      { source: '/hackmeridian/:slug', destination: '/ideas/:slug', permanent: false },
+      { source: '/hackmeridian/:slug', destination: '/ideas', permanent: false },
+      ...retiredIdeaSlugs.map((slug) => ({ source: `/ideas/${slug}`, destination: '/ideas', permanent: false })),
     ]
   },
 }

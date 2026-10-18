@@ -12,11 +12,11 @@ export function IdeaBankBand() {
           <div>
             <p className="eyebrow text-brand">Idea Bank</p>
             <h2 className="font-display mt-3 text-title font-semibold">
-              Ten Stellar ideas, written so you can build them.
+              Stellar ideas worth building, from the community.
             </h2>
             <p className="lead mt-4">
-              Briefs for products you can start in WebSoroban. Each one has the problem, the contracts,
-              a build sequence, and the Stellar pieces to use.
+              Wallets, payments, and markets you can start in WebSoroban. Each idea has the goal, the
+              key features, and why it matters for Stellar. Got your own? Submit it to be featured.
             </p>
             <Link
               href="/ideas"

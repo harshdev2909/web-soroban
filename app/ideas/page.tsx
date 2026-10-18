@@ -1,22 +1,18 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, ArrowUpRight } from 'lucide-react'
 import { IdeaBankFrame } from '@/components/ideas/frame'
+import { SubmitIdeaButton } from '@/components/ideas/submit-idea'
 import { ideas, themeLabel, themes, type ThemeId } from '@/lib/ideas'
+import { getCommunityIdeas } from '@/lib/ideasApi'
 
 export const metadata: Metadata = {
   title: 'Idea Bank · WebSoroban',
   description:
-    'Ten buildable Stellar briefs: RWA credit, PayFi, private payroll, agent wallets, and cross-border treasury.',
+    'Stellar ideas worth building: passkey and Google sign-in wallets, USDC subscriptions, payment links, prediction markets, and more. Submit your own.',
 }
 
 const themeIds = new Set(themes.map((theme) => theme.id))
-
-function difficultyClass(difficulty: string) {
-  if (difficulty.startsWith('Beginner')) return 'border-success/30 bg-success/10 text-success'
-  if (difficulty === 'Intermediate') return 'border-brand/30 bg-brand/10 text-brand'
-  return 'border-border bg-muted text-foreground'
-}
 
 export default async function IdeasPage({
   searchParams,
@@ -27,6 +23,7 @@ export default async function IdeasPage({
   const theme = raw && themeIds.has(raw as ThemeId | 'all') ? (raw as ThemeId | 'all') : 'all'
   const visible = theme === 'all' ? ideas : ideas.filter((idea) => idea.theme === theme)
   const activeTheme = themes.find((item) => item.id === theme) ?? themes[0]
+  const community = theme === 'all' ? await getCommunityIdeas() : []
 
   return (
     <IdeaBankFrame>
@@ -39,14 +36,15 @@ export default async function IdeasPage({
             Build something worth shipping.
           </h1>
           <p className="lead mt-5 max-w-2xl text-base md:text-lg">
-            Ten briefs organized the way Stellar is actually moving: RWA finance, PayFi,
-            agentic commerce, privacy, and cross-border infrastructure. Each one is a contract plan,
-            not a slogan.
+            Ideas from the Stellar community for wallets, payments, and markets, each with the goal,
+            the features, and why it matters for Stellar. Have one of your own? Submit it, and the
+            team will feature the ones worth building.
           </p>
-          <div className="mt-8">
+          <div className="mt-8 flex flex-wrap gap-3">
+            <SubmitIdeaButton variant="solid" />
             <Link
               href="/docs"
-              className="inline-flex h-11 items-center justify-center rounded-full bg-brand px-5 text-sm font-semibold text-brand-foreground transition-colors duration-200 hover:bg-brand/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="inline-flex h-11 items-center justify-center rounded-full border border-border px-5 text-sm font-semibold text-foreground transition-colors duration-200 hover:border-brand/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               Read the Soroban docs
             </Link>
@@ -80,7 +78,7 @@ export default async function IdeasPage({
         {visible.length === 0 ? (
           <div className="mt-10 rounded-xl border border-border bg-card px-6 py-12 text-center">
             <p className="font-display text-lg font-semibold">No briefs in this theme</p>
-            <p className="mt-2 text-sm text-muted-foreground">The bank has ten ideas across five themes.</p>
+            <p className="mt-2 text-sm text-muted-foreground">The bank has {ideas.length} ideas across {themes.length - 1} themes.</p>
             <Link
               href="/ideas"
               className="mt-5 inline-flex h-10 items-center rounded-full bg-brand px-4 text-sm font-semibold text-brand-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -98,15 +96,19 @@ export default async function IdeasPage({
                 >
                   <div className="flex items-start justify-between gap-4">
                     <span className="font-mono text-sm text-brand">{idea.number}</span>
-                    <span className={`rounded-full border px-2.5 py-1 text-[11px] font-medium ${difficultyClass(idea.difficulty)}`}>
-                      {idea.difficulty}
+                    <span className="rounded-full border border-border bg-muted px-2.5 py-1 text-[11px] font-medium text-foreground">
+                      {idea.category}
                     </span>
                   </div>
                   <h2 className="font-display mt-4 text-xl font-semibold tracking-tight">{idea.title}</h2>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {idea.category}
-                    <span className="px-1.5 text-border">/</span>
                     {themeLabel(idea.theme)}
+                    {idea.by && (
+                      <>
+                        <span className="px-1.5 text-border">/</span>
+                        by {idea.by}
+                      </>
+                    )}
                   </p>
                   <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">{idea.tagline}</p>
                   <ul className="mt-4 flex flex-wrap gap-1.5">
@@ -125,6 +127,67 @@ export default async function IdeasPage({
             ))}
           </ul>
         )}
+      </section>
+
+      {community.length > 0 && (
+        <section className="border-t border-border/60">
+          <div className="mx-auto max-w-6xl px-6 py-10 md:py-14">
+            <p className="eyebrow text-brand">From the community</p>
+            <h2 className="font-display mt-3 text-2xl font-semibold tracking-tight">Ideas people sent in</h2>
+            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+              Submitted through the Idea Bank and picked by the WebSoroban team.
+            </p>
+            <ul className="mt-8 grid gap-4 md:grid-cols-2">
+              {community.map((idea) => (
+                <li key={idea.id} className="flex flex-col rounded-xl border border-border bg-card p-5">
+                  <h3 className="font-display text-xl font-semibold tracking-tight">{idea.title}</h3>
+                  <p className="mt-1 text-xs text-muted-foreground">by {idea.author}</p>
+                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{idea.goal}</p>
+                  <details className="group mt-4 flex-1">
+                    <summary className="inline-flex h-10 cursor-pointer list-none items-center gap-1.5 text-sm font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                      Read the idea
+                      <ArrowRight className="h-4 w-4 transition-transform duration-200 group-open:rotate-90" />
+                    </summary>
+                    <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
+                      {idea.description}
+                    </p>
+                    {idea.alignment && (
+                      <>
+                        <p className="mt-4 text-sm font-medium">Stellar alignment</p>
+                        <p className="mt-1 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
+                          {idea.alignment}
+                        </p>
+                      </>
+                    )}
+                  </details>
+                  {idea.link && (
+                    <a
+                      href={idea.link}
+                      target="_blank"
+                      rel="noreferrer nofollow ugc"
+                      className="mt-4 inline-flex h-10 items-center gap-1.5 self-start text-sm text-muted-foreground transition-colors duration-200 hover:text-foreground"
+                    >
+                      Discussion
+                      <ArrowUpRight className="h-4 w-4" />
+                    </a>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
+
+      <section className="border-t border-border/60">
+        <div className="mx-auto flex max-w-6xl flex-col items-start gap-5 px-6 py-12 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="font-display text-xl font-semibold">Got an idea for Stellar?</h2>
+            <p className="mt-1 max-w-xl text-sm text-muted-foreground">
+              Send it in. The team reviews every submission and features the ones worth building, with credit to you.
+            </p>
+          </div>
+          <SubmitIdeaButton />
+        </div>
       </section>
     </IdeaBankFrame>
   )
