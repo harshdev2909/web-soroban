@@ -21,7 +21,7 @@ import { MainnetInvokeDialog, type InvokeConfirmDetails } from "@/components/net
 import { cn, copyToClipboard } from "@/lib/utils"
 import { toast } from "sonner"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://backend-ide-production.up.railway.app/api'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://backend-ide-production-003a.up.railway.app/api'
 
 interface InvokePanelProps {
   contractId: string

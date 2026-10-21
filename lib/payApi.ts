@@ -1,7 +1,7 @@
 import { authApi } from '@/lib/api'
 import { MAINNET, TESTNET, type FrontendNetwork } from '@/lib/networks'
 
-export const PAY_API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://backend-ide-production.up.railway.app/api'
+export const PAY_API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://backend-ide-production-003a.up.railway.app/api'
 
 export type PayNetwork = 'stellar:testnet' | 'stellar:pubnet'
 

@@ -1,7 +1,7 @@
 import { authApi } from '@/lib/api'
 import type { CommunityIdea, IdeaSubmission } from '@/lib/ideas'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://backend-ide-production.up.railway.app/api'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://backend-ide-production-003a.up.railway.app/api'
 
 export type IdeaForm = {
   title: string

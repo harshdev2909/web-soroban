@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://backend-ide-production.up.railway.app/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://backend-ide-production-003a.up.railway.app/api';
 
 export interface ProjectFile {
   /** Project-relative tree path, e.g. "src/lib.rs". Falls back to name if absent. */

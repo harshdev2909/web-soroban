@@ -5,7 +5,7 @@
  */
 import { authApi } from './api'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://backend-ide-production.up.railway.app/api'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://backend-ide-production-003a.up.railway.app/api'
 
 export interface CreditPack {
   key: 'starter' | 'pro' | 'max'

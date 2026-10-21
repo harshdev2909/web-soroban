@@ -6,7 +6,7 @@
  */
 import { authApi, type Project } from './api'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://backend-ide-production.up.railway.app/api'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://backend-ide-production-003a.up.railway.app/api'
 
 export type CopilotMode = 'ask' | 'agent' | 'plan' | 'debug' | 'multitask'
 

@@ -28,7 +28,7 @@ import {
   Crown
 } from 'lucide-react'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://backend-ide-production.up.railway.app/api'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://backend-ide-production-003a.up.railway.app/api'
 const HARDCODED_PIN = '204099'
 
 interface PremiumUser {

@@ -3,7 +3,7 @@
 import { authApi } from './api'
 import type { NetworkId } from './networks'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://backend-ide-production.up.railway.app/api'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://backend-ide-production-003a.up.railway.app/api'
 
 async function call<T = any>(path: string, opts: RequestInit = {}): Promise<T> {
   const token = authApi.getToken()
