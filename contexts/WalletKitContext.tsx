@@ -1,23 +1,18 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import {
-  StellarWalletsKit,
-  WalletNetwork,
-  allowAllModules,
-  ISupportedWallet,
-  FREIGHTER_ID,
-  XBULL_ID,
-  xBullModule,
-  FreighterModule,
-  AlbedoModule,
-  RabetModule,
-  LobstrModule,
-  HanaModule,
-  HotWalletModule,
-  KleverModule,
-} from '@creit.tech/stellar-wallets-kit'
-import { WatchWalletChanges, signAuthEntry as signFreighterAuthEntry } from '@stellar/freighter-api'
+// Type-only imports: Stellar Wallets Kit (~440 KB) and the Freighter API load on
+// the client after first paint, not in every page's bundle. Pages that never
+// touch a wallet no longer pay for them.
+import type { StellarWalletsKit, ISupportedWallet, WalletNetwork as KitWalletNetwork } from '@creit.tech/stellar-wallets-kit'
+
+type WalletNetwork = KitWalletNetwork
+// Same values as the kit's WalletNetwork enum (network passphrases).
+const WalletNetwork = {
+  PUBLIC: 'Public Global Stellar Network ; September 2015' as KitWalletNetwork,
+  TESTNET: 'Test SDF Network ; September 2015' as KitWalletNetwork,
+}
+const FREIGHTER_ID = 'freighter'
 
 /** The connected wallet's real, live network (as reported by the wallet itself). */
 export interface WalletNetworkInfo {
@@ -89,7 +84,11 @@ export function WalletKitProvider({ children }: { children: ReactNode }) {
     // Initialize the wallet kit
     const initializeKit = async () => {
       try {
-        const walletKit = new StellarWalletsKit({
+        const {
+          StellarWalletsKit: Kit, FreighterModule, xBullModule, AlbedoModule, RabetModule,
+          LobstrModule, HanaModule, HotWalletModule, KleverModule,
+        } = await import('@creit.tech/stellar-wallets-kit')
+        const walletKit = new Kit({
           network: WalletNetwork.TESTNET,
           selectedWalletId: FREIGHTER_ID, // Default to Freighter
           modules: [
@@ -130,11 +129,18 @@ export function WalletKitProvider({ children }: { children: ReactNode }) {
       }
     }
 
+    // Load the kit once the browser is idle (at most 2s after mount) so its
+    // download stays out of the critical page-load window.
+    let idleHandle: number | undefined
+    let timeoutHandle: ReturnType<typeof setTimeout> | undefined
     if (typeof window !== 'undefined') {
-      initializeKit()
+      if ('requestIdleCallback' in window) idleHandle = window.requestIdleCallback(() => { void initializeKit() }, { timeout: 2000 })
+      else timeoutHandle = setTimeout(() => { void initializeKit() }, 200)
     }
 
     return () => {
+      if (idleHandle !== undefined) window.cancelIdleCallback(idleHandle)
+      if (timeoutHandle !== undefined) clearTimeout(timeoutHandle)
       // Cleanup if needed
       if (kit) {
         // Kit doesn't have explicit cleanup, but we can reset state
@@ -196,32 +202,37 @@ export function WalletKitProvider({ children }: { children: ReactNode }) {
     if (id !== FREIGHTER_ID) return
 
     let active = true
-    const watcher = new WatchWalletChanges(2000)
-    watcher.watch(({ address: nextAddr, networkPassphrase, error: watchError }) => {
-      if (!active || watchError) return
+    let watcher: { stop: () => void } | null = null
+    void import('@stellar/freighter-api').then(({ WatchWalletChanges }) => {
+      if (!active) return
+      const freighterWatcher = new WatchWalletChanges(2000)
+      watcher = freighterWatcher
+      freighterWatcher.watch(({ address: nextAddr, networkPassphrase, error: watchError }) => {
+        if (!active || watchError) return
 
-      if (!nextAddr) {
-        // Wallet locked or disconnected — reflect it so the UI stops showing a
-        // stale connected state (keep the wallet id for an easy reconnect).
-        setAddress(null)
-        setWalletNetworkPassphrase(null)
-        try { window.localStorage.removeItem(LS_ADDRESS) } catch {}
-        return
-      }
+        if (!nextAddr) {
+          // Wallet locked or disconnected — reflect it so the UI stops showing a
+          // stale connected state (keep the wallet id for an easy reconnect).
+          setAddress(null)
+          setWalletNetworkPassphrase(null)
+          try { window.localStorage.removeItem(LS_ADDRESS) } catch {}
+          return
+        }
 
-      // Network switched in the wallet (React ignores an unchanged value).
-      if (networkPassphrase) setWalletNetworkPassphrase(networkPassphrase)
+        // Network switched in the wallet (React ignores an unchanged value).
+        if (networkPassphrase) setWalletNetworkPassphrase(networkPassphrase)
 
-      // Active account switched in the wallet.
-      if (nextAddr !== address) {
-        setAddress(nextAddr)
-        persistAddress(nextAddr)
-      }
+        // Active account switched in the wallet.
+        if (nextAddr !== address) {
+          setAddress(nextAddr)
+          persistAddress(nextAddr)
+        }
+        })
     })
 
     return () => {
       active = false
-      watcher.stop()
+      watcher?.stop()
     }
   }, [kit, address, selectedWalletId])
 
@@ -460,6 +471,7 @@ export function WalletKitProvider({ children }: { children: ReactNode }) {
         // Use Freighter's SEP-43 API directly. Wallets Kit 1.9 always runs
         // Buffer.from(value).toString('base64'), which corrupts signatures from
         // newer Freighter extensions when they already return a base64 string.
+        const { signAuthEntry: signFreighterAuthEntry } = await import('@stellar/freighter-api')
         const result = await signFreighterAuthEntry(authEntry, { address: signer, networkPassphrase: passphrase })
         if (result.error) throw result.error
         rawSignature = result.signedAuthEntry
