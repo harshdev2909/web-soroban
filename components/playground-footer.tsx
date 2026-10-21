@@ -17,6 +17,7 @@ const columns = [
     links: [
       { label: 'IDE', href: '/ide' },
       { label: 'WebSoroban Pay', href: '/pay' },
+      { label: 'PayLoop subscriptions', href: '/payloop' },
       { label: 'Templates', href: '/marketplace' },
     ],
   },

@@ -123,27 +123,42 @@ Returns `403` with `upgradeRequired: true` when over the function-test limit. Se
 
 ## Payments
 
-### GET /api/pay/resource/:slug
+### GET /api/pay/resource/:slug and /api/pay/live/resource/:slug
 
 <Badge tone="signed">x402 payment</Badge>
 
-Public hosted resource. An unpaid request returns HTTP `402`, a
-`PAYMENT-REQUIRED` header, and a JSON summary containing `endpoint`, `price`,
-`asset`, and `network`. Retry with a valid `PAYMENT-SIGNATURE` to receive the
-configured JSON response and a `PAYMENT-RESPONSE` settlement header.
+Public hosted resource, on testnet and mainnet respectively. An unpaid request
+returns HTTP `402`, a `PAYMENT-REQUIRED` header, and a JSON summary containing
+`endpoint`, `price`, `asset`, and `network`. Retry with a valid
+`PAYMENT-SIGNATURE` to receive the configured JSON response and a
+`PAYMENT-RESPONSE` settlement header. A slug requested on the wrong network
+returns `404` with `NETWORK_MISMATCH`.
+
+### GET /api/pay/networks, /api/pay/wallets, /api/pay/trustline
+
+<Badge tone="read-only">read-only</Badge>
+
+Public. `networks` lists which networks this server can settle on. `wallets`
+lists auth-entry wallet compatibility. `trustline?address=&network=` reports
+whether an account can hold USDC (`ready`, `missing_account`,
+`missing_trustline`, `not_authorized`, `not_applicable`, or `unknown`) with a fix.
 
 ### GET /api/pay/overview
 
 <Badge tone="read-only">read-only</Badge>
 
-Return Payment Studio metrics, configured endpoints, and recent request,
-verification, and settlement events.
+Return Payment Studio metrics, configured endpoints, recent events, settlement
+success rates (`metrics.settlement` for 24h, 7d, and 30d), failure reasons with
+fixes, webhooks with their last delivery, and agent wallets.
 
 ### POST /api/pay/endpoints
 
 Create a hosted endpoint. The request accepts `name`, `slug`, `price`, `payTo`,
-`responseMessage`, and optional `projectId`. The response returns the endpoint
-key once; store it as a server-side secret.
+`responseMessage`, optional `network` (`stellar:testnet` by default, or
+`stellar:pubnet`), and optional `projectId`. The payout address must be able to
+receive USDC; otherwise the response is `400 PAYOUT_NOT_READY` with the
+trustline report. The response returns the endpoint key once; store it as a
+server-side secret.
 
 ### PATCH /api/pay/endpoints/:id
 
@@ -153,11 +168,22 @@ Pause or resume an endpoint with `{ "active": boolean }`.
 
 Invalidate the existing endpoint key and return its replacement once.
 
+### Webhooks
+
+`POST /api/pay/webhooks` registers a URL for `payment.settled`,
+`payment.failed`, or `wallet.spend_limit_exceeded` and returns its signing
+secret once. `PATCH /api/pay/webhooks/:id` pauses or resumes it,
+`POST /api/pay/webhooks/:id/test` sends a signed `webhook.test` delivery,
+`GET /api/pay/webhooks/:id/deliveries` lists recent attempts, and
+`DELETE /api/pay/webhooks/:id` removes it.
+
 ### `/api/pay/facilitator/supported`, `/verify`, and `/settle`
 
-Endpoint-key-authenticated proxy to the managed x402 facilitator. Developer
-credentials are removed before the server adds its own facilitator credentials.
-See [x402 payments](/docs/payments) for the complete browser flow.
+Endpoint-key-authenticated proxy to the managed x402 facilitator. It accepts
+only payments to the endpoint's payout address, in USDC, on the endpoint's
+network, and allows 120 calls per endpoint per minute. Developer credentials
+are removed before the server adds its own facilitator credentials. See
+[x402 payments](/docs/payments) for the complete flow.
 
 ## Wallet
 

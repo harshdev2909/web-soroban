@@ -44,9 +44,15 @@ interface WalletKitContextType {
   walletNetworkPassphrase: string | null
   connect: () => Promise<void>
   connectFreighter: () => Promise<string>
+  /** Select a specific wallet module (e.g. 'hana') and resolve with its address. */
+  connectWallet: (walletId: string) => Promise<string>
   disconnect: () => void
   signMessage: (message: string) => Promise<string>
   signTransaction: (xdr: string, networkPassphrase?: string) => Promise<string>
+  /**
+   * Sign a Soroban authorization entry with the connected wallet. The returned
+   * signature is verified against the exact preimage and account before use.
+   */
   signAuthEntry: (authEntry: string, networkPassphrase?: string) => Promise<{ signedAuthEntry: string; signerAddress?: string }>
   /** Opens the wallet picker and resolves with the connected address (or null if cancelled). */
   openWalletModal: (onWalletSelected?: (wallet: ISupportedWallet) => void) => Promise<string | null>
@@ -260,30 +266,36 @@ export function WalletKitProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const connectFreighter = async (): Promise<string> => {
+  const connectWallet = async (walletId: string): Promise<string> => {
     if (!kit) throw new Error('Wallet kit not initialized')
     setConnecting(true)
     setError(null)
     try {
-      kit.setWallet(FREIGHTER_ID)
-      setSelectedWalletId(FREIGHTER_ID)
-      persistWallet(FREIGHTER_ID)
+      kit.setWallet(walletId)
+      setSelectedWalletId(walletId)
+      persistWallet(walletId)
       const supported = await kit.getSupportedWallets()
-      setSelectedWallet(supported.find((wallet) => wallet.id === FREIGHTER_ID) || null)
+      const wallet = supported.find((item) => item.id === walletId) || null
+      if (wallet && !wallet.isAvailable) {
+        throw new Error(`${wallet.name} is not installed in this browser.`)
+      }
+      setSelectedWallet(wallet)
       const result = await kit.getAddress()
-      if (!result?.address) throw new Error('Freighter returned no account address.')
+      if (!result?.address) throw new Error(`${wallet?.name || 'The wallet'} returned no account address.`)
       setAddress(result.address)
       persistAddress(result.address)
       await readAndStoreNetwork()
       return result.address
     } catch (error: any) {
-      const message = error?.message || 'Could not connect Freighter.'
+      const message = error?.message || 'Could not connect the wallet.'
       setError(message)
       throw new Error(message)
     } finally {
       setConnecting(false)
     }
   }
+
+  const connectFreighter = () => connectWallet(FREIGHTER_ID)
 
   const disconnect = () => {
     setAddress(null)
@@ -427,78 +439,60 @@ export function WalletKitProvider({ children }: { children: ReactNode }) {
   const signAuthEntry = async (authEntry: string, networkPassphrase?: string) => {
     if (!kit) throw new Error('Wallet not initialized')
 
-    ensureWalletSelected()
-    // Never trust cached React/localStorage state here. Freighter accounts can
-    // change while this page remains open, and signing for a stale payer yields
-    // the opaque SDK error "signature doesn't match payload".
+    const walletId = ensureWalletSelected() || FREIGHTER_ID
+    const walletName = selectedWallet?.name || (walletId === FREIGHTER_ID ? 'Freighter' : 'The wallet')
+    const passphrase = networkPassphrase || WalletNetwork.TESTNET
+    // Never trust cached React/localStorage state here. Accounts can change
+    // while this page remains open, and signing for a stale payer yields the
+    // opaque SDK error "signature doesn't match payload".
     const addressResult = await kit.getAddress()
     const signer = addressResult?.address || null
     if (signer) {
       setAddress(signer)
       persistAddress(signer)
     }
-    if (!signer) throw new Error('Connect Freighter before approving the payment.')
+    if (!signer) throw new Error(`Connect ${walletName} before approving the payment.`)
 
     try {
-      // Use Freighter's SEP-43 API directly here. Wallets Kit 1.9 always runs
-      // Buffer.from(value).toString('base64'), which corrupts signatures from
-      // newer Freighter extensions when they already return a base64 string.
-      const result = await signFreighterAuthEntry(authEntry, {
-        address: signer,
-        networkPassphrase: networkPassphrase || WalletNetwork.TESTNET,
-      })
-      if (result.error) throw result.error
-      if (!result?.signedAuthEntry) throw new Error('Freighter returned no signed authorization entry.')
-      if (result.signerAddress && result.signerAddress !== signer) {
-        throw new Error('Freighter signed with a different account. Reconnect the active account and retry.')
+      let rawSignature: unknown
+      let signerAddress: string | undefined
+      if (walletId === FREIGHTER_ID) {
+        // Use Freighter's SEP-43 API directly. Wallets Kit 1.9 always runs
+        // Buffer.from(value).toString('base64'), which corrupts signatures from
+        // newer Freighter extensions when they already return a base64 string.
+        const result = await signFreighterAuthEntry(authEntry, { address: signer, networkPassphrase: passphrase })
+        if (result.error) throw result.error
+        rawSignature = result.signedAuthEntry
+        signerAddress = result.signerAddress
+      } else {
+        // Hana, HOT, and Klever return either a string or { signedAuthEntry }.
+        const result: unknown = await kit.signAuthEntry(authEntry, { address: signer, networkPassphrase: passphrase })
+        rawSignature = typeof result === 'object' && result !== null && 'signedAuthEntry' in result
+          ? (result as { signedAuthEntry: unknown }).signedAuthEntry
+          : result
+        signerAddress = typeof result === 'object' && result !== null && 'signerAddress' in result
+          ? String((result as { signerAddress?: unknown }).signerAddress || '') || undefined
+          : undefined
+      }
+      if (!rawSignature) throw new Error(`${walletName} returned no signed authorization entry.`)
+      if (signerAddress && signerAddress !== signer) {
+        throw new Error(`${walletName} signed with a different account. Reconnect the active account and retry.`)
       }
 
-      const { Buffer } = await import('buffer')
-      const { Keypair, hash } = await import('@stellar/stellar-sdk')
-      const rawSignature = result.signedAuthEntry as unknown
-      const candidates: InstanceType<typeof Buffer>[] = []
-
-      if (typeof rawSignature === 'string') {
-        // Freighter versions have returned base64, base64url, and byte-like
-        // values across releases. Accept only a decoding that cryptographically
-        // verifies for this exact preimage and connected account.
-        candidates.push(Buffer.from(rawSignature, 'base64'))
-        if (/^[0-9a-fA-F]{128}$/.test(rawSignature)) {
-          candidates.push(Buffer.from(rawSignature, 'hex'))
-        }
-
-        const onceDecoded = Buffer.from(rawSignature, 'base64').toString('utf8')
-        if (/^[A-Za-z0-9+/_-]+={0,2}$/.test(onceDecoded)) {
-          candidates.push(Buffer.from(onceDecoded, 'base64'))
-        }
-        if (/^[0-9a-fA-F]{128}$/.test(onceDecoded)) {
-          candidates.push(Buffer.from(onceDecoded, 'hex'))
-        }
-      } else if (rawSignature instanceof Uint8Array) {
-        candidates.push(Buffer.from(rawSignature))
-      } else if (rawSignature instanceof ArrayBuffer) {
-        candidates.push(Buffer.from(new Uint8Array(rawSignature)))
+      const verified = await verifiedAuthEntrySignature(rawSignature, authEntry, signer)
+      if (!verified) {
+        throw new Error(`${walletName} returned a signature for a different authorization. Reconnect and retry.`)
       }
-
-      const payloadHash = hash(Buffer.from(authEntry, 'base64'))
-      const publicKey = Keypair.fromPublicKey(signer)
-      const verifiedSignature = candidates.find(
-        (candidate) => candidate.length === 64 && publicKey.verify(payloadHash, candidate),
-      )
-      if (!verifiedSignature) {
-        throw new Error('Freighter returned a signature for a different authorization. Reconnect Freighter and retry.')
-      }
-
-      return {
-        signedAuthEntry: verifiedSignature.toString('base64'),
-        signerAddress: result.signerAddress,
-      }
+      return { signedAuthEntry: verified, signerAddress: signerAddress || signer }
     } catch (error: any) {
       const message = error?.message || error?.toString?.() || ''
       if (/reject|denied|declin|cancel/i.test(message)) {
-        throw new Error('You cancelled the payment approval in Freighter.')
+        throw new Error(`You cancelled the payment approval in ${walletName}.`)
       }
-      throw new Error(message || 'Freighter could not sign the payment authorization.')
+      if (/does not support|signAuthEntry/i.test(message)) {
+        throw new Error(`${walletName} cannot sign Soroban authorization entries. Use Freighter, Hana, HOT, or Klever.`)
+      }
+      throw new Error(message || `${walletName} could not sign the payment authorization.`)
     }
   }
 
@@ -559,6 +553,7 @@ export function WalletKitProvider({ children }: { children: ReactNode }) {
         walletNetworkPassphrase,
         connect,
         connectFreighter,
+        connectWallet,
         disconnect,
         signMessage,
         signTransaction,
@@ -578,4 +573,33 @@ export function useWalletKit() {
     throw new Error('useWalletKit must be used within a WalletKitProvider')
   }
   return context
+}
+
+/**
+ * Wallets have returned auth-entry signatures as base64, base64url, hex,
+ * double-encoded base64, and raw bytes across releases. Accept only a
+ * decoding that is a valid Ed25519 signature over this exact preimage by the
+ * connected account, and return it as base64.
+ */
+async function verifiedAuthEntrySignature(raw: unknown, authEntry: string, signer: string): Promise<string | null> {
+  const { Buffer } = await import('buffer')
+  const { Keypair, hash } = await import('@stellar/stellar-sdk')
+  const candidates: InstanceType<typeof Buffer>[] = []
+
+  if (typeof raw === 'string') {
+    candidates.push(Buffer.from(raw, 'base64'))
+    if (/^[0-9a-fA-F]{128}$/.test(raw)) candidates.push(Buffer.from(raw, 'hex'))
+    const onceDecoded = Buffer.from(raw, 'base64').toString('utf8')
+    if (/^[A-Za-z0-9+/_-]+={0,2}$/.test(onceDecoded)) candidates.push(Buffer.from(onceDecoded, 'base64'))
+    if (/^[0-9a-fA-F]{128}$/.test(onceDecoded)) candidates.push(Buffer.from(onceDecoded, 'hex'))
+  } else if (raw instanceof Uint8Array) {
+    candidates.push(Buffer.from(raw))
+  } else if (raw instanceof ArrayBuffer) {
+    candidates.push(Buffer.from(new Uint8Array(raw)))
+  }
+
+  const payloadHash = hash(Buffer.from(authEntry, 'base64'))
+  const publicKey = Keypair.fromPublicKey(signer)
+  const verified = candidates.find((candidate) => candidate.length === 64 && publicKey.verify(payloadHash, candidate))
+  return verified ? verified.toString('base64') : null
 }

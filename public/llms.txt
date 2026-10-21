@@ -22,7 +22,11 @@
 
 ## Payments
 
-- [x402 payments](/docs/payments): Price an HTTP endpoint in USDC, pay with Freighter, and inspect the Stellar testnet settlement.
+- [x402 payments](/docs/payments): Price an HTTP endpoint in USDC, take payment from a Stellar wallet, and watch it settle.
+
+## PayLoop
+
+- [PayLoop subscriptions](/docs/payloop): Non-custodial USDC subscriptions on Soroban, and how a merchant accepts them.
 
 ## Networks
 
