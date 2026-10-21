@@ -19,6 +19,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import type { User } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { Coins, FileCode, LogOut, Settings } from 'lucide-react'
+import { NovaMark } from '@/components/nova-mark'
 
 // Quiet, typographic top bar for the catalog. A single Guides link on the left
 // of center; theme + network + wallet + account on the right. Network/wallet are
@@ -43,7 +44,7 @@ export function CatalogTopBar({ user }: { user?: User | null }) {
       {/* Left: wordmark + nav */}
       <div className="flex min-w-0 items-center gap-5">
         <Link href="/" className="flex shrink-0 items-center gap-2" aria-label="WebSoroban home">
-          <img src="/websoroban_logo.png" alt="" className="h-7 w-7 object-contain" aria-hidden />
+          <NovaMark className="h-7 w-7" />
           <span className="hidden font-display text-base font-semibold tracking-tight sm:inline">WebSoroban</span>
         </Link>
         <nav className="hidden items-center gap-1 md:flex" aria-label="Primary">

@@ -17,7 +17,7 @@ import {
   HotWalletModule,
   KleverModule,
 } from '@creit.tech/stellar-wallets-kit'
-import { WatchWalletChanges } from '@stellar/freighter-api'
+import { WatchWalletChanges, signAuthEntry as signFreighterAuthEntry } from '@stellar/freighter-api'
 
 /** The connected wallet's real, live network (as reported by the wallet itself). */
 export interface WalletNetworkInfo {
@@ -43,9 +43,11 @@ interface WalletKitContextType {
   /** the connected wallet's live network passphrase, or null when unknown/disconnected */
   walletNetworkPassphrase: string | null
   connect: () => Promise<void>
+  connectFreighter: () => Promise<string>
   disconnect: () => void
   signMessage: (message: string) => Promise<string>
   signTransaction: (xdr: string, networkPassphrase?: string) => Promise<string>
+  signAuthEntry: (authEntry: string, networkPassphrase?: string) => Promise<{ signedAuthEntry: string; signerAddress?: string }>
   /** Opens the wallet picker and resolves with the connected address (or null if cancelled). */
   openWalletModal: (onWalletSelected?: (wallet: ISupportedWallet) => void) => Promise<string | null>
   /** Reads the connected wallet's network fresh (not cached). Used to guard mainnet signs. */
@@ -258,6 +260,31 @@ export function WalletKitProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const connectFreighter = async (): Promise<string> => {
+    if (!kit) throw new Error('Wallet kit not initialized')
+    setConnecting(true)
+    setError(null)
+    try {
+      kit.setWallet(FREIGHTER_ID)
+      setSelectedWalletId(FREIGHTER_ID)
+      persistWallet(FREIGHTER_ID)
+      const supported = await kit.getSupportedWallets()
+      setSelectedWallet(supported.find((wallet) => wallet.id === FREIGHTER_ID) || null)
+      const result = await kit.getAddress()
+      if (!result?.address) throw new Error('Freighter returned no account address.')
+      setAddress(result.address)
+      persistAddress(result.address)
+      await readAndStoreNetwork()
+      return result.address
+    } catch (error: any) {
+      const message = error?.message || 'Could not connect Freighter.'
+      setError(message)
+      throw new Error(message)
+    } finally {
+      setConnecting(false)
+    }
+  }
+
   const disconnect = () => {
     setAddress(null)
     setSelectedWallet(null)
@@ -397,6 +424,84 @@ export function WalletKitProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const signAuthEntry = async (authEntry: string, networkPassphrase?: string) => {
+    if (!kit) throw new Error('Wallet not initialized')
+
+    ensureWalletSelected()
+    // Never trust cached React/localStorage state here. Freighter accounts can
+    // change while this page remains open, and signing for a stale payer yields
+    // the opaque SDK error "signature doesn't match payload".
+    const addressResult = await kit.getAddress()
+    const signer = addressResult?.address || null
+    if (signer) {
+      setAddress(signer)
+      persistAddress(signer)
+    }
+    if (!signer) throw new Error('Connect Freighter before approving the payment.')
+
+    try {
+      // Use Freighter's SEP-43 API directly here. Wallets Kit 1.9 always runs
+      // Buffer.from(value).toString('base64'), which corrupts signatures from
+      // newer Freighter extensions when they already return a base64 string.
+      const result = await signFreighterAuthEntry(authEntry, {
+        address: signer,
+        networkPassphrase: networkPassphrase || WalletNetwork.TESTNET,
+      })
+      if (result.error) throw result.error
+      if (!result?.signedAuthEntry) throw new Error('Freighter returned no signed authorization entry.')
+      if (result.signerAddress && result.signerAddress !== signer) {
+        throw new Error('Freighter signed with a different account. Reconnect the active account and retry.')
+      }
+
+      const { Buffer } = await import('buffer')
+      const { Keypair, hash } = await import('@stellar/stellar-sdk')
+      const rawSignature = result.signedAuthEntry as unknown
+      const candidates: InstanceType<typeof Buffer>[] = []
+
+      if (typeof rawSignature === 'string') {
+        // Freighter versions have returned base64, base64url, and byte-like
+        // values across releases. Accept only a decoding that cryptographically
+        // verifies for this exact preimage and connected account.
+        candidates.push(Buffer.from(rawSignature, 'base64'))
+        if (/^[0-9a-fA-F]{128}$/.test(rawSignature)) {
+          candidates.push(Buffer.from(rawSignature, 'hex'))
+        }
+
+        const onceDecoded = Buffer.from(rawSignature, 'base64').toString('utf8')
+        if (/^[A-Za-z0-9+/_-]+={0,2}$/.test(onceDecoded)) {
+          candidates.push(Buffer.from(onceDecoded, 'base64'))
+        }
+        if (/^[0-9a-fA-F]{128}$/.test(onceDecoded)) {
+          candidates.push(Buffer.from(onceDecoded, 'hex'))
+        }
+      } else if (rawSignature instanceof Uint8Array) {
+        candidates.push(Buffer.from(rawSignature))
+      } else if (rawSignature instanceof ArrayBuffer) {
+        candidates.push(Buffer.from(new Uint8Array(rawSignature)))
+      }
+
+      const payloadHash = hash(Buffer.from(authEntry, 'base64'))
+      const publicKey = Keypair.fromPublicKey(signer)
+      const verifiedSignature = candidates.find(
+        (candidate) => candidate.length === 64 && publicKey.verify(payloadHash, candidate),
+      )
+      if (!verifiedSignature) {
+        throw new Error('Freighter returned a signature for a different authorization. Reconnect Freighter and retry.')
+      }
+
+      return {
+        signedAuthEntry: verifiedSignature.toString('base64'),
+        signerAddress: result.signerAddress,
+      }
+    } catch (error: any) {
+      const message = error?.message || error?.toString?.() || ''
+      if (/reject|denied|declin|cancel/i.test(message)) {
+        throw new Error('You cancelled the payment approval in Freighter.')
+      }
+      throw new Error(message || 'Freighter could not sign the payment authorization.')
+    }
+  }
+
   const openWalletModal = async (
     onWalletSelected?: (wallet: ISupportedWallet) => void
   ): Promise<string | null> => {
@@ -453,9 +558,11 @@ export function WalletKitProvider({ children }: { children: ReactNode }) {
         network,
         walletNetworkPassphrase,
         connect,
+        connectFreighter,
         disconnect,
         signMessage,
         signTransaction,
+        signAuthEntry,
         openWalletModal,
         getWalletNetwork,
       }}

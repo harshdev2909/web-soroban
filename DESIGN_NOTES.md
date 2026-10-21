@@ -6,10 +6,9 @@ shadcn/ui**, icons from `lucide-react`, motion from `framer-motion`.
 
 ## Identity
 
-"Deep space, refined." A near-black canvas with **one** confident electric-iris
-accent (the brand). Restraint over neon: subtle radial glows, a faint dot grid,
-and light film grain instead of glow overload. Dark-first, with a genuinely
-usable light mode.
+"Stellar product studio." Marketing uses a warm paper canvas, strong black
+structure, square geometry, and **one** confident electric-iris accent. The IDE
+keeps its near-black, dense developer-tool surface. Restraint over neon.
 
 ## Color tokens
 

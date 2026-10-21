@@ -109,6 +109,16 @@ Look up code `N` in your contract's error enum to see what condition failed (a
 to satisfy it.
 </FaqItem>
 
+<FaqItem question="Payment checkout says Failed to fetch after Freighter approval">
+The browser signed successfully but CORS blocked the paid retry. The protected API
+must allow the `PAYMENT-SIGNATURE` request header and expose
+`PAYMENT-REQUIRED`, `PAYMENT-RESPONSE`, and `PAYMENT-ERROR` response headers.
+
+WebSoroban-hosted endpoints already include this policy. For an endpoint in your
+own Express app, update its CORS configuration and retry. See
+[x402 payments](/docs/payments#use-an-x402-client).
+</FaqItem>
+
 </Accordion>
 
 ## Next

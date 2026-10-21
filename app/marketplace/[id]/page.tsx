@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import {
   ArrowLeft, Coins, Code2, Landmark, Sparkles, ShieldCheck, Store,
-  TrendingUp, FileText, Lock, Check, Rocket, ChevronRight, FileCode2,
+  TrendingUp, FileText, Lock, Check, Rocket, ChevronRight, FileCode2, WalletCards,
 } from 'lucide-react'
 import PlaygroundNavbar from '@/components/playground-navbar'
 import PlaygroundFooter from '@/components/playground-footer'
@@ -27,6 +27,7 @@ const CATEGORY_META: Record<string, { icon: LucideIcon; chip: string }> = {
   defi: { icon: TrendingUp, chip: 'bg-success/10 text-success border-success/25' },
   security: { icon: ShieldCheck, chip: 'bg-destructive/10 text-destructive border-destructive/25' },
   marketplace: { icon: Store, chip: 'bg-warning/10 text-warning border-warning/25' },
+  payments: { icon: WalletCards, chip: 'bg-brand/10 text-brand border-brand/25' },
 }
 
 function categoryMeta(cat: string) {

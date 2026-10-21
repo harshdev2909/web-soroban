@@ -1,0 +1,92 @@
+---
+title: x402 payments
+description: Price an HTTP endpoint in USDC, pay with Freighter, and inspect the Stellar testnet settlement.
+---
+
+WebSoroban Pay turns a normal HTTP endpoint into an x402 v2 resource settled in
+USDC on Stellar testnet. The seller creates and monitors the endpoint in Payment
+Studio. A buyer can open its public checkout, approve one authorization in
+Freighter, and receive the protected response with an on-chain receipt.
+
+<Callout type="note" title="Testnet only">
+  This release never requests mainnet funds. The checkout displays **TESTNET**
+  before Freighter asks for approval.
+</Callout>
+
+## Create a paid endpoint
+
+1. Sign in and open [Payment Studio](/pay).
+2. Choose a name and URL slug.
+3. Set a USDC price, payout `G…` address, and JSON response message.
+4. Create the endpoint and store its endpoint key. The key is shown once; the
+   backend stores only its SHA-256 hash.
+5. Use **Inspect 402** to confirm the resource returns HTTP `402` and a
+   `PAYMENT-REQUIRED` header.
+
+Hosted resources use this shape:
+
+```text
+GET https://YOUR_API/api/pay/resource/YOUR_SLUG
+```
+
+Opening the resource in a browser shows a WebSoroban Pay handoff. It links to the
+public checkout, so the buyer does not need a WebSoroban account.
+
+## Pay with Freighter
+
+Before testing, the buyer needs:
+
+- the Freighter browser extension;
+- Freighter set to **Testnet**;
+- the selected account funded with Stellar testnet USDC.
+
+The facilitator sponsors the network fee, so the payer does not need XLM for the
+x402 settlement itself.
+
+1. Open the endpoint's **Pay with Freighter** action, or continue from its raw
+   `402 Payment Required` page.
+2. Select **Connect Freighter**.
+3. Review the exact asset, amount, recipient, and network in Freighter.
+4. Approve the single-use Soroban authorization.
+5. Wait for the checkout to show **Payment settled**.
+6. Select **View settlement receipt** to open the transaction on Stellar Expert.
+
+The authorization binds the exact token transfer arguments. The facilitator can
+submit and sponsor that transfer, but it cannot change its asset, amount, payer,
+or recipient.
+
+## Use an x402 client
+
+Programmatic clients should read the `PAYMENT-REQUIRED` response, create an
+`exact` Stellar payment payload, then retry with `PAYMENT-SIGNATURE`. Successful
+responses expose `PAYMENT-RESPONSE`, which includes the settlement transaction.
+
+For browser integrations, use compatible releases of the official clients:
+
+```bash
+npm install @x402/core@^2.25.0 @x402/fetch@^2.25.0 \
+  @x402/stellar@^2.25.0 @stellar/freighter-api@^6.0.1
+```
+
+<Callout type="warning" title="CORS requirements">
+  A cross-origin resource must allow `PAYMENT-SIGNATURE` and expose
+  `PAYMENT-REQUIRED`, `PAYMENT-RESPONSE`, and `PAYMENT-ERROR`. WebSoroban's
+  hosted endpoints are already configured for these headers.
+</Callout>
+
+## Common failures
+
+- **Switch Freighter to Testnet** — change the active network in Freighter,
+  reconnect, and retry.
+- **Freighter returned a signature for a different authorization** — update
+  `@stellar/freighter-api`, reconnect the active account, and approve again.
+- **Failed to fetch** after approval — the protected API's CORS policy is not
+  allowing the signed retry. Check the headers described above.
+- **HTTP 402 after approval** — inspect `PAYMENT-ERROR` and the Payment Studio
+  activity feed for the facilitator's verification or settlement reason.
+
+## Next
+
+- [API reference](/docs/reference/api), hosted resource and management routes.
+- [Wallets & faucet](/docs/wallets), wallet and network basics.
+- [Troubleshooting](/docs/troubleshooting), errors across the IDE.

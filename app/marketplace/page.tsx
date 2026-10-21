@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import {
   Coins, Code2, Landmark, Sparkles, Lock, ArrowRight, Search,
-  ShieldCheck, Store, TrendingUp, FileText, LayoutGrid,
+  ShieldCheck, Store, TrendingUp, FileText, LayoutGrid, WalletCards,
 } from 'lucide-react'
 import PlaygroundNavbar from '@/components/playground-navbar'
 import PlaygroundFooter from '@/components/playground-footer'
@@ -25,6 +25,7 @@ const CATEGORY_META: Record<string, CategoryMeta> = {
   defi: { icon: TrendingUp, tint: 'text-success', chip: 'bg-success/10 text-success border-success/25' },
   security: { icon: ShieldCheck, tint: 'text-destructive', chip: 'bg-destructive/10 text-destructive border-destructive/25' },
   marketplace: { icon: Store, tint: 'text-warning', chip: 'bg-warning/10 text-warning border-warning/25' },
+  payments: { icon: WalletCards, tint: 'text-brand', chip: 'bg-brand/10 text-brand border-brand/25' },
 }
 
 function categoryMeta(cat: string): CategoryMeta {
