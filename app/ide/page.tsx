@@ -28,6 +28,7 @@ import { CommandPalette, type PaletteCommand } from '@/components/command-palett
 import { StatusBar } from '@/components/status-bar'
 import { Skeleton } from '@/components/ui/skeleton'
 import { RightDock, type DockTab } from '@/components/copilot/right-dock'
+import { track, trackBuild } from '@/lib/analytics'
 import {
   Loader2,
   Hammer,
@@ -166,6 +167,9 @@ function IDEPageContent() {
     el.classList.add('dark');
     el.classList.remove('light');
   }, []);
+
+  // Funnel: visit → CTA click → IDE open → first build.
+  useEffect(() => { track('ide_open') }, []);
 
   // Initialize WebSocket connection on mount
   useEffect(() => {
@@ -652,6 +656,7 @@ mod tests {
                 }
                 
                 toast.success("Compilation complete");
+                trackBuild('compile');
               } else {
                 setLogs(prev => [...prev, {
                   type: "error",
@@ -708,6 +713,7 @@ mod tests {
             }
             
             toast.success("Compilation complete");
+            trackBuild('compile');
           }
         } else {
           if (!logs.some(log => log.message.includes('Compilation failed'))) {
@@ -738,6 +744,7 @@ mod tests {
           }
           
           toast.success("Compilation complete");
+          trackBuild('compile');
         } else {
           setLogs(prev => [...prev, {
             type: "error",
@@ -995,6 +1002,7 @@ mod tests {
         return;
       }
       appendLog('success', 'Compiled. WASM ready.');
+      trackBuild('deploy');
 
       // MAINNET takes the confirmation-gated, fee-previewed path (non-custodial
       // browser signing by default, or the custodial opt-in).

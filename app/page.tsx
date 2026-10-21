@@ -1,12 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import {
-  ArrowRight, ArrowUpRight, Bot, Braces, Check, ChevronRight, CircleDollarSign,
+  ArrowRight, ArrowUpRight, Bot, Braces, Check, ChevronRight, CircleDollarSign, Repeat,
   DatabaseZap, EyeOff, FileCode2, Fingerprint, Globe2, Layers3,
   MessageSquareText, Play, Sparkles, TerminalSquare, TestTube2, WandSparkles, Zap,
 } from 'lucide-react'
@@ -21,6 +21,7 @@ import { IdeaBankBand } from '@/components/ideas/landing-band'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@/lib/utils'
+import { trackCta, trackLandingView } from '@/lib/analytics'
 
 const STELLAR_DOCS = {
   mpp: 'https://developers.stellar.org/docs/build/agentic-payments/mpp',
@@ -31,11 +32,12 @@ const STELLAR_DOCS = {
 }
 
 const infrastructure = [
-  { index: '01', icon: CircleDollarSign, title: 'x402 facilitator', label: 'Agentic payments', copy: 'Create paid API routes, accept Freighter authorization, settle Stellar testnet USDC, and inspect the receipt.', href: '/pay', status: 'Live' },
-  { index: '02', icon: Zap, title: 'MPP on Stellar', label: 'Machine payments', copy: 'Prototype per-request charges and high-frequency sessions with Soroban SAC transfers and payment channels.', href: STELLAR_DOCS.mpp, status: 'Building' },
-  { index: '03', icon: DatabaseZap, title: 'Ingest pipelines', label: 'Ledger data', copy: 'Create lightweight, event-driven data services from Stellar ledger metadata without leaving the project.', href: STELLAR_DOCS.ingest, status: 'Planned' },
-  { index: '04', icon: EyeOff, title: 'Privacy primitives', label: 'Private applications', copy: 'Start with privacy-pool and confidential-token patterns designed for programmable compliance.', href: STELLAR_DOCS.privacy, status: 'Planned' },
-  { index: '05', icon: Fingerprint, title: 'ZK workspace', label: 'Proof-ready tooling', copy: 'Build around BN254 and Poseidon primitives, verifier contracts, and higher-level proof systems.', href: STELLAR_DOCS.zk, status: 'Planned' },
+  { index: '01', icon: CircleDollarSign, title: 'x402 kit', label: 'Paid APIs', copy: 'Put a USDC price on any Express route, take payment from Freighter, Hana, HOT, or Klever, and settle on Stellar testnet or mainnet with a receipt.', href: '/pay', status: 'Live' },
+  { index: '02', icon: Repeat, title: 'PayLoop', label: 'Subscriptions', copy: 'Non-custodial USDC subscriptions: one signed policy, an atomic first charge, on-schedule renewals, and pause or revoke from the wallet.', href: '/payloop', status: 'Live' },
+  { index: '03', icon: Zap, title: 'MPP on Stellar', label: 'Machine payments', copy: 'Prototype per-request charges and high-frequency sessions with Soroban SAC transfers and payment channels.', href: STELLAR_DOCS.mpp, status: 'Building' },
+  { index: '04', icon: DatabaseZap, title: 'Ingest pipelines', label: 'Ledger data', copy: 'Create lightweight, event-driven data services from Stellar ledger metadata without leaving the project.', href: STELLAR_DOCS.ingest, status: 'Planned' },
+  { index: '05', icon: EyeOff, title: 'Privacy primitives', label: 'Private applications', copy: 'Start with privacy-pool and confidential-token patterns designed for programmable compliance.', href: STELLAR_DOCS.privacy, status: 'Planned' },
+  { index: '06', icon: Fingerprint, title: 'ZK workspace', label: 'Proof-ready tooling', copy: 'Build around BN254 and Poseidon primitives, verifier contracts, and higher-level proof systems.', href: STELLAR_DOCS.zk, status: 'Planned' },
 ]
 
 /* Hero entrance storyboard (absolute): 60ms eyebrow; 120ms headline; 190ms copy;
@@ -48,10 +50,18 @@ export default function HomePage() {
   const { isAuthenticated } = useAuth()
   const [loginOpen, setLoginOpen] = useState(false)
   const reduce = useReducedMotion()
-  const startBuilding = () => isAuthenticated ? router.push('/projects') : setLoginOpen(true)
+  // The primary CTA reaches the IDE in one click; signed-in users go to their projects.
+  const startBuilding = (cta: string) => {
+    const destination = isAuthenticated ? '/projects' : '/ide'
+    trackCta(cta, destination)
+    router.push(destination)
+  }
+  useEffect(() => { trackLandingView() }, [])
+  // Slide only: no opacity or scale. The hero copy is the LCP element, so it must
+  // paint at full size in the server-rendered HTML rather than after hydration.
   const enter = (delay: number, distance = 12) => ({
-    initial: reduce ? false as const : { opacity: 0, y: distance, scale: 0.985 },
-    animate: reduce ? undefined : { opacity: 1, y: 0, scale: 1 },
+    initial: reduce ? false as const : { y: distance },
+    animate: reduce ? undefined : { y: 0 },
     transition: { ...spring, delay },
   })
 
@@ -87,11 +97,11 @@ export default function HomePage() {
               Describe the product. WebSoroban creates the interface, Soroban contracts, data layer, and payment rails—then opens every file in a real web IDE.
             </motion.p>
             <motion.div {...enter(HERO_TIMING.actions)} className="mt-9 flex flex-col gap-3 sm:flex-row">
-              <Button size="lg" className="nova-button h-12 gap-2 rounded-full px-6 shadow-md" onClick={startBuilding}>
+              <Button size="lg" className="nova-button h-12 gap-2 rounded-full px-6 shadow-md" onClick={() => startBuilding('hero_primary')}>
                 <WandSparkles className="h-4 w-4" aria-hidden="true" /> {isAuthenticated ? 'Open WebSoroban' : 'Build with WebSoroban'}
               </Button>
               <Button asChild size="lg" variant="outline" className="h-12 rounded-full border-foreground/20 bg-background/70 px-6 backdrop-blur-sm hover:bg-card">
-                <Link href="/ide">Explore the IDE <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
+                <Link href="/ide" onClick={() => trackCta('hero_ide', '/ide')}>Explore the IDE <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
               </Button>
             </motion.div>
             <motion.ul {...enter(HERO_TIMING.proof, 8)} className="mt-8 flex max-w-xl flex-wrap gap-x-6 gap-y-3 text-sm text-muted-foreground">
@@ -130,12 +140,12 @@ export default function HomePage() {
           <div className="nova-dark-island relative overflow-hidden rounded-3xl bg-foreground px-5 py-8 text-background shadow-xl sm:px-9 sm:py-12 lg:px-14 lg:py-16">
             <div className="nova-dark-grid pointer-events-none absolute inset-0" aria-hidden="true" />
             <Reveal className="relative grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
-              <div><p className="font-mono text-[0.68rem] font-medium uppercase tracking-[0.2em] text-brand">Agentic payments</p><h2 className="mt-4 max-w-xl font-display text-4xl font-semibold leading-[1.02] sm:text-6xl">Give software a native way to pay.</h2><p className="mt-6 max-w-lg text-base leading-7 text-background/65">Design, generate, and test paid endpoints where agents and services settle on Stellar. The payment layer belongs in the product workflow—not in a second dashboard.</p><Button asChild className="mt-7 rounded-full bg-brand text-brand-foreground hover:bg-brand/90"><Link href="/pay">Open WebSoroban Pay <ArrowRight className="h-4 w-4" /></Link></Button></div>
+              <div><p className="font-mono text-[0.68rem] font-medium uppercase tracking-[0.2em] text-brand">Agentic payments</p><h2 className="mt-4 max-w-xl font-display text-4xl font-semibold leading-[1.02] sm:text-6xl">Give software a native way to pay.</h2><p className="mt-6 max-w-lg text-base leading-7 text-background/65">Design, generate, and test paid endpoints where agents and services settle on Stellar. The payment layer belongs in the product workflow—not in a second dashboard.</p><div className="mt-7 flex flex-wrap gap-3"><Button asChild className="rounded-full bg-brand text-brand-foreground hover:bg-brand/90"><Link href="/pay" onClick={() => trackCta('payments_pay', '/pay')}>Open WebSoroban Pay <ArrowRight className="h-4 w-4" /></Link></Button><Button asChild variant="outline" className="rounded-full border-background/25 bg-transparent text-background hover:bg-background/10 hover:text-background"><Link href="/payloop" onClick={() => trackCta('payments_payloop', '/payloop')}>Try PayLoop <Repeat className="h-4 w-4" /></Link></Button></div></div>
               <PaymentConstellation className="mx-auto w-full max-w-2xl" />
             </Reveal>
             <Reveal className="relative mt-12 grid gap-4 lg:grid-cols-2" delay={0.06}>
-              <PaymentRow number="01" title="x402 facilitator" copy="Protect an endpoint, verify its payment, and settle Stellar USDC from one guided flow." tag="HTTP 402" href={STELLAR_DOCS.x402} />
-              <PaymentRow number="02" title="MPP charge + session" copy="Create single charges or high-frequency agent sessions using Soroban assets and channels." tag="@stellar/mpp" href={STELLAR_DOCS.mpp} />
+              <PaymentRow number="01" title="x402 kit" copy="npm i @web-soroban/pay, protect a route, and settle USDC through WebSoroban's managed facilitator, with webhooks and a failure dashboard." tag="HTTP 402" href="/docs/payments" />
+              <PaymentRow number="02" title="PayLoop subscriptions" copy="Recurring USDC that never leaves the subscriber's wallet until it is due. The contract enforces merchant, amount, interval, and cap." tag="Soroban" href="/payloop" />
             </Reveal>
             <Reveal className="relative mt-7 flex flex-col gap-5 rounded-2xl border border-background/15 bg-background/[0.045] p-5 sm:flex-row sm:items-center sm:justify-between" delay={0.08}>
               <p className="max-w-lg font-display text-xl">From payment policy to a locally verified request.</p>
@@ -177,7 +187,7 @@ export default function HomePage() {
           <div className="nova-cta relative overflow-hidden rounded-3xl bg-brand px-6 py-14 text-brand-foreground shadow-xl sm:px-10 lg:grid lg:grid-cols-[1fr_auto] lg:items-end lg:px-14 lg:py-16">
             <div className="nova-cta-grid pointer-events-none absolute inset-0 opacity-20" aria-hidden="true" /><div className="nova-cta-orbit pointer-events-none absolute -right-28 -top-40 h-96 w-96 rounded-full border border-brand-foreground/25" aria-hidden="true" />
             <div className="relative"><p className="font-mono text-[0.68rem] font-medium uppercase tracking-[0.2em] text-brand-foreground/70">WebSoroban / public beta</p><h2 className="mt-4 max-w-3xl font-display text-4xl font-semibold leading-[1.02] sm:text-6xl">Bring the idea. Leave with a Stellar product.</h2><p className="mt-5 max-w-xl text-base leading-7 text-brand-foreground/80">Generate the app, inspect the code, run the contracts, and deploy—without giving up control of the engineering workflow.</p></div>
-            <Button size="lg" variant="secondary" className="relative mt-8 h-12 rounded-full bg-foreground px-6 text-background shadow-md hover:bg-foreground/90 lg:mt-0" onClick={startBuilding}>{isAuthenticated ? 'Open WebSoroban' : 'Start building'} <ArrowRight className="h-4 w-4" aria-hidden="true" /></Button>
+            <Button size="lg" variant="secondary" className="relative mt-8 h-12 rounded-full bg-foreground px-6 text-background shadow-md hover:bg-foreground/90 lg:mt-0" onClick={() => startBuilding('footer_primary')}>{isAuthenticated ? 'Open WebSoroban' : 'Start building'} <ArrowRight className="h-4 w-4" aria-hidden="true" /></Button>
           </div>
         </Reveal>
       </section>
@@ -223,7 +233,8 @@ function BuildWorkspace() {
 }
 
 function PaymentRow({ number, title, copy, tag, href }: { number: string; title: string; copy: string; tag: string; href: string }) {
-  return <a href={href} target="_blank" rel="noreferrer" className="group flex min-h-56 flex-col rounded-2xl border border-background/15 bg-background/[0.045] p-5 transition-[background-color,transform,border-color] duration-200 hover:-translate-y-1 hover:border-brand/35 hover:bg-background/[0.07] sm:p-6"><div className="flex items-center justify-between"><span className="font-mono text-xs text-brand">{number}</span><span className="rounded-full border border-background/15 px-2.5 py-1.5 font-mono text-[0.62rem] text-background/65">{tag}</span></div><h3 className="mt-8 font-display text-2xl font-medium">{title}</h3><p className="mt-3 max-w-xl text-sm leading-6 text-background/60">{copy}</p><div className="mt-auto flex items-center justify-between pt-6 font-mono text-[0.65rem] text-background/45"><span>Open Stellar docs</span><span className="grid h-9 w-9 place-items-center rounded-full bg-background/10 text-background transition-[background-color,transform] duration-150 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:bg-brand"><ArrowUpRight className="h-4 w-4" aria-hidden="true" /></span></div></a>
+  const external = href.startsWith('http')
+  return <a href={href} target={external ? '_blank' : undefined} rel={external ? 'noreferrer' : undefined} onClick={() => trackCta(`payments_row_${number}`, href)} className="group flex min-h-56 flex-col rounded-2xl border border-background/15 bg-background/[0.045] p-5 transition-[background-color,transform,border-color] duration-200 hover:-translate-y-1 hover:border-brand/35 hover:bg-background/[0.07] sm:p-6"><div className="flex items-center justify-between"><span className="font-mono text-xs text-brand">{number}</span><span className="rounded-full border border-background/15 px-2.5 py-1.5 font-mono text-[0.62rem] text-background/65">{tag}</span></div><h3 className="mt-8 font-display text-2xl font-medium">{title}</h3><p className="mt-3 max-w-xl text-sm leading-6 text-background/60">{copy}</p><div className="mt-auto flex items-center justify-between pt-6 font-mono text-[0.65rem] text-background/45"><span>Open Stellar docs</span><span className="grid h-9 w-9 place-items-center rounded-full bg-background/10 text-background transition-[background-color,transform] duration-150 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:bg-brand"><ArrowUpRight className="h-4 w-4" aria-hidden="true" /></span></div></a>
 }
 
 function LocalnetTerminal() {
