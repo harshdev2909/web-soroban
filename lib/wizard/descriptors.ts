@@ -3,7 +3,7 @@
 // A descriptor lists the type's parameters and feature toggles. The controls UI
 // renders straight from this, and the engines read the resolved state back. To
 // add a new toggle: add a FeatureSpec here, then teach the matching engine how to
-// turn it into options (oz) or code fragments (internal). See TEMPLATE_WIZARD.md.
+// turn it into options (oz) or code fragments (internal). See docs/TEMPLATE_WIZARD.md.
 
 import type { EngineId } from "./types"
 

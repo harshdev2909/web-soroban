@@ -3,7 +3,7 @@
 // Each feature declares a code FRAGMENT (imports, storage keys, methods, helpers,
 // and any cross-cutting guards woven into base methods). The assembler turns the
 // resolved wizard state into a single-crate bundle. Today it drives the Counter;
-// adding a template means adding a manifest + assembler here. See TEMPLATE_WIZARD.md.
+// adding a template means adding a manifest + assembler here. See docs/TEMPLATE_WIZARD.md.
 
 import type { WizardBundle, WizardState } from "./types"
 import { renderCustomFunctions } from "./custom-fn"

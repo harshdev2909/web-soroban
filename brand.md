@@ -3,7 +3,7 @@
 _Status: active_
 
 The source of truth for color, type, and voice. Full token reference and
-component conventions live in `DESIGN_NOTES.md`; this file is the quick brief the
+component conventions live in `docs/DESIGN.md`; this file is the quick brief the
 `frontend-design-guidelines` skill reads.
 
 ## Feel

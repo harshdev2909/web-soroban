@@ -13,10 +13,18 @@ or revoke from their own wallet at any time.
   PayLoop runs on **Stellar Testnet** (test USDC) and **Stellar Mainnet** (real
   Circle USDC), each with its own contract and relayer. Pick the network with
   the switch on the [PayLoop](/payloop) page, or `?network=mainnet` on every
-  API call. The mainnet contract has had an internal security review;
-  `GET /api/payloop/config?network=mainnet` reports `audited`, and the page
-  shows a notice while no independent audit is recorded.
+  API call. The mainnet contract has had an internal security review but no
+  independent audit yet; `GET /api/payloop/config?network=mainnet` reports
+  `audited`, and the page shows a notice while no audit is recorded.
 </Callout>
+
+| Network | Contract |
+| --- | --- |
+| Testnet | [`CCNMZWP2NQMTJF2J42W4DNYNOAQQYWOCJ2IQROXWYSJVOI3DKSH7YRIH`](https://stellar.expert/explorer/testnet/contract/CCNMZWP2NQMTJF2J42W4DNYNOAQQYWOCJ2IQROXWYSJVOI3DKSH7YRIH) |
+| Mainnet | [`CDQ6I65CP3JHLNGMEHWE4BP2OMLWOUMZ77U53JPAURFZPZBVH6PYEXPN`](https://stellar.expert/explorer/public/contract/CDQ6I65CP3JHLNGMEHWE4BP2OMLWOUMZ77U53JPAURFZPZBVH6PYEXPN) |
+
+Both run the same build (wasm `d42be154…a19318`). The contract has no admin,
+no pause switch, and no upgrade path.
 
 ## How a policy works
 
