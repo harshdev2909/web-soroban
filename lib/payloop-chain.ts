@@ -33,6 +33,9 @@ async function rpcCall<T>(network: NetworkId, method: string, params: Record<str
  * Submit a signed transaction and wait for it. Uses raw JSON-RPC for send and
  * status so newer ledger metadata formats never need decoding in the browser.
  */
+/** The network confirmed the transaction failed, so it applied nothing. */
+class ConfirmedFailure extends Error {}
+
 async function sendAndConfirm(network: NetworkId, signedXdr: string): Promise<string> {
   const sent = await rpcCall<{ hash: string; status: string; errorResultXdr?: string }>(network, 'sendTransaction', { transaction: signedXdr })
   if (sent.status === 'ERROR') throw new Error('The network rejected the transaction. Check your balance and retry.')
@@ -41,7 +44,7 @@ async function sendAndConfirm(network: NetworkId, signedXdr: string): Promise<st
   while (Date.now() < deadline) {
     const result = await rpcCall<{ status: string }>(network, 'getTransaction', { hash: sent.hash })
     if (result.status === 'SUCCESS') return sent.hash
-    if (result.status === 'FAILED') throw new Error(`Transaction ${sent.hash.slice(0, 8)}… failed on-chain.`)
+    if (result.status === 'FAILED') throw new ConfirmedFailure(`Transaction ${sent.hash.slice(0, 8)}… failed on-chain.`)
     await new Promise((resolve) => setTimeout(resolve, 1_000))
   }
   throw new Error('The transaction was not confirmed in time. Check the explorer before retrying.')
@@ -54,12 +57,31 @@ export interface InvokeResult {
 }
 
 /** Simulate, have the wallet sign, submit, and confirm a PayLoop contract call. */
+/**
+ * Simulate, sign, submit, and confirm a PayLoop call. If the network confirms
+ * a failure (e.g. another user's create_policy took the policy id this
+ * transaction was simulated with), nothing was applied, so it re-simulates and
+ * asks the wallet to sign again, up to twice. `onRetry` lets the page explain
+ * the extra prompt. Unconfirmed outcomes are never retried.
+ */
 export async function invokePayLoop(
   config: PayLoopConfig,
   wallet: WalletSigner,
   method: string,
   args: xdr.ScVal[],
+  onRetry?: (attempt: number) => void,
 ): Promise<InvokeResult> {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      return await invokeOnce(config, wallet, method, args)
+    } catch (error) {
+      if (!(error instanceof ConfirmedFailure) || attempt >= 2) throw error
+      onRetry?.(attempt + 1)
+    }
+  }
+}
+
+async function invokeOnce(config: PayLoopConfig, wallet: WalletSigner, method: string, args: xdr.ScVal[]): Promise<InvokeResult> {
   if (!config.contractId) throw new Error('PayLoop is not deployed on this server.')
   const network = getNetwork(config.network)
   const server = new rpc.Server(RPC_URL[config.network])

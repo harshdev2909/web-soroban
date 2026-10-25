@@ -109,10 +109,11 @@ export default function PayLoopPage() {
       const amount = toStroops(form.amount)
       const cap = toStroops(form.cap)
       if (cap < amount) throw new Error('The safety cap must cover at least one charge.')
+      const retryNotice = () => setNotice({ text: 'The network was busy and nothing was charged. Approve once more in your wallet.' })
       const result = await invokePayLoop(config, wallet, 'create_policy', [
         scv.address(wallet.address), scv.address(form.merchant.trim()), scv.i128(amount),
         scv.u64(BigInt(form.interval)), scv.i128(cap), scv.u32(await allowanceLiveUntil(config)),
-      ])
+      ], retryNotice)
       return { text: `Policy ${String(result.simulated ?? '')} created and the first ${form.amount} USDC charge settled.`, hash: result.hash }
     })
   }
