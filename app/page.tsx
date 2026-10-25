@@ -60,7 +60,7 @@ export default function HomePage() {
   })
 
   return (
-    <main className="relative min-h-screen bg-background text-foreground">
+    <main className="relative min-h-screen overflow-x-clip bg-background text-foreground">
       <LoginModal open={loginOpen} onOpenChange={setLoginOpen} />
       <PlaygroundNavbar onSignInClick={() => setLoginOpen(true)} />
 
