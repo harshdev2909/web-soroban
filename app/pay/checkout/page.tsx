@@ -55,6 +55,15 @@ function trustedResource(value: string | null) {
   }
 }
 
+/** The facilitator's rejection reason from a 402's PAYMENT-REQUIRED header, if any. */
+function paymentRequiredError(httpClient: x402HTTPClient, response: Response): string {
+  try {
+    return String(httpClient.getPaymentRequiredResponse((name) => response.headers.get(name)).error || '')
+  } catch {
+    return ''
+  }
+}
+
 function priceNumber(price: string) {
   return Number(price.replace(/^\$/, ''))
 }
@@ -179,15 +188,22 @@ function CheckoutContent() {
         request.headers.delete('Access-Control-Expose-Headers')
         return fetch(request)
       }
-      const response = await wrapFetchWithPayment(corsSafeFetch, client)(resourceUrl, {
-        headers: { Accept: 'application/json' },
-      })
+      const httpClient = new x402HTTPClient(client)
+      let response = await wrapFetchWithPayment(corsSafeFetch, client)(resourceUrl, { headers: { Accept: 'application/json' } })
+      // The facilitator re-simulates at verification; if network fees moved in
+      // the seconds since signing it rejects with fee_below_minimum and nothing
+      // is charged. Ask the wallet to sign once more, never more than once.
+      if (response.status === 402 && /fee[ _]below[ _]minimum/i.test(paymentRequiredError(httpClient, response))) {
+        setError('Network fees moved while you were signing, so nothing was charged. Approve once more in your wallet.')
+        response = await wrapFetchWithPayment(corsSafeFetch, client)(resourceUrl, { headers: { Accept: 'application/json' } })
+        setError('')
+      }
       const body = await response.json().catch(() => ({})) as Record<string, unknown>
       if (!response.ok) {
         const fix = typeof body.fix === 'string' ? ` ${body.fix}` : ''
         throw new Error(String(body.message || body.error || `Payment failed with HTTP ${response.status}.`) + fix)
       }
-      const settlement = new x402HTTPClient(client).getPaymentSettleResponse((name) => response.headers.get(name))
+      const settlement = httpClient.getPaymentSettleResponse((name) => response.headers.get(name))
       if (!settlement?.transaction) throw new Error('The resource unlocked, but no settlement receipt was returned.')
       setReceipt({ transaction: settlement.transaction, payer: settlement.payer, body })
     } catch (paymentError) {
