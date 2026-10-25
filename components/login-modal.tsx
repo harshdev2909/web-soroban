@@ -2,7 +2,7 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { authApi } from '@/lib/api'
-import { Github, Wallet, Sparkles } from 'lucide-react'
+import { ArrowRight, Github, Wallet } from 'lucide-react'
 import { NovaMark } from '@/components/nova-mark'
 
 function GoogleIcon({ className }: { className?: string }) {
@@ -48,46 +48,49 @@ export function LoginModal({ open, onOpenChange, returnTo }: LoginModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="overflow-hidden p-0 sm:max-w-[420px]">
-        {/* Brand header */}
-        <div className="relative border-b border-border bg-radial-fade px-6 pb-5 pt-6">
-          <div className="flex items-center gap-2.5">
-            <NovaMark />
-            <span className="font-display text-lg font-semibold tracking-tight">WebSoroban</span>
-          </div>
-          <DialogHeader className="mt-4 space-y-1.5 text-left">
-            <DialogTitle className="font-display text-2xl">Sign in to start building</DialogTitle>
-            <p className="text-sm text-muted-foreground">
-              We&apos;ll spin up a funded Stellar testnet wallet for you automatically.
+      <DialogContent className="overflow-hidden rounded-lg border-border bg-popover p-0 shadow-lg sm:max-w-[420px]">
+        <div className="border-b border-border px-6 pb-6 pt-6">
+          <p className="eyebrow flex items-center gap-3 text-foreground">
+            <NovaMark className="h-6 w-6 rounded-sm" />
+            WebSoroban · sign in
+          </p>
+          <DialogHeader className="mt-6 space-y-2 text-left">
+            <DialogTitle className="font-display text-2xl font-medium">Sign in to start building</DialogTitle>
+            <p className="text-sm leading-6 text-muted-foreground">
+              A funded Stellar testnet wallet is created for you on first sign-in.
             </p>
           </DialogHeader>
         </div>
 
-        <div className="space-y-2.5 px-6 py-6">
-          {providers.map((p) => {
-            const Icon = p.icon
-            return (
-              <button
-                key={p.id}
-                onClick={() => beginLogin(p.onClick)}
-                className="flex h-11 w-full items-center justify-center gap-3 rounded-lg border border-border bg-card text-sm font-medium text-foreground transition-[transform,background-color,border-color] duration-200 hover:border-brand/40 hover:bg-accent active:scale-[0.99]"
-              >
-                <Icon className="h-5 w-5" />
-                {p.label}
-              </button>
-            )
-          })}
+        <div className="px-6 py-5">
+          <ul className="space-y-2">
+            {providers.map((p, index) => {
+              const Icon = p.icon
+              return (
+                <li key={p.id}>
+                  <button
+                    onClick={() => beginLogin(p.onClick)}
+                    className="group flex min-h-12 w-full items-center gap-3 rounded-md border border-border bg-card px-3.5 text-left text-sm text-foreground transition-colors duration-150 hover:border-foreground/30 hover:bg-accent"
+                  >
+                    <Icon className="h-4 w-4 shrink-0" />
+                    <span className="flex-1">{p.label}</span>
+                    <span className="font-mono text-[0.6rem] text-muted-foreground" aria-hidden="true">0{index + 1}</span>
+                    <ArrowRight className="h-3.5 w-3.5 text-muted-foreground transition-transform duration-150 motion-safe:group-hover:translate-x-0.5" aria-hidden="true" />
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
 
-          <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2.5">
-            <Wallet className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
-            <p className="text-xs leading-relaxed text-muted-foreground">
+          <div className="mt-5 flex items-start gap-3 border-t border-border pt-4">
+            <Wallet className="mt-0.5 h-4 w-4 shrink-0 text-brand" aria-hidden="true" />
+            <p className="text-xs leading-5 text-muted-foreground">
               No external wallet needed. Your testnet keypair is created and funded on first login,
               and your secret key never leaves the server.
             </p>
           </div>
 
-          <p className="flex items-center justify-center gap-1.5 pt-1 text-center text-xs text-muted-foreground">
-            <Sparkles className="h-3 w-3" />
+          <p className="mt-5 font-mono text-[0.62rem] uppercase leading-5 tracking-[0.14em] text-muted-foreground">
             By continuing you agree to our terms and privacy policy.
           </p>
         </div>

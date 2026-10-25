@@ -40,13 +40,14 @@ export function CatalogTopBar({ user }: { user?: User | null }) {
   const pathname = usePathname()
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-border bg-background/80 px-3 backdrop-blur-xl sm:px-5">
+    <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-border bg-background/85 px-3 backdrop-blur-xl sm:px-5">
       {/* Left: wordmark + nav */}
       <div className="flex min-w-0 items-center gap-5">
-        <Link href="/" className="flex shrink-0 items-center gap-2" aria-label="WebSoroban home">
-          <NovaMark className="h-7 w-7" />
-          <span className="hidden font-display text-base font-semibold tracking-tight sm:inline">WebSoroban</span>
+        <Link href="/" className="flex shrink-0 items-center gap-3" aria-label="WebSoroban home">
+          <NovaMark className="h-7 w-7 rounded-md" />
+          <span className="hidden font-display text-[0.95rem] font-semibold tracking-[-0.02em] sm:inline">WebSoroban</span>
         </Link>
+        <span className="hidden h-4 w-px bg-border md:block" aria-hidden="true" />
         <nav className="hidden items-center gap-1 md:flex" aria-label="Primary">
           {NAV.map((l) => {
             const active = l.href !== '/' && pathname?.startsWith(l.href)
@@ -55,7 +56,7 @@ export function CatalogTopBar({ user }: { user?: User | null }) {
                 key={l.label}
                 href={l.href}
                 className={cn(
-                  'rounded-md px-2.5 py-1.5 text-sm transition-colors hover:text-foreground',
+                  'flex min-h-9 items-center rounded-md px-2.5 font-mono text-[0.68rem] uppercase tracking-[0.14em] transition-colors duration-150 hover:text-foreground',
                   active ? 'text-foreground' : 'text-muted-foreground',
                 )}
               >
@@ -83,14 +84,14 @@ export function CatalogTopBar({ user }: { user?: User | null }) {
               >
                 <Avatar className="h-8 w-8 border border-border">
                   {user.picture && <AvatarImage src={user.picture} alt="" />}
-                  <AvatarFallback className="bg-brand/15 text-xs font-semibold text-brand">
+                  <AvatarFallback className="bg-accent font-mono text-[0.68rem] text-foreground">
                     {initials(user)}
                   </AvatarFallback>
                 </Avatar>
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel className="truncate text-xs font-normal text-muted-foreground">
+              <DropdownMenuLabel className="truncate font-mono text-[0.68rem] font-normal text-muted-foreground">
                 {user.email}
               </DropdownMenuLabel>
               <DropdownMenuSeparator />

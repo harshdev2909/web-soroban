@@ -16,8 +16,8 @@ export function Tabs({ items, children }: { items: string[]; children: ReactNode
   const panels = Children.toArray(children).filter(isValidElement) as ReactElement[]
 
   return (
-    <div className="my-5 overflow-hidden rounded-lg border border-border">
-      <div role="tablist" className="flex gap-1 border-b border-border bg-muted/30 px-2">
+    <div className="my-5 overflow-hidden rounded-lg border border-border bg-card">
+      <div role="tablist" className="flex gap-1 border-b border-border px-2">
         {items.map((label, i) => (
           <button
             key={label}
@@ -27,13 +27,12 @@ export function Tabs({ items, children }: { items: string[]; children: ReactNode
             aria-controls={`${base}-panel-${i}`}
             onClick={() => setActive(i)}
             className={cn(
-              "relative -mb-px border-b-2 px-3 py-2 text-sm transition-colors",
-              active === i
-                ? "border-brand text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground",
+              "relative flex h-10 items-center px-3 font-mono text-[0.72rem] uppercase tracking-[0.14em] transition-colors duration-150",
+              active === i ? "text-foreground" : "text-muted-foreground hover:text-foreground",
             )}
           >
             {label}
+            {active === i && <span aria-hidden className="absolute inset-x-3 -bottom-px h-px bg-brand" />}
           </button>
         ))}
       </div>
@@ -44,7 +43,7 @@ export function Tabs({ items, children }: { items: string[]; children: ReactNode
           id={`${base}-panel-${i}`}
           aria-labelledby={`${base}-tab-${i}`}
           hidden={active !== i}
-          className="px-4 py-3 text-sm leading-relaxed [&>figure]:my-0 [&_pre.shiki]:text-[0.8125rem]"
+          className="px-4 py-4 text-sm leading-relaxed [&>figure]:my-0 [&_pre.shiki]:text-[0.8125rem]"
         >
           {panel}
         </div>

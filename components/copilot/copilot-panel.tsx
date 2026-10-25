@@ -101,7 +101,7 @@ function ToolStep({ name, args, status, summary, data }: { name: string; args: a
   const Icon = TOOL_ICON[name] || SquareTerminal
   const findings = data?.findings as any[] | undefined
   return (
-    <div className="rounded-md border border-border/60 bg-card/40">
+    <div className="rounded-sm border border-border bg-card/40">
       <button onClick={() => setOpen((v) => !v)} className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left">
         <Icon className="h-3.5 w-3.5 text-muted-foreground" />
         <span className="text-[12px] text-foreground/90">{toolLabel({ name, args })}</span>
@@ -111,7 +111,7 @@ function ToolStep({ name, args, status, summary, data }: { name: string; args: a
           ) : (
             <span className={`h-1.5 w-1.5 rounded-full ${status === 'error' ? 'bg-destructive' : 'bg-success'}`} />
           )}
-          {(summary || findings) && <ChevronRight className={`h-3 w-3 text-muted-foreground transition ${open ? 'rotate-90' : ''}`} />}
+          {(summary || findings) && <ChevronRight className={`h-3 w-3 text-muted-foreground transition-transform duration-150 ${open ? 'rotate-90' : ''}`} />}
         </span>
       </button>
       {open && (
@@ -607,13 +607,10 @@ export function CopilotPanel(props: CopilotPanelProps) {
       <div ref={scrollRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto px-3 py-3">
         {isEmpty && (
           <div className="flex h-full flex-col items-center justify-center px-1 text-center">
-            <div className="relative mb-4">
-              <div className="absolute inset-0 -z-10 rounded-full bg-brand/25 blur-2xl" aria-hidden />
-              <div className="grid h-14 w-14 place-items-center rounded-2xl border border-brand/30 bg-gradient-to-br from-brand/25 to-brand/5 shadow-lg shadow-brand/10">
-                <Sparkles className="h-7 w-7 text-brand" />
-              </div>
+            <div className="mb-4 grid h-10 w-10 place-items-center rounded-md border border-border text-brand">
+              <Sparkles className="h-5 w-5" />
             </div>
-            <p className="text-sm font-semibold text-foreground">Soroban Copilot</p>
+            <p className="font-display text-sm font-medium text-foreground">Soroban Copilot</p>
             <p className="mt-1.5 max-w-[260px] text-xs leading-relaxed text-muted-foreground">
               Generate, debug, and optimize contracts. Every edit is validated against the real compile + security pipeline.
             </p>
@@ -624,16 +621,16 @@ export function CopilotPanel(props: CopilotPanelProps) {
                   <button
                     key={s.id}
                     onClick={() => applySlash(s)}
-                    className="group flex w-full items-center gap-2.5 rounded-lg border border-border/70 bg-card/50 px-3 py-2 text-left transition hover:border-brand/40 hover:bg-accent"
+                    className="group flex w-full items-center gap-2.5 rounded-md border border-border bg-card/40 px-3 py-2 text-left transition-colors duration-150 hover:border-foreground/30 hover:bg-accent"
                   >
-                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-muted text-muted-foreground transition group-hover:bg-brand/15 group-hover:text-brand">
+                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-sm bg-muted text-muted-foreground transition-colors duration-150 group-hover:text-brand">
                       <Icon className="h-3.5 w-3.5" />
                     </span>
                     <span className="flex min-w-0 flex-col">
                       <span className="font-mono text-[12px] font-medium text-foreground">{s.label}</span>
                       <span className="truncate text-[10px] text-muted-foreground">{s.hint}</span>
                     </span>
-                    <ChevronRight className="ml-auto h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition group-hover:opacity-100" />
+                    <ChevronRight className="ml-auto h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity duration-150 group-hover:opacity-100" />
                   </button>
                 )
               })}
@@ -683,7 +680,7 @@ export function CopilotPanel(props: CopilotPanelProps) {
         {chips.length > 0 && (
           <div className="mb-2 flex flex-wrap gap-1">
             {chips.map((c, i) => (
-              <span key={i} className="flex items-center gap-1 rounded-full bg-brand/10 px-2 py-0.5 text-[10px] text-brand">
+              <span key={i} className="flex items-center gap-1 rounded-sm border border-brand/30 bg-brand/10 px-1.5 py-0.5 font-mono text-[0.62rem] text-brand">
                 {c.label}
                 <button onClick={() => setChips((prev) => prev.filter((_, j) => j !== i))}><X className="h-2.5 w-2.5" /></button>
               </span>
@@ -691,7 +688,7 @@ export function CopilotPanel(props: CopilotPanelProps) {
           </div>
         )}
 
-        <div className="rounded-xl border border-border bg-card/70 shadow-sm transition focus-within:border-border">
+        <div className="rounded-md border border-border bg-card transition-colors duration-150 focus-within:border-foreground/40">
           <textarea
             ref={textareaRef}
             value={input}
@@ -706,7 +703,7 @@ export function CopilotPanel(props: CopilotPanelProps) {
             {/* Slash menu */}
             <Popover open={slashOpen} onOpenChange={setSlashOpen}>
               <PopoverTrigger asChild>
-                <button className="flex items-center gap-1 rounded-md border border-border bg-card px-1.5 py-1 text-xs text-muted-foreground hover:text-foreground" title="Commands">
+                <button className="grid h-7 w-7 place-items-center rounded-sm border border-border bg-card text-muted-foreground transition-colors duration-150 hover:border-foreground/30 hover:text-foreground" title="Commands">
                   <Slash className="h-3.5 w-3.5" />
                 </button>
               </PopoverTrigger>
@@ -825,13 +822,13 @@ function MessageView({
   if (message.role === 'user') {
     return (
       <div className="flex flex-col items-end">
-        <div className="max-w-[90%] rounded-2xl rounded-br-md border border-brand/20 bg-gradient-to-br from-brand/15 to-brand/5 px-3.5 py-2 text-[13px] leading-relaxed text-foreground shadow-sm">
+        <div className="max-w-[90%] rounded-md border border-border border-r-2 border-r-brand bg-accent px-3.5 py-2 text-[13px] leading-relaxed text-foreground">
           {message.content}
         </div>
         {Array.isArray(message.meta?.attachments) && message.meta.attachments.length > 0 && (
           <div className="mt-1 flex flex-wrap justify-end gap-1">
             {message.meta.attachments.map((a: any, i: number) => (
-              <span key={i} className="rounded-full bg-muted px-1.5 py-0.5 text-[9px] text-muted-foreground">{a.label}</span>
+              <span key={i} className="rounded-sm bg-muted px-1.5 py-0.5 font-mono text-[0.6rem] text-muted-foreground">{a.label}</span>
             ))}
           </div>
         )}

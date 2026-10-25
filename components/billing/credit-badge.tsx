@@ -51,15 +51,15 @@ export function CreditBadge({ compact = false }: { compact?: boolean }) {
       <button
         onClick={() => setOpen(true)}
         title="AI credits — click to buy more"
-        className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium transition ${
+        className={`flex min-h-7 items-center gap-1.5 rounded-sm border px-2 font-mono text-[0.68rem] transition-[background-color,border-color,color] duration-150 ${
           low
             ? 'border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/20'
-            : 'border-border bg-muted/50 text-foreground hover:bg-accent'
+            : 'border-border text-foreground hover:border-foreground/30'
         }`}
       >
         <Coins className={`h-3 w-3 ${low ? 'text-destructive' : 'text-brand'}`} />
-        {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <span>{(balance ?? 0).toLocaleString()}</span>}
-        {!compact && <span className="text-muted-foreground">credits</span>}
+        {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <span className="font-mono-tnum">{(balance ?? 0).toLocaleString()}</span>}
+        {!compact && <span className="uppercase tracking-[0.12em] text-muted-foreground">credits</span>}
       </button>
       <UpgradeModal open={open} onOpenChange={setOpen} outOfCredits={low} />
     </>

@@ -81,7 +81,9 @@ const fields: {
 ]
 
 const buttonClass =
-  'inline-flex h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60'
+  'inline-flex h-10 items-center justify-center gap-2 rounded-md px-4 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60'
+const solidClass = 'bg-primary text-primary-foreground hover:bg-primary/90'
+const outlineClass = 'border border-border text-foreground hover:border-foreground/30'
 
 export function SubmitIdeaButton({ variant = 'outline' }: { variant?: 'solid' | 'outline' }) {
   const [open, setOpen] = useState(false)
@@ -125,8 +127,8 @@ export function SubmitIdeaButton({ variant = 'outline' }: { variant?: 'solid' | 
           type="button"
           className={
             variant === 'solid'
-              ? `${buttonClass} bg-brand text-brand-foreground hover:bg-brand/90`
-              : `${buttonClass} border border-border text-foreground hover:border-brand/50`
+              ? `${buttonClass} lit ${solidClass}`
+              : `${buttonClass} ${outlineClass}`
           }
         >
           <Lightbulb className="h-4 w-4" />
@@ -135,16 +137,18 @@ export function SubmitIdeaButton({ variant = 'outline' }: { variant?: 'solid' | 
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
         {done ? (
-          <div className="py-6 text-center">
-            <CheckCircle2 className="mx-auto h-10 w-10 text-success" />
-            <DialogTitle className="font-display mt-4 text-xl">Thanks, we got it</DialogTitle>
-            <DialogDescription className="mt-2">
+          <div className="py-4">
+            <span className="grid h-12 w-12 place-items-center rounded-md border border-success/40 text-success">
+              <CheckCircle2 className="h-6 w-6" />
+            </span>
+            <DialogTitle className="font-display mt-6 text-xl font-medium">Thanks, we got it.</DialogTitle>
+            <DialogDescription className="mt-2 leading-6">
               The team reviews every idea. If it’s a fit for the Idea Bank, we’ll feature it here and credit you.
             </DialogDescription>
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className={`${buttonClass} mt-6 bg-brand text-brand-foreground hover:bg-brand/90`}
+              className={`${buttonClass} lit mt-6 ${solidClass}`}
             >
               Done
             </button>
@@ -152,7 +156,7 @@ export function SubmitIdeaButton({ variant = 'outline' }: { variant?: 'solid' | 
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle className="font-display text-xl">Submit an idea</DialogTitle>
+              <DialogTitle className="font-display text-xl font-medium">Submit an idea</DialogTitle>
               <DialogDescription>
                 Pitch something worth building on Stellar. Ideas the team accepts are featured in the Idea Bank with
                 your name on them.
@@ -212,7 +216,7 @@ export function SubmitIdeaButton({ variant = 'outline' }: { variant?: 'solid' | 
               </div>
 
               {error && !error.field && (
-                <p role="alert" className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm">
+                <p role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm">
                   {error.message}
                 </p>
               )}
@@ -221,14 +225,14 @@ export function SubmitIdeaButton({ variant = 'outline' }: { variant?: 'solid' | 
                 <button
                   type="button"
                   onClick={() => onOpenChange(false)}
-                  className={`${buttonClass} border border-border text-foreground hover:border-brand/50`}
+                  className={`${buttonClass} ${outlineClass}`}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className={`${buttonClass} bg-brand text-brand-foreground hover:bg-brand/90`}
+                  className={`${buttonClass} lit ${solidClass}`}
                 >
                   {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
                   {submitting ? 'Sending…' : 'Send for review'}

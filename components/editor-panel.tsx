@@ -11,8 +11,9 @@ import { cn } from "@/lib/utils"
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
   loading: () => (
-    <div className="flex h-full items-center justify-center bg-background">
-      <Loader2 className="h-8 w-8 animate-spin text-brand" />
+    <div className="flex h-full items-center justify-center gap-2 bg-background font-mono text-[0.68rem] uppercase tracking-[0.16em] text-muted-foreground">
+      <Loader2 className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" />
+      Loading editor
     </div>
   ),
 })
@@ -129,8 +130,8 @@ export function EditorPanel({
 
   return (
     <div className="flex h-full min-w-0 flex-col overflow-hidden bg-background">
-      {/* File tabs + actions */}
-      <div className="flex min-w-0 items-center border-b border-border bg-card/30">
+      {/* File tabs + actions: one 36px hairline row */}
+      <div className="flex h-9 min-w-0 shrink-0 items-stretch border-b border-border bg-card/40">
         <div ref={tabsRef} onWheel={onTabsWheel} className="flex min-w-0 flex-1 overflow-x-auto overflow-y-hidden no-scrollbar">
           {files.map((file) => {
             const filePath = pathOf(file)
@@ -143,19 +144,17 @@ export function EditorPanel({
                 onClick={() => onFileSelect(file)}
                 aria-current={isActive}
                 title={filePath}
-                className={`group relative flex shrink-0 items-center gap-2 whitespace-nowrap px-4 py-2.5 font-mono text-xs transition-colors ${
-                  isActive
-                    ? "bg-background text-foreground"
-                    : "text-muted-foreground hover:bg-accent/40 hover:text-foreground"
-                }`}
+                className={cn(
+                  "group relative flex shrink-0 items-center gap-1 whitespace-nowrap border-r border-border px-3 font-mono text-[0.72rem] transition-colors duration-150",
+                  isActive ? "bg-background text-foreground" : "text-muted-foreground hover:bg-accent/40 hover:text-foreground",
+                )}
               >
-                <span className={`h-1.5 w-1.5 rounded-full transition-colors ${isActive ? "bg-brand" : "bg-border group-hover:bg-muted-foreground"}`} />
                 {dir && <span className="text-muted-foreground/60">{dir}/</span>}
                 {baseName(filePath)}
                 {isActive && (
                   <motion.span
                     layoutId="editor-tab-underline"
-                    className="pointer-events-none absolute inset-x-0 bottom-0 h-0.5 bg-brand"
+                    className="pointer-events-none absolute inset-x-0 -bottom-px h-px bg-brand"
                     transition={{ type: "spring", stiffness: 500, damping: 40 }}
                   />
                 )}
@@ -164,16 +163,16 @@ export function EditorPanel({
           })}
         </div>
 
-        {/* Action cluster: Deploy is the single primary; Compile is secondary */}
-        <div className="ml-auto flex flex-shrink-0 items-center gap-2 border-l border-border px-3 py-1.5">
-          <Button onClick={onCompile} disabled={isCompiling} size="sm" variant="outline" className="h-8 gap-1.5">
-            {isCompiling ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Hammer className="h-3.5 w-3.5" />}
-            <span className="text-xs">{isCompiling ? "Compiling…" : "Compile"}</span>
+        {/* Action cluster: Deploy is the single lit action; Compile and Test are outline */}
+        <div className="ml-auto flex flex-shrink-0 items-center gap-1.5 border-l border-border px-2">
+          <Button onClick={onCompile} disabled={isCompiling} size="sm" variant="outline" className="h-7 gap-1.5 px-2.5 text-xs">
+            {isCompiling ? <Loader2 className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" /> : <Hammer className="h-3.5 w-3.5" />}
+            {isCompiling ? "Compiling…" : "Compile"}
           </Button>
           {onTest && (
-            <Button onClick={onTest} disabled={isTesting} size="sm" variant="outline" className="h-8 gap-1.5">
-              {isTesting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FlaskConical className="h-3.5 w-3.5" />}
-              <span className="text-xs">{isTesting ? "Testing…" : "Test"}</span>
+            <Button onClick={onTest} disabled={isTesting} size="sm" variant="outline" className="h-7 gap-1.5 px-2.5 text-xs">
+              {isTesting ? <Loader2 className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" /> : <FlaskConical className="h-3.5 w-3.5" />}
+              {isTesting ? "Testing…" : "Test"}
             </Button>
           )}
           <Button
@@ -182,16 +181,16 @@ export function EditorPanel({
             size="sm"
             title={deployWarning || undefined}
             aria-label={deployWarning ? `Deploy — ${deployWarning}` : undefined}
-            className={cn("h-8 gap-1.5", deployWarning && "bg-warning text-background hover:bg-warning/90")}
+            className={cn("h-7 gap-1.5 px-2.5 text-xs", deployWarning ? "bg-warning text-warning-foreground hover:bg-warning/90" : "lit")}
           >
             {isDeploying ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              <Loader2 className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" />
             ) : deployWarning ? (
               <AlertTriangle className="h-3.5 w-3.5" />
             ) : (
               <Rocket className="h-3.5 w-3.5" />
             )}
-            <span className="text-xs">{isDeploying ? "Deploying…" : "Deploy"}</span>
+            {isDeploying ? "Deploying…" : "Deploy"}
           </Button>
         </div>
       </div>

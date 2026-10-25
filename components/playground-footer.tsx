@@ -3,8 +3,9 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useReducedMotion } from 'framer-motion'
-import { Github, Twitter, ArrowUpRight, ArrowUp } from 'lucide-react'
+import { ArrowUp, ArrowUpRight, Github, Twitter } from 'lucide-react'
 import { NovaMark } from '@/components/nova-mark'
+import { OrbitStatic } from '@/components/three/hero-sculpture'
 
 export const socials = [
   { href: 'https://github.com/WebSoroban', icon: <Github className="h-4 w-4" />, name: 'GitHub' },
@@ -17,21 +18,23 @@ const columns = [
     links: [
       { label: 'IDE', href: '/ide' },
       { label: 'WebSoroban Pay', href: '/pay' },
-      { label: 'PayLoop subscriptions', href: '/payloop' },
+      { label: 'PayLoop', href: '/payloop' },
       { label: 'Templates', href: '/marketplace' },
     ],
   },
   {
-    title: 'Resources',
+    title: 'Developers',
     links: [
       { label: 'Docs', href: '/docs' },
-      { label: 'Idea Bank', href: '/ideas' },
-      { label: 'Playground', href: '/contract' },
+      { label: 'x402 guide', href: '/docs/payments' },
+      { label: 'PayLoop guide', href: '/docs/payloop' },
+      { label: 'API reference', href: '/docs/reference/api' },
     ],
   },
   {
-    title: 'Legal',
+    title: 'Company',
     links: [
+      { label: 'Idea Bank', href: '/ideas' },
       { label: 'Privacy', href: '/privacy-policy' },
       { label: 'Terms', href: '/terms-of-service' },
     ],
@@ -43,114 +46,103 @@ const PlaygroundFooter = () => {
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' })
 
   return (
-    <footer id="site-footer" className="relative bg-background px-3 pb-3 sm:px-4 sm:pb-4">
-      <div className="relative mx-auto max-w-7xl overflow-hidden rounded-3xl bg-foreground text-background shadow-2xl shadow-foreground/10">
-        <svg
-          aria-hidden="true"
-          className="pointer-events-none absolute -right-20 -top-28 h-96 w-96 text-background/10"
-          viewBox="0 0 400 400"
-          fill="none"
-        >
-          <path d="M31 203c36-89 105-147 194-157 84-9 137 37 145 105 8 69-38 143-112 181-77 39-165 27-206-31-21-30-28-64-21-98Z" stroke="currentColor" />
-          <path d="M75 208c30-65 85-107 151-112 63-5 101 29 105 79 5 51-31 104-87 131-57 27-120 17-148-26-14-21-21-47-21-72Z" stroke="currentColor" />
-          <circle cx="315" cy="99" r="8" fill="currentColor" />
-          <circle cx="90" cy="297" r="4" fill="currentColor" />
-        </svg>
-
-        <div className="relative px-6 pt-14 sm:px-8 md:px-10 md:pt-16">
-          <div className="grid gap-12 md:grid-cols-[1.7fr_1fr_1fr_1fr]">
-            <div>
-              <Link
-                href="/"
-                className="group inline-flex items-center gap-2.5 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-background focus-visible:ring-offset-4 focus-visible:ring-offset-foreground"
-              >
-                <NovaMark className="rounded-xl bg-background text-foreground transition-transform duration-200 motion-safe:group-hover:-rotate-3 motion-reduce:transform-none" />
-                <span className="font-display text-lg font-semibold tracking-tight">WebSoroban</span>
-              </Link>
-              <p className="mt-4 max-w-sm text-sm leading-6 text-background/60">
-                The AI product builder and web IDE for Stellar applications, agentic payments, contracts, and data.
-              </p>
-              <div className="mt-6 flex flex-wrap items-center gap-2">
-                {socials.map((item) => (
-                  <a
-                    key={item.name}
-                    href={item.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label={item.name}
-                    className="grid h-10 w-10 place-items-center rounded-xl border border-background/20 bg-background/5 text-background/60 transition-[background-color,border-color,color,transform] duration-150 hover:border-background/40 hover:bg-background/10 hover:text-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-background motion-safe:hover:-translate-y-0.5 motion-reduce:transform-none"
-                  >
-                    {item.icon}
-                  </a>
-                ))}
+    <footer id="site-footer" className="relative overflow-hidden border-t border-border bg-background">
+      <div className="bg-space mask-radial pointer-events-none absolute -right-40 -top-40 h-[56rem] w-[56rem] opacity-60" aria-hidden="true" />
+      <OrbitStatic className="pointer-events-none absolute -right-32 -top-24 h-[40rem] w-[40rem] opacity-50" />
+      <div className="relative mx-auto max-w-7xl px-6">
+        <div className="grid gap-12 py-16 md:grid-cols-[1.5fr_1fr_1fr_1fr] md:py-20">
+          <div>
+            <Link href="/" className="group inline-flex items-center gap-3 rounded-md">
+              <NovaMark className="h-7 w-7 rounded-md" />
+              <span className="font-display text-[0.95rem] font-semibold tracking-[-0.02em]">WebSoroban</span>
+            </Link>
+            <p className="mt-5 max-w-xs text-sm leading-6 text-muted-foreground">
+              The product builder and web IDE for Stellar: Soroban contracts, agentic payments, and subscriptions, in one workspace.
+            </p>
+            <div className="mt-6 flex flex-wrap items-center gap-2">
+              {socials.map((item) => (
                 <a
-                  href="https://stellar.org"
+                  key={item.name}
+                  href={item.href}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex min-h-10 items-center gap-2 rounded-full border border-background/20 bg-background/5 px-3 text-background/55 transition-[background-color,border-color,color,transform] duration-150 hover:border-background/40 hover:bg-background/10 hover:text-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-background motion-safe:hover:-translate-y-0.5 motion-reduce:transform-none"
+                  aria-label={item.name}
+                  className="grid h-10 w-10 place-items-center rounded-md border border-border text-muted-foreground transition-colors duration-150 hover:border-foreground/30 hover:text-foreground"
                 >
-                  <span className="font-mono text-xs uppercase tracking-wider">Built on</span>
-                  <span className="h-4 w-px bg-background/20" aria-hidden="true" />
-                  <Image
-                    src="/stellar-logo-white.png"
-                    alt="Stellar"
-                    width={6231}
-                    height={1560}
-                    className="h-4 w-auto"
-                  />
+                  {item.icon}
                 </a>
-              </div>
+              ))}
+              <a
+                href="https://stellar.org"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex min-h-10 items-center gap-3 rounded-md border border-border px-3 text-muted-foreground transition-colors duration-150 hover:border-foreground/30 hover:text-foreground"
+              >
+                <span className="font-mono text-[0.62rem] uppercase tracking-[0.18em]">Built on</span>
+                <span className="h-4 w-px bg-border" aria-hidden="true" />
+                <Image src="/stellar-logo-white.png" alt="Stellar" width={6231} height={1560} className="h-3.5 w-auto opacity-80" />
+              </a>
             </div>
-
-            {columns.map((col) => (
-              <div key={col.title}>
-                <h3 className="font-mono text-xs uppercase tracking-widest text-background/50">{col.title}</h3>
-                <ul className="mt-4 space-y-1">
-                  {col.links.map((l) => (
-                    <li key={l.label}>
-                      <Link
-                        href={l.href}
-                        className="group inline-flex min-h-10 items-center gap-1 rounded-lg text-sm text-background/70 transition-colors duration-150 hover:text-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-background"
-                      >
-                        {l.label}
-                        <ArrowUpRight className="h-3 w-3 -translate-y-px opacity-0 transition-[opacity,transform] duration-150 group-hover:translate-x-0.5 group-hover:opacity-100 motion-reduce:transform-none" />
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
           </div>
 
-          <div className="mt-14 flex justify-center" aria-hidden="true">
-            <span className="w-full select-none whitespace-nowrap text-center font-display text-[clamp(2rem,9vw,12rem)] font-bold leading-none tracking-tighter text-background opacity-[0.06]">
-              WEBSOROBAN
-            </span>
-          </div>
+          {columns.map((column) => (
+            <div key={column.title}>
+              <h3 className="eyebrow">{column.title}</h3>
+              <ul className="mt-5 space-y-0.5">
+                {column.links.map((link) => (
+                  <li key={link.label}>
+                    <Link
+                      href={link.href}
+                      className="group inline-flex min-h-9 items-center gap-1 rounded-md text-sm text-muted-foreground transition-colors duration-150 hover:text-foreground"
+                    >
+                      {link.label}
+                      <ArrowUpRight className="h-3 w-3 -translate-y-px opacity-0 transition-[opacity,transform] duration-150 group-hover:translate-x-0.5 group-hover:opacity-100 motion-reduce:transform-none" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
 
-        <div className="relative border-t border-background/15">
-          <div className="flex flex-col items-center justify-between gap-4 px-6 py-5 text-xs text-background/50 sm:flex-row sm:px-8 md:px-10">
-            <div className="max-w-2xl text-center sm:text-left">
-              <p>© 2026 BayLeaf OÜ. All rights reserved.</p>
-            </div>
-            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
-              <span className="flex items-center gap-1.5">
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-60 motion-reduce:animate-none" />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-success" />
-                </span>
-                Stellar Mainnet · operational
+        {/* The wordmark as an outline, scaled to the exact width of the column. */}
+        <div className="border-t border-border pt-8" aria-hidden="true">
+          <svg className="block h-auto w-full select-none" viewBox="0 0 1200 158" fill="none" preserveAspectRatio="none">
+            <text
+              x="0"
+              y="150"
+              textLength="1200"
+              lengthAdjust="spacingAndGlyphs"
+              fontFamily="var(--font-sans)"
+              fontSize="196"
+              fontWeight="600"
+              letterSpacing="-8"
+              stroke="hsl(var(--foreground) / 0.18)"
+              strokeWidth="1.2"
+            >
+              WEBSOROBAN
+            </text>
+          </svg>
+        </div>
+
+        <div className="flex flex-col items-start justify-between gap-4 border-t border-border py-5 font-mono text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground sm:flex-row sm:items-center">
+          <p>© 2026 BayLeaf OÜ</p>
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+            <span className="flex items-center gap-2">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-60 motion-reduce:animate-none" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-success" />
               </span>
-              <button
-                onClick={scrollToTop}
-                className="group inline-flex min-h-10 items-center gap-1.5 rounded-lg text-background/50 transition-colors duration-150 hover:text-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-background"
-                aria-label="Back to top"
-              >
-                Back to top
-                <ArrowUp className="h-3.5 w-3.5 transition-transform duration-150 motion-safe:group-hover:-translate-y-0.5 motion-reduce:transform-none" />
-              </button>
-            </div>
+              Testnet · Mainnet · operational
+            </span>
+            <button
+              onClick={scrollToTop}
+              className="group inline-flex min-h-10 items-center gap-1.5 rounded-md uppercase tracking-[0.14em] transition-colors duration-150 hover:text-foreground"
+              aria-label="Back to top"
+            >
+              Top
+              <ArrowUp className="h-3.5 w-3.5 transition-transform duration-150 motion-safe:group-hover:-translate-y-0.5" />
+            </button>
           </div>
         </div>
       </div>

@@ -33,7 +33,7 @@ export function DocsShell({
 
       <div className="mx-auto flex w-full max-w-[1400px]">
         {/* Desktop sidebar */}
-        <aside className="sticky top-14 hidden h-[calc(100vh-3.5rem)] w-72 shrink-0 overflow-y-auto border-r border-border px-4 py-6 lg:block">
+        <aside className="sticky top-16 hidden h-[calc(100vh-4rem)] w-64 shrink-0 overflow-y-auto border-r border-border px-4 py-8 lg:block">
           <SidebarNav tree={tree} />
         </aside>
 
@@ -46,18 +46,25 @@ export function DocsShell({
           aria-hidden={!navOpen}
         >
           <div
-            className={cn("absolute inset-0 bg-background/70 backdrop-blur-sm transition-opacity", navOpen ? "opacity-100" : "opacity-0")}
+            className={cn(
+              "absolute inset-0 bg-background/70 backdrop-blur-sm transition-opacity duration-200",
+              navOpen ? "opacity-100" : "opacity-0",
+            )}
             onClick={() => setNavOpen(false)}
           />
           <div
             className={cn(
-              "absolute left-0 top-0 h-full w-72 max-w-[80vw] overflow-y-auto border-r border-border bg-background px-3 py-4 shadow-lg transition-transform",
+              "absolute left-0 top-0 h-full w-72 max-w-[80vw] overflow-y-auto border-r border-border bg-background px-3 py-4 shadow-lg transition-transform duration-200 ease-out",
               navOpen ? "translate-x-0" : "-translate-x-full",
             )}
           >
-            <div className="mb-3 flex items-center justify-between px-2.5">
-              <span className="font-display text-sm font-semibold">Documentation</span>
-              <button onClick={() => setNavOpen(false)} aria-label="Close navigation" className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground">
+            <div className="mb-4 flex items-center justify-between border-b border-border px-2.5 pb-3">
+              <span className="eyebrow">Documentation</span>
+              <button
+                onClick={() => setNavOpen(false)}
+                aria-label="Close navigation"
+                className="grid h-10 w-10 place-items-center rounded-md text-muted-foreground transition-colors duration-150 hover:bg-accent hover:text-foreground"
+              >
                 <X className="h-4 w-4" />
               </button>
             </div>

@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Button } from './ui/button'
-import { Badge } from './ui/badge'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,6 +33,7 @@ import { User } from '@/lib/api'
 import { billingApi } from '@/lib/billingApi'
 import { CREDITS_UPDATED_EVENT } from '@/components/billing/credit-badge'
 import { NovaMark } from '@/components/nova-mark'
+import { cn } from '@/lib/utils'
 
 interface NavbarProps {
   projectSelector?: React.ReactNode
@@ -49,6 +49,15 @@ const planMeta: Record<string, { label: string; className: string; icon?: boolea
   plan3: { label: 'Premium', className: 'border-warning/40 text-warning bg-warning/10', icon: true },
 }
 
+// Quiet 32px icon control used across the bar.
+const iconControl =
+  'grid h-8 w-8 place-items-center rounded-md border border-border text-muted-foreground transition-colors duration-150 hover:bg-accent hover:text-foreground'
+
+/**
+ * The IDE's top bar: a single 48px hairline row. Mark and project on the left,
+ * the command palette in the middle, network, plan, wallet, and account on the
+ * right. Flat surface, no blur, no shadow.
+ */
 export function Navbar({
   projectSelector,
   user,
@@ -61,49 +70,45 @@ export function Navbar({
   const plan = user ? planMeta[user.subscription.plan] ?? planMeta.free : null
 
   return (
-    <header className="relative z-30 flex h-14 items-center justify-between gap-3 border-b border-border bg-background/80 px-3 backdrop-blur-xl sm:px-4">
+    <header className="relative z-30 flex h-12 items-center justify-between gap-3 border-b border-border bg-background px-3">
       {/* Left: brand + project */}
       <div className="flex min-w-0 items-center gap-3">
-        <Link href="/" className="flex items-center gap-2 shrink-0" aria-label="WebSoroban home">
-          <NovaMark className="h-7 w-7" />
-          <span className="hidden font-display text-base font-semibold tracking-tight sm:inline">
+        <Link href="/" className="flex shrink-0 items-center gap-2 rounded-md" aria-label="WebSoroban home">
+          <NovaMark className="h-6 w-6 rounded-md" />
+          <span className="hidden font-display text-sm font-semibold tracking-[-0.02em] sm:inline">
             WebSoroban
           </span>
         </Link>
-        <div className="h-6 w-px bg-border" />
+        <div className="h-5 w-px bg-border" aria-hidden="true" />
         {projectSelector && <div className="min-w-0">{projectSelector}</div>}
       </div>
 
       {/* Center: command palette trigger */}
       <button
         onClick={onOpenCommandPalette}
-        className="group hidden h-9 max-w-sm flex-1 items-center gap-2 rounded-lg border border-border bg-card/60 px-3 text-sm text-muted-foreground transition-colors hover:border-brand/40 hover:bg-accent lg:flex"
+        className="group hidden h-8 max-w-sm flex-1 items-center gap-2 rounded-md border border-border bg-card px-2.5 font-mono text-[0.72rem] text-muted-foreground transition-colors duration-150 hover:border-foreground/30 hover:text-foreground lg:flex"
         aria-label="Open command palette"
       >
-        <Search className="h-4 w-4" />
+        <Search className="h-3.5 w-3.5" />
         <span className="flex-1 text-left">Search files, run actions…</span>
-        <kbd className="flex items-center gap-0.5 rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
-          <Command className="h-3 w-3" />K
+        <kbd className="flex items-center gap-0.5 rounded-sm border border-border bg-muted px-1 py-0.5 text-[0.6rem] text-muted-foreground">
+          <Command className="h-2.5 w-2.5" />K
         </kbd>
       </button>
 
       {/* Right */}
-      <div className="flex items-center gap-1.5 sm:gap-2">
+      <div className="flex items-center gap-1.5">
         <div className="hidden md:block">
           <NetworkSwitcher />
         </div>
 
-        <button
-          onClick={onOpenCommandPalette}
-          className="grid h-9 w-9 place-items-center rounded-lg border border-border text-muted-foreground hover:bg-accent hover:text-foreground lg:hidden"
-          aria-label="Open command palette"
-        >
+        <button onClick={onOpenCommandPalette} className={cn(iconControl, 'lg:hidden')} aria-label="Open command palette">
           <Search className="h-4 w-4" />
         </button>
 
-        <Button asChild variant="ghost" size="sm" className="hidden text-muted-foreground hover:text-foreground md:inline-flex">
+        <Button asChild variant="ghost" size="sm" className="hidden h-8 font-mono text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground hover:text-foreground md:inline-flex">
           <Link href="/marketplace" title="Templates">
-            <FileCode className="h-4 w-4 md:mr-1.5" />
+            <FileCode className="h-3.5 w-3.5 md:mr-1" />
             <span className="hidden md:inline">Templates</span>
           </Link>
         </Button>
@@ -114,16 +119,18 @@ export function Navbar({
             {plan && (
               <Popover>
                 <PopoverTrigger asChild>
-                  <button title="Plan & usage" aria-label="Plan and usage">
-                    <Badge variant="outline" className={`gap-1 px-2.5 py-1 font-medium ${plan.className}`}>
-                      {plan.icon && <Crown className="h-3 w-3" />}
-                      {plan.label}
-                    </Badge>
+                  <button
+                    title="Plan & usage"
+                    aria-label="Plan and usage"
+                    className={cn('inline-flex h-8 items-center gap-1 rounded-md border px-2 font-mono text-[0.68rem] uppercase tracking-[0.14em] transition-colors duration-150', plan.className)}
+                  >
+                    {plan.icon && <Crown className="h-3 w-3" />}
+                    {plan.label}
                   </button>
                 </PopoverTrigger>
                 <PopoverContent align="end" className="w-64 p-3">
                   <div className="mb-3 flex items-center justify-between">
-                    <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Plan</span>
+                    <span className="eyebrow">Plan</span>
                     <span className="text-xs font-medium text-foreground">{plan.label}</span>
                   </div>
                   <UsageMeter
@@ -156,12 +163,12 @@ export function Navbar({
             <WalletWidget />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground" aria-label="Account menu">
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-md text-muted-foreground hover:text-foreground" aria-label="Account menu">
                   <Settings className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel className="truncate text-xs font-normal text-muted-foreground">
+                <DropdownMenuLabel className="truncate font-mono text-[0.68rem] font-normal text-muted-foreground">
                   {user.email}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -191,24 +198,26 @@ export function Navbar({
           </>
         ) : (
           onLoginClick && (
-            <Button size="sm" onClick={onLoginClick}>
+            <Button size="sm" className="lit h-8" onClick={onLoginClick}>
               <LogIn className="mr-1.5 h-4 w-4" /> Sign in
             </Button>
           )
         )}
 
         <button
-          className="grid h-9 w-9 place-items-center rounded-lg border border-border text-muted-foreground hover:bg-accent md:hidden"
+          className={cn(iconControl, 'md:hidden')}
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label="Menu"
+          aria-expanded={mobileOpen}
         >
-          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
         </button>
       </div>
 
       {mobileOpen && (
-        <div className="absolute inset-x-0 top-14 z-40 border-b border-border bg-background/95 p-3 backdrop-blur-xl md:hidden">
+        <div className="absolute inset-x-0 top-12 z-40 border-b border-border bg-background p-2 md:hidden">
           <div className="flex flex-col gap-1">
+            <div className="px-2 py-1.5"><NetworkSwitcher /></div>
             {user && (
               <Button asChild variant="ghost" className="justify-start">
                 <Link href="/billing" onClick={() => setMobileOpen(false)}>
@@ -253,15 +262,16 @@ function NavCredits({ initial }: { initial?: number }) {
     <Link
       href="/billing"
       title="AI credits — view billing & buy more"
-      className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition ${
+      className={cn(
+        'flex h-8 items-center gap-1.5 rounded-md border px-2 font-mono text-[0.68rem] transition-colors duration-150',
         low
           ? 'border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/20'
-          : 'border-border bg-card/60 text-foreground hover:border-brand/40 hover:bg-accent'
-      }`}
+          : 'border-border bg-card text-foreground hover:border-foreground/30 hover:bg-accent',
+      )}
     >
-      <Coins className={`h-3.5 w-3.5 ${low ? 'text-destructive' : 'text-brand'}`} />
+      <Coins className={cn('h-3.5 w-3.5', low ? 'text-destructive' : 'text-brand')} />
       <span className="font-mono-tnum">{(balance ?? 0).toLocaleString()}</span>
-      <span className="hidden text-muted-foreground sm:inline">credits</span>
+      <span className="hidden uppercase tracking-[0.12em] text-muted-foreground sm:inline">credits</span>
     </Link>
   )
 }
@@ -279,9 +289,9 @@ function UsageMeter({ label, count, limit, tint }: { label: string; count: numbe
           <span className="text-muted-foreground">/{unlimited ? '∞' : limit}</span>
         </span>
       </div>
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+      <div className="h-1 w-full overflow-hidden rounded-sm bg-muted">
         <div
-          className={`h-full rounded-full transition-all ${nearLimit ? 'bg-warning' : tint} ${unlimited ? 'opacity-40' : ''}`}
+          className={cn('h-full rounded-sm transition-[width] duration-300 ease-out', nearLimit ? 'bg-warning' : tint, unlimited && 'opacity-40')}
           style={{ width: `${pct}%` }}
         />
       </div>

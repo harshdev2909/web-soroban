@@ -10,7 +10,7 @@ import { useNetwork } from '@/contexts/NetworkContext'
 import { networkApi, type NetWalletInfo } from '@/lib/mainnetApi'
 import { getNetwork } from '@/lib/networks'
 import { toast } from 'sonner'
-import { Wallet, Copy, Check, Droplets, RefreshCw, AlertTriangle, Loader2, KeyRound, HelpCircle } from 'lucide-react'
+import { Copy, Check, Droplets, RefreshCw, AlertTriangle, Loader2, KeyRound, HelpCircle } from 'lucide-react'
 import { MainnetManual } from '@/components/network/mainnet-manual'
 import { ExportKeyModal } from '@/components/network/export-key-modal'
 
@@ -84,11 +84,11 @@ export function WalletWidget({ className }: { className?: string }) {
           variant="outline"
           size="sm"
           aria-label="Your wallet"
-          className={cn('h-9 gap-2 border-border bg-card/60 px-2.5 font-mono text-xs hover:bg-accent', className)}
+          className={cn('h-9 gap-2.5 rounded-md border-border bg-card px-2.5 font-mono text-xs hover:border-foreground/30 hover:bg-accent', className)}
         >
-          <span className="relative flex h-2 w-2">
-            <span className={cn('absolute inline-flex h-full w-full rounded-full opacity-60 animate-ping', cfg.dotClass)} />
-            <span className={cn('relative inline-flex h-2 w-2 rounded-full', cfg.dotClass)} />
+          <span className="relative flex h-1.5 w-1.5">
+            <span className={cn('absolute inline-flex h-full w-full rounded-full opacity-60 animate-ping motion-reduce:hidden', cfg.dotClass)} />
+            <span className={cn('relative inline-flex h-1.5 w-1.5 rounded-full', cfg.dotClass)} />
           </span>
           {status === 'loading' && !wallet ? (
             <Skeleton className="h-3.5 w-24" />
@@ -100,18 +100,13 @@ export function WalletWidget({ className }: { className?: string }) {
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent align="end" className="w-80 p-0">
+      <PopoverContent align="end" className="w-80 rounded-lg border-border bg-popover p-0 shadow-lg">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
-          <div className="flex items-center gap-2">
-            <span className="grid h-7 w-7 place-items-center rounded-md bg-brand/15 text-brand">
-              <Wallet className="h-4 w-4" />
-            </span>
-            <div className="leading-tight">
-              <p className="text-sm font-semibold">Your wallet</p>
-              <p className="text-[11px] text-muted-foreground">Same address on both networks</p>
-            </div>
+          <div className="leading-tight">
+            <p className="eyebrow">Server wallet</p>
+            <p className="mt-1.5 text-xs text-muted-foreground">Same address on both networks</p>
           </div>
-          <span className={cn('rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide', cfg.badgeClass)}>
+          <span className={cn('rounded-sm border px-1.5 py-0.5 font-mono text-[0.6rem] uppercase tracking-[0.14em]', cfg.badgeClass)}>
             {cfg.label}
           </span>
         </div>
@@ -132,30 +127,30 @@ export function WalletWidget({ className }: { className?: string }) {
           </div>
         ) : (
           <div className="px-4 py-4">
-            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Public key</p>
+            <p className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">Public key</p>
             <button
               onClick={onCopy}
-              className="group mt-1 flex w-full items-center justify-between gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-left transition-colors hover:bg-muted"
+              className="group mt-1.5 flex w-full items-center justify-between gap-2 rounded-md border border-border bg-card px-3 py-2 text-left transition-colors duration-150 hover:border-foreground/30"
             >
               <code className="truncate font-mono text-xs text-foreground">{wallet.publicKey}</code>
               {copied ? (
                 <Check className="h-3.5 w-3.5 shrink-0 text-success" />
               ) : (
-                <Copy className="h-3.5 w-3.5 shrink-0 text-muted-foreground group-hover:text-foreground" />
+                <Copy className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-colors duration-150 group-hover:text-foreground" />
               )}
             </button>
 
-            <div className="mt-4 flex items-end justify-between">
+            <div className="mt-4 flex items-end justify-between border-t border-border pt-4">
               <div>
-                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{cfg.label} balance</p>
-                <p className="font-mono-tnum text-2xl font-semibold leading-none">
-                  {formatXlm(wallet.balance)} <span className="text-sm font-normal text-muted-foreground">XLM</span>
+                <p className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">{cfg.label} balance</p>
+                <p className="font-mono-tnum mt-1.5 text-2xl font-medium leading-none tracking-[-0.02em]">
+                  {formatXlm(wallet.balance)} <span className="text-sm text-muted-foreground">XLM</span>
                 </p>
               </div>
               <span
                 className={cn(
-                  'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
-                  wallet.funded ? cfg.badgeClass : 'border border-warning/30 bg-warning/10 text-warning',
+                  'rounded-sm border px-1.5 py-0.5 font-mono text-[0.6rem] uppercase tracking-[0.14em]',
+                  wallet.funded ? cfg.badgeClass : 'border-warning/40 text-warning',
                 )}
               >
                 {wallet.funded ? 'Funded' : 'Unfunded'}
@@ -163,8 +158,8 @@ export function WalletWidget({ className }: { className?: string }) {
             </div>
 
             {lowBalance && (
-              <p className="mt-3 flex items-center gap-1.5 text-[11px] text-warning">
-                <AlertTriangle className="h-3 w-3" /> Low balance for {cfg.label} — top up before deploying.
+              <p className="mt-3 flex items-center gap-1.5 text-xs text-warning">
+                <AlertTriangle className="h-3 w-3" /> Low balance for {cfg.label}. Top up before deploying.
               </p>
             )}
 
@@ -172,7 +167,7 @@ export function WalletWidget({ className }: { className?: string }) {
               onClick={onFund}
               disabled={status === 'funding'}
               size="sm"
-              className="mt-4 w-full gap-2"
+              className={cn('mt-4 w-full gap-2', lowBalance && 'lit')}
               variant={lowBalance ? 'default' : 'outline'}
             >
               {status === 'funding' ? (
@@ -189,9 +184,9 @@ export function WalletWidget({ className }: { className?: string }) {
               <KeyRound className="h-3.5 w-3.5" /> Export private key
             </Button>
 
-            <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
+            <p className="mt-3 text-xs leading-5 text-muted-foreground">
               {network === 'mainnet'
-                ? 'On mainnet you sign in your connected wallet by default — your key is never sent to the server.'
+                ? 'On mainnet you sign in your connected wallet by default. Your key is never sent to the server.'
                 : 'Testnet deploys are signed for you. The secret key stays encrypted on the server.'}
             </p>
           </div>

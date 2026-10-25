@@ -2,77 +2,88 @@
 
 The visual system for the WebSoroban frontend. Read this before adding UI so new
 work stays consistent. Stack: **Next.js (App Router) + TypeScript + Tailwind +
-shadcn/ui**, icons from `lucide-react`, motion from `framer-motion`.
+shadcn/ui**, icons from `lucide-react`, motion from `framer-motion`, the hero
+sculpture in `three` through `@react-three/fiber`.
 
 ## Identity
 
-"Stellar product studio." Marketing uses a warm paper canvas, strong black
-structure, square geometry, and **one** confident electric-iris accent. The IDE
-keeps its near-black, dense developer-tool surface. Restraint over neon.
+"Observatory." One dark, warm near-black canvas for every surface: the landing
+story, the product pages, the docs, and the IDE. Warm-white ink, hairline
+structure, mono instrument labels, and **one** electric-iris accent used like
+light: the sculpture, active states, and the single primary action on screen.
+No gradients, no glass, no neon. Restraint over decoration; the art is the
+sculpture, the composition, and the motion.
 
 ## Color tokens
 
 All color is driven by CSS variables in `app/globals.css` (HSL channels) and
-exposed to Tailwind in `tailwind.config.ts`. **Never hardcode hex/slate colors** —
-use the semantic classes.
+exposed to Tailwind in `tailwind.config.ts`. `.dark` is the default and the only
+theme outside the docs; `:root` holds a warm-paper light theme for the docs
+toggle. **Never hardcode hex/slate colors** — use the semantic classes.
 
 | Token | Tailwind class | Role |
 | --- | --- | --- |
-| `--background` / `--foreground` | `bg-background` / `text-foreground` | Canvas + primary text |
-| `--card` / `--card-foreground` | `bg-card` | Panels, cards, surfaces |
+| `--background` / `--foreground` | `bg-background` / `text-foreground` | Canvas + primary ink |
+| `--card` / `--card-foreground` | `bg-card` | Panels, figures, rows on hover |
 | `--popover` | `bg-popover` | Menus, dialogs, palette |
-| `--muted` / `--muted-foreground` | `bg-muted` / `text-muted-foreground` | Secondary surfaces + text |
+| `--muted` / `--muted-foreground` | `bg-muted` / `text-muted-foreground` | Skeletons + secondary text |
 | `--accent` | `bg-accent` | Hover/active surface |
 | `--border` / `--input` | `border-border` | Hairlines, inputs |
-| `--primary` / `--brand` | `bg-primary` / `text-brand` | The electric-iris accent (same hue) |
-| `--cosmic` | `text-cosmic` | Secondary accent — **gradients only**, never solo CTAs |
+| `--primary` / `--brand` | `bg-primary` / `text-brand` | The iris accent (same hue); dark ink on top |
+| `--cosmic` | `text-cosmic` | Charts only |
 | `--success` / `--warning` / `--destructive` / `--info` | `text-success` … | Semantic status |
 | `--ring` | `ring-ring` | Focus ring (matches brand) |
 
-Semantic colors each pair with a muted badge variant via opacity (e.g.
-`bg-success/12 text-success`, `bg-warning/15 text-warning`). Use these for
-badges/pills — never a raw fill behind body text.
+Semantic colors pair with a tinted badge via opacity (`bg-success/10 text-success`,
+`bg-warning/15 text-warning`). Never a raw fill behind body text.
 
-Dark brand hue: `hsl(250 86% 66%)`. Light: `hsl(250 80% 58%)`. White text on the
-brand fill is used for primary buttons (large/medium semibold labels — meets AA at
-those sizes; body text never sits on raw brand).
-
-Helper classes: `.text-gradient-brand`, `.bg-space` (dot grid), `.grain`,
-`bg-radial-fade`, `bg-brand-gradient`, `.font-mono-tnum` (tabular addresses/numbers).
+Helper classes (`app/globals.css`): `.figure` (framed product surface) + `.ticks`
+(registration-mark corners), `.rule` (labelled hairline), `.eyebrow` (mono
+label), `.lead`, `.lit` (the one primary action), `.bg-space` (dot field),
+`.bg-blueprint` (hairline grid), `.grain`, `.font-mono-tnum`.
+`.text-gradient-brand`, `bg-brand-gradient`, and `bg-radial-fade` still exist
+for older call sites but render flat; do not add new uses.
 
 ## Typography
 
 Fonts are wired with `next/font` in `app/layout.tsx` and exposed as CSS vars:
 
-- **Display** — `Space_Grotesk` → `--font-display` → `font-display`. Headings only.
-- **Sans (UI)** — `GeistSans` → `--font-sans` → default `font-sans`.
-- **Mono** — `GeistMono` → `--font-mono` → `font-mono`. Code, addresses, IDs, metrics.
+- **Sans (UI + display)** — `GeistSans` → `--font-sans` → `font-sans`. Headings add
+  `font-display` (tight tracking, balanced wrap) at weight 500.
+- **Mono** — `GeistMono` → `--font-mono` → `font-mono`. Labels, eyebrows, indices,
+  addresses, amounts, code.
 
-Display scale lives in `tailwind.config.ts`: `text-display-lg`, `text-display`,
-`text-title` (all use tight tracking + clamp() for fluid sizing).
+Display scale lives in `tailwind.config.ts`: `text-display-xl`, `text-display-lg`,
+`text-display`, `text-title` (fluid `clamp()` with tight tracking). Three weights
+at most on a page: 400 body, 500 headings and labels, 600 the wordmark.
 
 ## Spacing, radius, elevation
 
 - Spacing/sizing: Tailwind scale only (`p-4`, `gap-2`, `h-9`). No magic px.
-- Radius: `--radius: 0.625rem`; use `rounded-lg/md/sm/xl` (derived).
-- Shadows: `shadow-xs/sm/md/lg` (tuned for a dark canvas) and `shadow-glow` /
-  `shadow-glow-sm` for the rare brand-lit element. Prefer borders + subtle shadow
-  over heavy glow.
+- Radius: `--radius: 0.5rem`; `rounded-md` for controls, `rounded-lg` for panels.
+  `rounded-full` only for status dots and avatars.
+- Elevation: hairlines over shadows. Panels are `border border-border bg-card`;
+  lists are `divide-y divide-border`; cells are `grid gap-px bg-border`. Reserve
+  `shadow-lg` for genuinely raised things (palette, popovers).
 
 ## Motion
 
 - `framer-motion` for orchestrated entrances; CSS transitions for hover/press.
-- Use the `Reveal` component (`components/reveal.tsx`) for scroll fade-up — it
-  already respects `prefers-reduced-motion` (renders static).
-- `app/globals.css` has a global reduced-motion guard. Keep animations purposeful;
-  durations 150–600ms, ease `[0.16, 1, 0.3, 1]`.
+- Springs, no bounce (`stiffness ~300, damping ~30`): entrances 300–600ms, updates
+  100–150ms, exits shorter than entries. Always name the transition properties
+  (never `transition-all`).
+- Use the `Reveal` component (`components/reveal.tsx`) for scroll entrances and
+  `Chapter`/`ChapterHeading` (`components/landing/chapter.tsx`) for sectioning.
+- The hero sculpture (`components/three/`) loads after idle, never on the server,
+  falls back to a static SVG without WebGL, and renders a single frame under
+  `prefers-reduced-motion`. `app/globals.css` has a global reduced-motion guard.
 
 ## Components & conventions
 
 - Build on **shadcn/ui** primitives (`components/ui/*`); they consume the tokens,
   so theming is automatic. Add new ones with `npx shadcn@latest add <name>`.
-- **Buttons:** `default` = brand primary (main CTA), `outline` = secondary action,
-  `ghost` = tertiary/icon. One primary action per view.
+- **Buttons:** `default` = iris primary (add `.lit` to the one main CTA), `outline`
+  = secondary action, `ghost` = tertiary/icon. One primary action per view.
 - **Badges/pills:** semantic tokens (`text-success`, `border-warning/30`, …).
 - **WalletWidget** (`components/wallet-widget.tsx`): the per-user testnet wallet —
   public key (copyable), balance, funded status, faucet. Never renders the secret.

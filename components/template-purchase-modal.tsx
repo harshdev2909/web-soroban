@@ -161,10 +161,10 @@ export function TemplatePurchaseModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[520px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[520px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <FileCode className="w-5 h-5" />
+          <DialogTitle className="flex items-center gap-2 font-display font-medium">
+            <FileCode className="h-4 w-4 text-muted-foreground" />
             Purchase: {template.name}
           </DialogTitle>
           <DialogDescription>
@@ -172,27 +172,25 @@ export function TemplatePurchaseModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="space-y-4 py-2">
           {paymentSuccess ? (
-            <div className="text-center space-y-6 py-6">
-              <div className="flex justify-center">
-                <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-full p-6">
-                  <CheckCircle2 className="w-16 h-16 text-white" />
-                </div>
+            <div className="space-y-5 py-4">
+              <span className="grid h-12 w-12 place-items-center rounded-md border border-success/40 text-success">
+                <CheckCircle2 className="h-6 w-6" />
+              </span>
+              <div>
+                <h3 className="font-display text-xl font-medium text-foreground">Template unlocked.</h3>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  You can now use <strong className="font-medium text-foreground">{template.name}</strong> in the IDE.
+                </p>
               </div>
-              <h3 className="text-xl font-bold text-green-600 dark:text-green-400">
-                Template unlocked!
-              </h3>
-              <p className="text-muted-foreground">
-                You can now use <strong>{template.name}</strong> in the IDE.
-              </p>
-              <Button onClick={handleClose} className="w-full" size="lg">
-                <CheckCircle2 className="w-4 h-4 mr-2" />
+              <Button onClick={handleClose} className="lit w-full" size="lg">
+                <CheckCircle2 className="mr-2 h-4 w-4" />
                 Continue
               </Button>
             </div>
           ) : sessionExpired ? (
-            <div className="space-y-4 py-4">
+            <div className="space-y-4 py-2">
               <Alert variant="destructive">
                 <AlertDescription>
                   Your session has expired. Please sign in again to purchase this template.
@@ -203,88 +201,92 @@ export function TemplatePurchaseModal({
                   setSessionExpired(false)
                   login()
                 }}
-                className="w-full"
+                className="lit w-full"
                 size="lg"
               >
-                <LogIn className="w-4 h-4 mr-2" />
+                <LogIn className="mr-2 h-4 w-4" />
                 Sign in again
               </Button>
-              <p className="text-xs text-center text-muted-foreground">
+              <p className="font-mono text-[0.68rem] text-muted-foreground">
                 You can close this and reopen the purchase after signing in.
               </p>
             </div>
           ) : !paymentInfo ? (
             <div className="space-y-4">
-              <div className="rounded-lg border p-4 bg-muted/50">
-                <p className="text-2xl font-bold">{template.price} XLM</p>
-                <p className="text-sm text-muted-foreground">{template.description}</p>
+              <div className="rounded-md border border-border bg-card p-4">
+                <p className="eyebrow">Price</p>
+                <p className="mt-2 font-mono-tnum text-2xl font-medium">{template.price} XLM</p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">{template.description}</p>
               </div>
               <Button
                 onClick={handleStartPurchase}
                 disabled={isLoading}
-                className="w-full"
+                className="lit w-full"
                 size="lg"
               >
                 {isLoading ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
-                  <Wallet className="w-4 h-4 mr-2" />
+                  <Wallet className="mr-2 h-4 w-4" />
                 )}
                 Get payment details
               </Button>
             </div>
           ) : (
             <div className="space-y-4">
-              <Alert>
-                <AlertDescription>
-                  <p className="font-semibold mb-2">Send {paymentInfo.amount} {paymentInfo.currency} to:</p>
-                  <p className="font-mono text-sm bg-muted p-2 rounded break-all mb-2">
-                    {paymentInfo.address}
-                  </p>
-                  <p>Memo: <strong className="font-mono">{paymentInfo.memo}</strong></p>
-                  <p className="text-xs text-muted-foreground">Network: {paymentInfo.network}</p>
-                </AlertDescription>
-              </Alert>
+              <dl className="rounded-md border border-border bg-card">
+                <div className="border-b border-border px-4 py-3">
+                  <dt className="eyebrow">Send</dt>
+                  <dd className="mt-1.5 font-mono-tnum text-lg font-medium">{paymentInfo.amount} {paymentInfo.currency}</dd>
+                </div>
+                <div className="border-b border-border px-4 py-3">
+                  <dt className="eyebrow">To</dt>
+                  <dd className="mt-1.5 break-all font-mono text-xs text-foreground">{paymentInfo.address}</dd>
+                </div>
+                <div className="grid grid-cols-2 gap-px bg-border">
+                  <div className="bg-card px-4 py-3">
+                    <dt className="eyebrow">Memo</dt>
+                    <dd className="mt-1.5 font-mono text-xs text-foreground">{paymentInfo.memo}</dd>
+                  </div>
+                  <div className="bg-card px-4 py-3">
+                    <dt className="eyebrow">Network</dt>
+                    <dd className="mt-1.5 font-mono text-xs text-foreground">{paymentInfo.network}</dd>
+                  </div>
+                </div>
+              </dl>
 
               <Button
                 onClick={handlePayWithWallet}
                 disabled={isPaying || isVerifying || !isInitialized}
-                className="w-full"
+                className="lit w-full"
                 size="lg"
               >
                 {isPaying ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Processing...
                   </>
                 ) : (
                   <>
-                    <Wallet className="w-4 h-4 mr-2" />
+                    <Wallet className="mr-2 h-4 w-4" />
                     {address ? 'Pay with Wallet' : 'Connect & Pay'}
                   </>
                 )}
               </Button>
 
               {address && (
-                <div className="flex items-center justify-between p-2 bg-muted rounded-lg">
-                  <span className="text-xs text-muted-foreground truncate">
+                <div className="flex items-center justify-between rounded-md border border-border px-3 py-2">
+                  <span className="truncate font-mono text-[0.68rem] text-muted-foreground">
                     From: {address.slice(0, 8)}...{address.slice(-4)}
                   </span>
-                  <Button variant="ghost" size="sm" onClick={() => disconnect()} className="h-6 px-2 text-xs">
-                    <X className="w-3 h-3 mr-1" />
+                  <Button variant="ghost" size="sm" onClick={() => disconnect()} className="h-7 px-2 font-mono text-[0.68rem] uppercase tracking-[0.14em]">
+                    <X className="mr-1 h-3 w-3" />
                     Disconnect
                   </Button>
                 </div>
               )}
 
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">Or paste tx hash</span>
-                </div>
-              </div>
+              <p className="rule">Or paste a transaction hash</p>
 
               <div className="space-y-2">
                 <Label htmlFor="txHash">Transaction hash</Label>
@@ -310,12 +312,13 @@ export function TemplatePurchaseModal({
                   Cancel
                 </Button>
                 <Button
+                  variant="outline"
                   onClick={() => handleVerify()}
                   disabled={isVerifying || isPaying || !txHash.trim()}
                 >
                   {isVerifying ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Verifying...
                     </>
                   ) : (

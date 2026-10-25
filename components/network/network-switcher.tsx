@@ -39,7 +39,7 @@ export function NetworkSwitcher() {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
-            className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${cfg.badgeClass}`}
+            className={`flex h-8 items-center gap-1.5 rounded-md border px-2.5 font-mono text-[0.68rem] uppercase tracking-[0.14em] transition-colors duration-150 ${cfg.badgeClass}`}
             title={`Network: ${cfg.label}`}
           >
             <span className={`h-1.5 w-1.5 rounded-full ${cfg.dotClass}`} />
@@ -48,16 +48,16 @@ export function NetworkSwitcher() {
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-52">
-          <div className="px-2 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">Network</div>
+          <div className="eyebrow px-2 py-1.5">Network</div>
           <DropdownMenuItem onClick={() => choose('testnet')} className="gap-2">
             <span className="h-1.5 w-1.5 rounded-full bg-success" />
             Testnet
-            <span className="ml-auto text-[10px] text-muted-foreground">free faucet</span>
+            <span className="ml-auto font-mono text-[0.62rem] text-muted-foreground">free faucet</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => choose('mainnet')} className="gap-2">
             <span className="h-1.5 w-1.5 rounded-full bg-warning" />
             Mainnet
-            <span className="ml-auto text-[10px] text-warning">real XLM</span>
+            <span className="ml-auto font-mono text-[0.62rem] text-warning">real XLM</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setManualOpen(true)} className="gap-2 text-muted-foreground">
             <Info className="h-3.5 w-3.5" /> Mainnet guide

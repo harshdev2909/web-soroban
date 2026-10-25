@@ -10,6 +10,7 @@ import type { Project, ProjectFile } from '@/lib/api'
 import { CopilotPanel } from './copilot-panel'
 import { SkillsPanel } from './skills-panel'
 import { CreditBadge } from '@/components/billing/credit-badge'
+import { cn } from '@/lib/utils'
 
 interface TabItem {
   id: string
@@ -63,30 +64,32 @@ export function CopilotTabs(props: CopilotTabsProps) {
   return (
     <div className="flex h-full flex-col bg-background">
       {/* Tab strip */}
-      <div className="flex items-center gap-1 border-b border-border/70 px-1.5 py-1">
-        <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto no-scrollbar">
+      <div className="flex h-9 shrink-0 items-center gap-1 border-b border-border px-1.5">
+        <div className="flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto no-scrollbar">
           {tabs.map((t) => {
             const isActive = t.id === activeId
             return (
               <div
                 key={t.id}
                 onClick={() => setActiveId(t.id)}
-                className={`group flex max-w-[150px] shrink-0 cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-xs transition ${
+                className={cn(
+                  'group flex h-7 max-w-[150px] shrink-0 cursor-pointer items-center gap-1.5 rounded-sm border px-2 text-xs transition-colors duration-150',
                   isActive
-                    ? 'border border-border/80 bg-card text-foreground shadow-sm'
-                    : 'border border-transparent text-muted-foreground hover:bg-accent/60 hover:text-foreground'
-                }`}
+                    ? 'border-border bg-card text-foreground'
+                    : 'border-transparent text-muted-foreground hover:bg-accent/60 hover:text-foreground',
+                )}
               >
-                <MessageSquare className={`h-3 w-3 shrink-0 ${isActive ? 'text-brand' : ''}`} />
+                <MessageSquare className={cn('h-3 w-3 shrink-0', isActive && 'text-brand')} />
                 <span className="truncate">{t.title || 'New chat'}</span>
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
                     closeTab(t.id)
                   }}
-                  className={`-mr-0.5 rounded p-0.5 transition hover:bg-muted ${
-                    isActive || tabs.length > 1 ? 'opacity-60 hover:opacity-100' : 'opacity-0 group-hover:opacity-60'
-                  }`}
+                  className={cn(
+                    '-mr-0.5 rounded-sm p-0.5 transition-[opacity,background-color] duration-150 hover:bg-muted',
+                    isActive || tabs.length > 1 ? 'opacity-60 hover:opacity-100' : 'opacity-0 group-hover:opacity-60',
+                  )}
                   title="Close tab"
                 >
                   <X className="h-3 w-3" />
@@ -96,7 +99,7 @@ export function CopilotTabs(props: CopilotTabsProps) {
           })}
           <button
             onClick={addTab}
-            className="shrink-0 rounded-md p-1.5 text-muted-foreground transition hover:bg-accent hover:text-foreground"
+            className="grid h-7 w-7 shrink-0 place-items-center rounded-sm text-muted-foreground transition-colors duration-150 hover:bg-accent hover:text-foreground"
             title="New chat tab"
           >
             <Plus className="h-3.5 w-3.5" />
@@ -105,9 +108,11 @@ export function CopilotTabs(props: CopilotTabsProps) {
         <CreditBadge compact />
         <button
           onClick={() => setShowSkills((v) => !v)}
-          className={`shrink-0 rounded-md p-1.5 transition hover:bg-accent hover:text-foreground ${
-            showSkills ? 'bg-accent text-brand' : 'text-muted-foreground'
-          }`}
+          aria-pressed={showSkills}
+          className={cn(
+            'grid h-7 w-7 shrink-0 place-items-center rounded-sm transition-colors duration-150 hover:bg-accent hover:text-foreground',
+            showSkills ? 'bg-accent text-brand' : 'text-muted-foreground',
+          )}
           title="Skills — Soroban knowledge packs"
         >
           <BookOpen className="h-3.5 w-3.5" />

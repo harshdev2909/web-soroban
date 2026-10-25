@@ -2,21 +2,13 @@ import type { Metadata } from 'next'
 import Script from 'next/script'
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
-import { Space_Grotesk } from 'next/font/google'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { WalletKitProvider } from '@/contexts/WalletKitContext'
 import { NetworkProvider } from '@/contexts/NetworkContext'
+import { MotionProvider } from '@/components/motion-provider'
 import { Toaster } from 'sonner'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
-
-// Geometric grotesk display face for headings
-const display = Space_Grotesk({
-  subsets: ['latin'],
-  weight: ['500', '600', '700'],
-  variable: '--font-display',
-  display: 'swap',
-})
 
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || ''
 
@@ -34,7 +26,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`dark ${GeistSans.variable} ${GeistMono.variable} ${display.variable}`}
+      className={`dark ${GeistSans.variable} ${GeistMono.variable}`}
       suppressHydrationWarning
     >
       <head>
@@ -42,6 +34,7 @@ export default function RootLayout({
 :root {
   --font-sans: ${GeistSans.style.fontFamily};
   --font-mono: ${GeistMono.style.fontFamily};
+  --font-display: ${GeistSans.style.fontFamily};
 }
         `}</style>
       </head>
@@ -64,11 +57,13 @@ export default function RootLayout({
             </Script>
           </>
         )}
-        <WalletKitProvider>
-          <NetworkProvider>
-            <AuthProvider>{children}</AuthProvider>
-          </NetworkProvider>
-        </WalletKitProvider>
+        <MotionProvider>
+          <WalletKitProvider>
+            <NetworkProvider>
+              <AuthProvider>{children}</AuthProvider>
+            </NetworkProvider>
+          </WalletKitProvider>
+        </MotionProvider>
         <Toaster
           theme="dark"
           position="top-center"

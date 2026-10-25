@@ -17,12 +17,12 @@ function CodeBlock({ code, lang }: { code: string; lang?: string }) {
     })
   }
   return (
-    <div className="group relative my-2 overflow-hidden rounded-lg border border-border bg-[#0b0e17]">
-      <div className="flex items-center justify-between border-b border-border/60 px-3 py-1.5">
-        <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{lang || 'code'}</span>
+    <div className="group relative my-2 overflow-hidden rounded-md border border-border bg-background">
+      <div className="flex items-center justify-between border-b border-border px-3 py-1.5">
+        <span className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">{lang || 'code'}</span>
         <button
           onClick={copy}
-          className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-muted-foreground opacity-0 transition hover:text-foreground group-hover:opacity-100"
+          className="flex items-center gap-1 rounded-sm px-1.5 py-0.5 font-mono text-[0.62rem] text-muted-foreground opacity-0 transition-[opacity,color] duration-150 hover:text-foreground group-hover:opacity-100 focus-visible:opacity-100"
         >
           {copied ? <Check className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3" />}
           {copied ? 'Copied' : 'Copy'}

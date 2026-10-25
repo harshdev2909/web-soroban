@@ -90,13 +90,18 @@ const config: Config = {
       fontFamily: {
         sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
         mono: ["var(--font-mono)", "ui-monospace", "SFMono-Regular", "monospace"],
-        display: ["var(--font-display)", "var(--font-sans)", "sans-serif"],
+        // Display headings are the UI sans at display sizes (see .font-display)
+        display: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       fontSize: {
         // Tight display scale for headings
-        "display-lg": ["clamp(2.75rem, 6vw, 5rem)", { lineHeight: "1.02", letterSpacing: "-0.03em" }],
-        "display": ["clamp(2.25rem, 4.5vw, 3.5rem)", { lineHeight: "1.05", letterSpacing: "-0.025em" }],
-        "title": ["clamp(1.5rem, 2.5vw, 2.25rem)", { lineHeight: "1.1", letterSpacing: "-0.02em" }],
+        "display-xl": ["clamp(3.5rem, 9vw, 8.5rem)", { lineHeight: "0.92", letterSpacing: "-0.05em" }],
+        "display-lg": ["clamp(2.75rem, 6vw, 5rem)", { lineHeight: "1.0", letterSpacing: "-0.04em" }],
+        "display": ["clamp(2.25rem, 4.5vw, 3.5rem)", { lineHeight: "1.04", letterSpacing: "-0.035em" }],
+        "title": ["clamp(1.5rem, 2.5vw, 2.25rem)", { lineHeight: "1.1", letterSpacing: "-0.025em" }],
+      },
+      letterSpacing: {
+        tightest: "-0.05em",
       },
       borderRadius: {
         xl: "calc(var(--radius) + 4px)",
@@ -116,10 +121,10 @@ const config: Config = {
       backgroundImage: {
         "grid-faint":
           "linear-gradient(to right, hsl(var(--border) / 0.6) 1px, transparent 1px), linear-gradient(to bottom, hsl(var(--border) / 0.6) 1px, transparent 1px)",
-        "brand-gradient":
-          "linear-gradient(135deg, hsl(var(--brand)) 0%, hsl(var(--cosmic)) 100%)",
+        // Kept for older call sites; both now resolve to a flat brand fill or a faint vignette.
+        "brand-gradient": "linear-gradient(hsl(var(--brand)), hsl(var(--brand)))",
         "radial-fade":
-          "radial-gradient(60% 60% at 50% 0%, hsl(var(--brand) / 0.16) 0%, transparent 70%)",
+          "radial-gradient(70% 50% at 50% 0%, hsl(var(--brand) / 0.07) 0%, transparent 70%)",
       },
       keyframes: {
         "accordion-down": {

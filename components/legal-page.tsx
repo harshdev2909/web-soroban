@@ -18,25 +18,34 @@ interface LegalPageProps {
 export function LegalPage({ title, effective, updated, intro, children }: LegalPageProps) {
   const [loginOpen, setLoginOpen] = useState(false)
   return (
-    <div className="relative min-h-screen bg-background">
-      <div className="pointer-events-none fixed inset-0 -z-10 bg-radial-fade" aria-hidden />
+    <div className="relative min-h-screen bg-background text-foreground">
       <PlaygroundNavbar onSignInClick={() => setLoginOpen(true)} />
 
-      <main className="mx-auto max-w-3xl px-4 sm:px-6">
-        <section className="pb-8 pt-12 sm:pt-16">
-          <Reveal>
-            <p className="eyebrow">Legal</p>
-            <h1 className="mt-3 font-display text-title font-semibold tracking-tight">{title}</h1>
-            <div className="mt-2 space-y-0.5 font-mono text-xs text-muted-foreground">
-              {effective && <p>Effective date · {effective}</p>}
-              <p>Last updated · {updated}</p>
+      <main className="mx-auto max-w-7xl px-6">
+        <section className="border-b border-border pb-12 pt-14 lg:pt-20">
+          <Reveal className="grid gap-8 lg:grid-cols-12 lg:items-end">
+            <div className="lg:col-span-7">
+              <p className="eyebrow">Legal</p>
+              <h1 className="mt-4 font-display text-display-lg font-medium">{title}</h1>
+              <dl className="mt-6 flex flex-wrap gap-x-6 gap-y-1 font-mono text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground">
+                {effective && (
+                  <div className="flex gap-2">
+                    <dt>Effective</dt>
+                    <dd className="text-foreground">{effective}</dd>
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <dt>Updated</dt>
+                  <dd className="text-foreground">{updated}</dd>
+                </div>
+              </dl>
             </div>
-            <p className="lead mt-4 max-w-2xl text-[15px]">{intro}</p>
+            <p className="lead text-base lg:col-span-5">{intro}</p>
           </Reveal>
         </section>
 
         <Reveal delay={0.06}>
-          <div className="space-y-9 pb-20">{children}</div>
+          <div className="max-w-3xl pb-24 pt-4">{children}</div>
         </Reveal>
       </main>
 
@@ -49,20 +58,20 @@ export function LegalPage({ title, effective, updated, intro, children }: LegalP
 /** A numbered/titled section block. */
 export function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section>
-      <h2 className="font-display text-lg font-semibold tracking-tight text-foreground">{title}</h2>
-      <div className="mt-3 space-y-3 text-[15px] leading-relaxed text-foreground/75">{children}</div>
+    <section className="border-b border-border py-8 last:border-b-0">
+      <h2 className="font-display text-xl font-medium text-foreground">{title}</h2>
+      <div className="mt-4 space-y-3 text-[15px] leading-7 text-muted-foreground">{children}</div>
     </section>
   )
 }
 
-/** A bulleted list with branded markers. */
+/** A bulleted list with hairline markers. */
 export function Bullets({ items }: { items: ReactNode[] }) {
   return (
     <ul className="space-y-2">
       {items.map((item, i) => (
-        <li key={i} className="flex gap-2.5">
-          <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand/60" aria-hidden />
+        <li key={i} className="flex gap-3">
+          <span className="mt-[0.8rem] h-px w-3 shrink-0 bg-muted-foreground/60" aria-hidden />
           <span>{item}</span>
         </li>
       ))}
@@ -79,12 +88,12 @@ export function LegalTable({
   rows: ReactNode[][]
 }) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-border">
+    <div className="overflow-x-auto rounded-md border border-border">
       <table className="w-full min-w-[32rem] text-left text-sm">
         <thead>
-          <tr className="border-b border-border bg-muted/30">
+          <tr className="border-b border-border bg-card">
             {headers.map((h) => (
-              <th key={h} className="px-3 py-2.5 font-medium text-foreground">
+              <th key={h} className="px-3 py-2.5 font-mono text-[0.62rem] font-normal uppercase tracking-[0.14em] text-muted-foreground">
                 {h}
               </th>
             ))}
@@ -92,9 +101,9 @@ export function LegalTable({
         </thead>
         <tbody>
           {rows.map((row, i) => (
-            <tr key={i} className="border-b border-border/60 last:border-0">
+            <tr key={i} className="border-b border-border last:border-0">
               {row.map((cell, j) => (
-                <td key={j} className="px-3 py-2.5 align-top text-foreground/75">
+                <td key={j} className="px-3 py-2.5 align-top text-muted-foreground">
                   {cell}
                 </td>
               ))}

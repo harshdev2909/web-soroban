@@ -1,4 +1,4 @@
-/* 
+/*
  * INVITE MODAL - COMMENTED OUT
  * This component has been disabled as the invite system has been replaced
  * with premium gifting functionality. Users should now use Google OAuth to sign in.
@@ -38,7 +38,6 @@ import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
 
 interface InviteModalProps {
@@ -60,30 +59,29 @@ export function InviteModal({ open, onOpenChange }: InviteModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <AlertCircle className="w-5 h-5 text-yellow-500" />
-            Invite System Disabled
+      <DialogContent className="rounded-lg border-border bg-popover shadow-lg sm:max-w-[460px]">
+        <DialogHeader className="text-left">
+          <p className="eyebrow">Sign in</p>
+          <DialogTitle className="flex items-center gap-2 font-display text-xl font-medium">
+            <AlertCircle className="h-4 w-4 text-warning" aria-hidden="true" />
+            Invite system disabled
           </DialogTitle>
           <DialogDescription>
-            The invite system has been replaced with Google authentication
+            The invite system has been replaced with Google authentication.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-4">
-          <Alert>
-            <AlertDescription>
-              Please use Google OAuth to sign in. The invite code system is no longer available.
-            </AlertDescription>
-          </Alert>
+        <div className="space-y-4 pt-2">
+          <p className="rounded-md border border-border border-l-2 border-l-warning bg-card px-4 py-3 text-sm leading-6 text-muted-foreground">
+            Please use Google OAuth to sign in. The invite code system is no longer available.
+          </p>
           <Button
             onClick={() => {
               onOpenChange(false)
               router.push('/ide')
             }}
-            className="w-full"
+            className="lit w-full"
           >
-            Go to Login
+            Go to login
           </Button>
         </div>
       </DialogContent>

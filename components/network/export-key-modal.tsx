@@ -71,10 +71,10 @@ export function ExportKeyModal({ open, onOpenChange }: { open: boolean; onOpenCh
       <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <span className="grid h-7 w-7 place-items-center rounded-md bg-destructive/15 text-destructive">
+            <span className="grid h-7 w-7 place-items-center rounded-sm border border-destructive/40 bg-destructive/10 text-destructive">
               <AlertTriangle className="h-4 w-4" />
             </span>
-            Export private key
+            <span className="font-display font-medium">Export private key</span>
           </DialogTitle>
           <DialogDescription>
             Anyone with this key controls your funds on <span className="text-foreground">mainnet and testnet</span>. Store
@@ -102,8 +102,8 @@ export function ExportKeyModal({ open, onOpenChange }: { open: boolean; onOpenCh
           </div>
         ) : (
           <div className="space-y-3 py-1">
-            <div className="rounded-md border border-destructive/30 bg-destructive/5 p-2.5">
-              <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Secret key (S…)</div>
+            <div className="rounded-sm border border-destructive/30 bg-destructive/5 p-2.5">
+              <div className="eyebrow">Secret key (S…)</div>
               <div className="mt-1 break-all font-mono text-[12px] text-foreground">{secret}</div>
             </div>
             <div className="flex gap-2">

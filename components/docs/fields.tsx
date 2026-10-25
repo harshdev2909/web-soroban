@@ -20,25 +20,15 @@ function Field({
   children?: ReactNode
 }) {
   return (
-    <div className="border-b border-border py-3 last:border-b-0">
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[0.8125rem] font-medium text-foreground">
-          {name}
-        </code>
-        {type && <span className="font-mono text-xs text-muted-foreground">{type}</span>}
-        {required && (
-          <span className="rounded-full border border-destructive/30 bg-destructive/10 px-1.5 py-0.5 text-[10px] font-medium text-destructive">
-            required
-          </span>
-        )}
-        {badge && (
-          <span className="rounded-full border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-            {badge}
-          </span>
-        )}
+    <div className="border-b border-border py-3.5 last:border-b-0">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[0.75rem]">
+        <code className="text-[0.8125rem] font-medium text-foreground">{name}</code>
+        {type && <span className="text-muted-foreground">{type}</span>}
+        {required && <span className="uppercase tracking-[0.14em] text-destructive">required</span>}
+        {badge && <span className="rounded-sm border border-border px-1.5 py-0.5 text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">{badge}</span>}
       </div>
       {children && (
-        <div className="mt-1.5 text-sm leading-relaxed text-muted-foreground [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-[0.85em]">
+        <div className="mt-1.5 text-sm leading-relaxed text-muted-foreground [&_code]:rounded-sm [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-[0.85em]">
           {children}
         </div>
       )}
@@ -47,7 +37,7 @@ function Field({
 }
 
 function FieldGroup({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn("my-5 rounded-lg border border-border bg-card/40 px-4", className)}>{children}</div>
+  return <div className={cn("my-5 rounded-md border border-border bg-card px-4", className)}>{children}</div>
 }
 
 export function ParamField(props: Parameters<typeof Field>[0]) {

@@ -1,6 +1,6 @@
 'use client'
 
-import { motion, useReducedMotion, type Variants } from 'framer-motion'
+import { motion, type Variants } from 'framer-motion'
 import type { ReactNode } from 'react'
 
 const variants: Variants = {
@@ -9,7 +9,9 @@ const variants: Variants = {
 }
 
 /**
- * Scroll-triggered fade-up. Respects prefers-reduced-motion (renders static).
+ * Scroll-triggered fade-up. The app-wide `MotionProvider` turns the slide off
+ * for visitors who prefer reduced motion, so the markup never branches on the
+ * preference and hydration stays exact.
  */
 export function Reveal({
   children,
@@ -22,13 +24,7 @@ export function Reveal({
   className?: string
   as?: 'div' | 'section' | 'li' | 'span'
 }) {
-  const reduce = useReducedMotion()
   const MotionTag = motion[as] as typeof motion.div
-
-  if (reduce) {
-    const Tag = as as any
-    return <Tag className={className}>{children}</Tag>
-  }
 
   return (
     <MotionTag

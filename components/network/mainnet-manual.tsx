@@ -84,10 +84,10 @@ export function MainnetManual({
         {/* Header */}
         <DialogHeader className="space-y-3 border-b border-border px-6 pb-5 pt-6">
           <DialogTitle className="flex items-center gap-3">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-warning/15 text-warning ring-1 ring-inset ring-warning/25">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-sm border border-warning/40 bg-warning/10 text-warning">
               <AlertTriangle className="h-4 w-4" />
             </span>
-            <span className="font-display text-lg font-semibold tracking-tight">Switching to Mainnet</span>
+            <span className="font-display text-lg font-medium">Switching to Mainnet</span>
           </DialogTitle>
           <p className="text-sm leading-relaxed text-muted-foreground">
             The live Stellar network. Transactions cost <span className="font-medium text-foreground">real XLM</span> and
@@ -98,13 +98,13 @@ export function MainnetManual({
 
         <div className="space-y-4 px-6 py-5">
           {/* Fund */}
-          <section className="rounded-xl border border-border bg-card/40 p-4">
+          <section className="rounded-md border border-border bg-card/40 p-4">
             <SectionLabel icon={Wallet}>Fund your wallet</SectionLabel>
             <ol className="mt-3 space-y-2.5">
               {FUND_STEPS.map((s, i) => (
                 <li key={i} className="flex gap-3">
-                  <span className="mt-px grid h-5 w-5 shrink-0 place-items-center rounded-full bg-brand/12 font-mono text-[10px] font-semibold text-brand">
-                    {i + 1}
+                  <span className="mt-px font-mono text-[0.62rem] tracking-[0.14em] text-muted-foreground">
+                    0{i + 1}
                   </span>
                   <p className="text-[13px] leading-relaxed text-muted-foreground">{s}</p>
                 </li>
@@ -113,26 +113,26 @@ export function MainnetManual({
 
             <div className="mt-4">
               <div className="flex items-baseline justify-between">
-                <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Deposit address</span>
-                <span className="text-[10px] text-muted-foreground/70">same on testnet &amp; mainnet</span>
+                <span className="eyebrow">Deposit address</span>
+                <span className="font-mono text-[0.62rem] text-muted-foreground/70">same on testnet &amp; mainnet</span>
               </div>
               <button
                 onClick={copyAddr}
-                className="group mt-1.5 flex w-full items-center gap-2 rounded-lg border border-border bg-background/60 px-3 py-2.5 text-left transition-colors hover:border-brand/40 hover:bg-accent"
+                className="group mt-1.5 flex w-full items-center gap-2 rounded-sm border border-border bg-background px-3 py-2.5 text-left transition-colors duration-150 hover:border-foreground/30 hover:bg-accent"
                 title="Copy address"
               >
                 <span className="min-w-0 flex-1 break-all font-mono text-[12px] text-foreground/90">{address || 'Loading…'}</span>
                 {copied ? (
                   <Check className="h-4 w-4 shrink-0 text-success" />
                 ) : (
-                  <Copy className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
+                  <Copy className="h-4 w-4 shrink-0 text-muted-foreground transition-colors duration-150 group-hover:text-foreground" />
                 )}
               </button>
             </div>
           </section>
 
           {/* Custody */}
-          <section className="rounded-xl border border-border bg-card/40 p-4">
+          <section className="rounded-md border border-border bg-card/40 p-4">
             <SectionLabel icon={ShieldCheck}>Who signs your transactions</SectionLabel>
             <div className="mt-3 grid gap-2.5">
               {/* Connected */}
@@ -141,16 +141,16 @@ export function MainnetManual({
                 disabled={savingMode}
                 aria-pressed={mode === 'connected'}
                 className={cn(
-                  'rounded-lg border p-3 text-left transition',
+                  'rounded-md border p-3 text-left transition-colors duration-150',
                   mode === 'connected'
-                    ? 'border-brand/60 bg-brand/[0.06] ring-1 ring-inset ring-brand/30'
-                    : 'border-border hover:border-brand/40 hover:bg-accent/40',
+                    ? 'border-brand/60 bg-brand/[0.06]'
+                    : 'border-border hover:border-foreground/30 hover:bg-accent/40',
                 )}
               >
                 <div className="flex items-center gap-2">
                   <Wallet className="h-4 w-4 text-brand" />
                   <span className="text-[13px] font-medium text-foreground">Connect an external wallet</span>
-                  <span className="ml-auto rounded-full bg-brand/15 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-brand">
+                  <span className="ml-auto rounded-sm border border-brand/30 bg-brand/10 px-1.5 py-0.5 font-mono text-[0.6rem] uppercase tracking-[0.12em] text-brand">
                     Recommended
                   </span>
                 </div>
@@ -172,9 +172,9 @@ export function MainnetManual({
                 }}
                 aria-pressed={mode === 'custodial'}
                 className={cn(
-                  'cursor-pointer rounded-lg border p-3 text-left transition focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-warning/50',
+                  'cursor-pointer rounded-md border p-3 text-left transition-colors duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-warning/50',
                   mode === 'custodial'
-                    ? 'border-warning/60 bg-warning/[0.06] ring-1 ring-inset ring-warning/30'
+                    ? 'border-warning/60 bg-warning/[0.06]'
                     : 'border-border hover:border-warning/40 hover:bg-accent/40',
                 )}
               >
@@ -195,7 +195,7 @@ export function MainnetManual({
                   />
                   <span
                     className={cn(
-                      'mt-px grid h-4 w-4 shrink-0 place-items-center rounded-[5px] border transition-colors peer-focus-visible:ring-1 peer-focus-visible:ring-warning/50',
+                      'mt-px grid h-4 w-4 shrink-0 place-items-center rounded-sm border transition-colors duration-150 peer-focus-visible:ring-1 peer-focus-visible:ring-warning/50',
                       ack ? 'border-warning bg-warning/20' : 'border-border bg-background',
                     )}
                   >
@@ -214,9 +214,9 @@ export function MainnetManual({
           </section>
 
           {/* Costs */}
-          <section className="rounded-xl border border-border bg-card/40 p-4">
+          <section className="rounded-md border border-border bg-card/40 p-4">
             <SectionLabel icon={Wallet}>What it costs</SectionLabel>
-            <dl className="mt-2 divide-y divide-border/60">
+            <dl className="mt-2 divide-y divide-border">
               {COSTS.map(([k, v]) => (
                 <div key={k} className="flex items-center justify-between gap-3 py-2 text-[12px]">
                   <dt className="font-medium text-foreground">{k}</dt>
@@ -233,14 +233,14 @@ export function MainnetManual({
             href="https://stellar.expert/explorer/public"
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-1 text-[11px] text-muted-foreground transition-colors hover:text-brand"
+            className="inline-flex items-center gap-1 font-mono text-[0.68rem] text-muted-foreground transition-colors duration-150 hover:text-foreground"
           >
             View on stellar.expert <ExternalLink className="h-3 w-3" />
           </a>
           <div className="flex gap-2">
             <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
             <Button
-              className="gap-1.5 bg-warning text-background hover:bg-warning/90"
+              className="gap-1.5 bg-warning text-warning-foreground hover:bg-warning/90"
               onClick={() => {
                 onProceed?.()
                 onOpenChange(false)

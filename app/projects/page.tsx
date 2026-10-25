@@ -232,16 +232,16 @@ export default function ProjectsPage() {
   if (!authLoading && !isAuthenticated) {
     return (
       <div className="relative grid min-h-screen place-items-center overflow-hidden bg-background px-6">
-        <div className="pointer-events-none absolute inset-0 bg-radial-fade" aria-hidden />
         <div className="pointer-events-none absolute inset-0 grain" aria-hidden />
-        <div className="relative max-w-md text-center">
+        <div className="figure ticks relative w-full max-w-md p-8">
           <LoginModal open={loginOpen} onOpenChange={setLoginOpen} />
-          <NovaMark className="mx-auto mb-6 h-14 w-14" />
-          <h1 className="font-display text-3xl font-semibold tracking-tight">
-            Sign in to <span className="text-gradient-brand">WebSoroban</span>
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">Sign in to see your projects and open the IDE.</p>
-          <Button className="mt-6" onClick={() => setLoginOpen(true)}>
+          <div className="flex items-center justify-between">
+            <NovaMark className="h-9 w-9 rounded-md" />
+            <span className="eyebrow">Projects</span>
+          </div>
+          <h1 className="mt-8 font-display text-title font-medium">Sign in to WebSoroban.</h1>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">Sign in to see your projects and open the IDE.</p>
+          <Button className="lit mt-6" onClick={() => setLoginOpen(true)}>
             Sign in to continue
           </Button>
         </div>
@@ -252,100 +252,104 @@ export default function ProjectsPage() {
   return (
     <MotionConfig reducedMotion="user">
       <div className="relative flex min-h-screen flex-col bg-background text-foreground">
-        <div className="pointer-events-none fixed inset-0 -z-10 bg-radial-fade" aria-hidden />
         <CatalogTopBar user={user} />
 
         <div className="flex flex-1">
           <CatalogRail view={view} onSelect={setView} />
 
-          <main className="min-w-0 flex-1 px-4 pb-24 pt-6 sm:px-6 md:pb-10 lg:px-10">
+          <main className="min-w-0 flex-1 px-4 pb-24 pt-8 sm:px-6 md:pb-10 lg:px-10">
             <div className="mx-auto w-full max-w-[1200px]">
             {view === 'templates' && <TemplatesView onUse={(id) => startCreate(id)} />}
 
             {view === 'projects' && (
               <>
-                {/* Search */}
-                <div className="relative">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Search projects by name…"
-                    aria-label="Search projects"
-                    className="h-11 pl-9 pr-9"
-                  />
-                  {query && (
-                    <button
-                      onClick={() => setQuery('')}
-                      aria-label="Clear search"
-                      className="absolute right-2.5 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
+                {/* Heading */}
+                <div className="flex flex-col gap-6 border-b border-border pb-6 lg:flex-row lg:items-end lg:justify-between">
+                  <div>
+                    <p className="eyebrow">Projects</p>
+                    <h1 className="mt-3 flex items-baseline gap-3 font-display text-display font-medium">
+                      Your workspace.
+                      {status === 'ready' && (
+                        <span className="font-mono text-sm tracking-[0.14em] text-muted-foreground">{String(projects.length).padStart(2, '0')}</span>
+                      )}
+                    </h1>
+                  </div>
 
-                {/* Heading + controls */}
-                <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-baseline gap-2">
-                    <h1 className="font-display text-title font-semibold tracking-tight">Projects</h1>
-                    {status === 'ready' && (
-                      <span className="font-mono text-sm text-muted-foreground">{projects.length}</span>
+                  {/* Search */}
+                  <div className="relative w-full lg:max-w-sm">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      placeholder="Search projects by name…"
+                      aria-label="Search projects"
+                      className="h-11 border-border bg-card pl-9 pr-9 font-mono text-sm"
+                    />
+                    {query && (
+                      <button
+                        onClick={() => setQuery('')}
+                        aria-label="Clear search"
+                        className="absolute right-2.5 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-md text-muted-foreground transition-colors duration-150 hover:bg-accent hover:text-foreground"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
                     )}
                   </div>
+                </div>
 
-                  <div className="flex flex-wrap items-center gap-2">
-                    {/* network filter chips */}
-                    <div className="flex items-center gap-1 rounded-lg border border-border bg-card/40 p-0.5">
-                      {NETWORK_FILTERS.map((f) => (
-                        <button
-                          key={f.value}
-                          onClick={() => setNetworkFilter(f.value)}
-                          className={cn(
-                            'rounded-md px-2.5 py-1 text-xs font-medium transition-colors',
-                            networkFilter === f.value
-                              ? 'bg-accent text-foreground'
-                              : 'text-muted-foreground hover:text-foreground',
-                          )}
-                        >
-                          {f.label}
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* favorites toggle */}
-                    <button
-                      onClick={() => setFavoritesOnly((v) => !v)}
-                      aria-pressed={favoritesOnly}
-                      className={cn(
-                        'flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors',
-                        favoritesOnly
-                          ? 'border-warning/40 bg-warning/10 text-warning'
-                          : 'border-border bg-card/40 text-muted-foreground hover:text-foreground',
-                      )}
-                    >
-                      <Star className={cn('h-3.5 w-3.5', favoritesOnly && 'fill-warning')} /> Favorites
-                    </button>
-
-                    {/* sort */}
-                    <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
-                      <SelectTrigger className="h-9 w-[150px] gap-1.5 bg-card/40 text-xs" aria-label="Sort projects">
-                        <ArrowDownUp className="h-3.5 w-3.5 text-muted-foreground" />
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {SORT_OPTIONS.map((o) => (
-                          <SelectItem key={o.value} value={o.value} className="text-xs">
-                            {o.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                {/* Controls */}
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  {/* network filter chips */}
+                  <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5" role="group" aria-label="Filter by network">
+                    {NETWORK_FILTERS.map((f) => (
+                      <button
+                        key={f.value}
+                        onClick={() => setNetworkFilter(f.value)}
+                        aria-pressed={networkFilter === f.value}
+                        className={cn(
+                          'min-h-8 rounded-sm px-2.5 font-mono text-[0.68rem] uppercase tracking-[0.14em] transition-colors duration-150',
+                          networkFilter === f.value
+                            ? 'bg-accent text-foreground'
+                            : 'text-muted-foreground hover:text-foreground',
+                        )}
+                      >
+                        {f.label}
+                      </button>
+                    ))}
                   </div>
+
+                  {/* favorites toggle */}
+                  <button
+                    onClick={() => setFavoritesOnly((v) => !v)}
+                    aria-pressed={favoritesOnly}
+                    className={cn(
+                      'flex min-h-9 items-center gap-1.5 rounded-md border px-2.5 font-mono text-[0.68rem] uppercase tracking-[0.14em] transition-colors duration-150',
+                      favoritesOnly
+                        ? 'border-warning/40 bg-warning/10 text-warning'
+                        : 'border-border text-muted-foreground hover:text-foreground',
+                    )}
+                  >
+                    <Star className={cn('h-3.5 w-3.5', favoritesOnly && 'fill-warning')} /> Favorites
+                  </button>
+
+                  {/* sort */}
+                  <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
+                    <SelectTrigger className="h-9 w-[160px] gap-1.5 rounded-md border-border bg-transparent font-mono text-[0.68rem] uppercase tracking-[0.14em]" aria-label="Sort projects">
+                      <ArrowDownUp className="h-3.5 w-3.5 text-muted-foreground" />
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SORT_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={o.value} className="text-xs">
+                          {o.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {/* Grid / states */}
-                <div className="mt-5">
+                <div className="mt-6">
                   {status === 'error' ? (
                     <CatalogErrorState onRetry={loadProjects} />
                   ) : status === 'ready' && projects.length === 0 ? (
@@ -410,7 +414,7 @@ export default function ProjectsPage() {
         <Dialog open={!!renameTarget} onOpenChange={(o) => !o && setRenameTarget(null)}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle className="font-display">Rename project</DialogTitle>
+              <DialogTitle className="font-display font-medium">Rename project</DialogTitle>
             </DialogHeader>
             <div className="space-y-2 py-1">
               <Label htmlFor="rename-input">Project name</Label>
@@ -428,7 +432,7 @@ export default function ProjectsPage() {
               <Button variant="outline" onClick={() => setRenameTarget(null)}>
                 Cancel
               </Button>
-              <Button onClick={submitRename} disabled={!renameValue.trim()}>
+              <Button onClick={submitRename} disabled={!renameValue.trim()} className="lit">
                 Save
               </Button>
             </DialogFooter>

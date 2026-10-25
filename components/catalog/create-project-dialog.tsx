@@ -117,7 +117,7 @@ export function CreateProjectDialog({
       <Dialog open={open} onOpenChange={(o) => !creating && onOpenChange(o)}>
         <DialogContent className="flex max-h-[88vh] flex-col gap-0 p-0 sm:max-w-xl">
           <DialogHeader className="border-b border-border px-6 py-4">
-            <DialogTitle className="font-display">New project</DialogTitle>
+            <DialogTitle className="font-display font-medium">New project</DialogTitle>
             <DialogDescription>Name it, choose a starting point, and pick a default network.</DialogDescription>
           </DialogHeader>
 
@@ -151,14 +151,14 @@ export function CreateProjectDialog({
             {mode === 'template' && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-muted-foreground">Choose a template</span>
-                  <Link href="/marketplace" target="_blank" className="text-xs text-brand hover:underline">
+                  <span className="eyebrow">Choose a template</span>
+                  <Link href="/marketplace" target="_blank" className="font-mono text-[0.68rem] uppercase tracking-[0.14em] text-brand hover:underline">
                     Browse all
                   </Link>
                 </div>
                 <div className="grid max-h-64 grid-cols-1 gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
                   {loadingTemplates
-                    ? Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-[68px] rounded-lg" />)
+                    ? Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-[68px] rounded-md" />)
                     : templates.map((t) => {
                         const locked = isLocked(t)
                         const selected = selectedTemplate === t.id
@@ -168,11 +168,11 @@ export function CreateProjectDialog({
                             disabled={locked}
                             onClick={() => setSelectedTemplate(t.id)}
                             className={cn(
-                              'flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition-colors',
+                              'flex flex-col items-start gap-1 rounded-md border p-3 text-left transition-colors duration-150',
                               locked && 'cursor-not-allowed opacity-60',
                               selected
-                                ? 'border-brand/60 bg-brand/10'
-                                : 'border-border bg-card/40 hover:border-brand/30 hover:bg-accent',
+                                ? 'border-brand bg-brand/10'
+                                : 'border-border bg-card hover:border-foreground/30',
                             )}
                           >
                             <div className="flex w-full items-center gap-1.5">
@@ -180,7 +180,7 @@ export function CreateProjectDialog({
                               {locked && <Lock className="ml-auto h-3.5 w-3.5 shrink-0 text-warning" />}
                             </div>
                             <p className="line-clamp-2 text-[11px] text-muted-foreground">{t.description}</p>
-                            <span className="mt-0.5 rounded border border-border px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+                            <span className="mt-0.5 rounded-sm border border-border px-1.5 py-0.5 font-mono text-[0.6rem] uppercase tracking-[0.14em] text-muted-foreground">
                               {t.category}
                             </span>
                           </button>
@@ -191,7 +191,7 @@ export function CreateProjectDialog({
             )}
 
             {mode === 'wizard' && (
-              <div className="rounded-lg border border-dashed border-border bg-card/40 p-4 text-sm text-muted-foreground">
+              <div className="rounded-md border border-dashed border-border p-4 text-sm leading-6 text-muted-foreground">
                 The contract customiser lets you pick a type (Fungible, NFT, Stablecoin, Counter), toggle features, and
                 preview the code live before scaffolding. Continue to open it.
               </div>
@@ -209,13 +209,13 @@ export function CreateProjectDialog({
                       key={id}
                       onClick={() => setLocalNetwork(id)}
                       className={cn(
-                        'flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm transition-colors',
-                        active ? cn(cfg.badgeClass, 'font-medium') : 'border-border bg-card/40 text-muted-foreground hover:bg-accent',
+                        'flex items-center gap-2 rounded-md border px-3 py-2.5 text-sm transition-colors duration-150',
+                        active ? cn(cfg.badgeClass, 'font-medium') : 'border-border bg-card text-muted-foreground hover:border-foreground/30',
                       )}
                     >
                       <span className={cn('h-2 w-2 rounded-full', cfg.dotClass)} />
                       {cfg.label}
-                      <span className="ml-auto text-[10px] uppercase tracking-wide opacity-70">
+                      <span className="ml-auto font-mono text-[0.6rem] uppercase tracking-[0.14em] opacity-70">
                         {id === 'testnet' ? 'free faucet' : 'real XLM'}
                       </span>
                     </button>
@@ -223,7 +223,7 @@ export function CreateProjectDialog({
                 })}
               </div>
               {network === 'mainnet' && (
-                <p className="text-[11px] text-warning">Mainnet uses real XLM — you confirm every deploy in the IDE.</p>
+                <p className="font-mono text-[0.68rem] text-warning">Mainnet uses real XLM. You confirm every deploy in the IDE.</p>
               )}
             </div>
           </div>
@@ -232,7 +232,7 @@ export function CreateProjectDialog({
             <Button variant="outline" onClick={() => onOpenChange(false)} disabled={creating}>
               Cancel
             </Button>
-            <Button onClick={handleCreate} disabled={!canConfirm || creating} className="gap-2">
+            <Button onClick={handleCreate} disabled={!canConfirm || creating} className="lit gap-2">
               {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : mode === 'wizard' ? <Wand2 className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
               {creating ? 'Creating…' : confirmLabel}
             </Button>
@@ -272,15 +272,15 @@ function ModeButton({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        'flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition-colors',
-        active ? 'border-brand/60 bg-brand/10' : 'border-border bg-card/40 hover:border-brand/30 hover:bg-accent',
+        'flex flex-col items-start gap-1 rounded-md border p-3 text-left transition-colors duration-150',
+        active ? 'border-brand bg-brand/10' : 'border-border bg-card hover:border-foreground/30',
       )}
     >
-      <span className={cn('grid h-7 w-7 place-items-center rounded-md', active ? 'bg-brand/15 text-brand' : 'bg-muted text-muted-foreground')}>
+      <span className={cn('grid h-7 w-7 place-items-center rounded-sm border', active ? 'border-brand/50 text-brand' : 'border-border text-muted-foreground')}>
         {icon}
       </span>
       <span className="text-sm font-medium text-foreground">{label}</span>
-      <span className="text-[11px] text-muted-foreground">{sub}</span>
+      <span className="font-mono text-[0.62rem] uppercase tracking-[0.12em] text-muted-foreground">{sub}</span>
     </button>
   )
 }

@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { ArrowRight, ArrowUpRight } from 'lucide-react'
 import { IdeaBankFrame } from '@/components/ideas/frame'
 import { SubmitIdeaButton } from '@/components/ideas/submit-idea'
+import { Index } from '@/components/landing/chapter'
 import { ideas, themeLabel, themes, type ThemeId } from '@/lib/ideas'
 import { getCommunityIdeas } from '@/lib/ideasApi'
 
@@ -27,33 +28,35 @@ export default async function IdeasPage({
 
   return (
     <IdeaBankFrame>
-      <section className="relative overflow-hidden border-b border-border/60">
-        <div className="pointer-events-none absolute inset-0 bg-radial-fade" aria-hidden />
+      <section className="relative overflow-hidden border-b border-border">
         <div className="pointer-events-none absolute inset-0 grain" aria-hidden />
-        <div className="relative mx-auto max-w-6xl px-6 pb-14 pt-16 md:pb-20 md:pt-20">
-          <p className="eyebrow text-brand">Idea Bank</p>
-          <h1 className="font-display mt-4 max-w-3xl text-display font-semibold">
-            Build something worth shipping.
-          </h1>
-          <p className="lead mt-5 max-w-2xl text-base md:text-lg">
-            Ideas from the Stellar community for wallets, payments, and markets, each with the goal,
-            the features, and why it matters for Stellar. Have one of your own? Submit it, and the
-            team will feature the ones worth building.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <SubmitIdeaButton variant="solid" />
-            <Link
-              href="/docs"
-              className="inline-flex h-11 items-center justify-center rounded-full border border-border px-5 text-sm font-semibold text-foreground transition-colors duration-200 hover:border-brand/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-            >
-              Read the Soroban docs
-            </Link>
+        <div className="relative mx-auto grid max-w-7xl gap-8 px-6 pb-12 pt-14 lg:grid-cols-12 lg:items-end lg:pt-20">
+          <div className="lg:col-span-7">
+            <p className="eyebrow">Idea Bank · {String(ideas.length).padStart(2, '0')} briefs</p>
+            <h1 className="mt-4 font-display text-display-lg font-medium">Build something worth shipping.</h1>
+          </div>
+          <div className="lg:col-span-5">
+            <p className="lead text-base">
+              Ideas from the Stellar community for wallets, payments, and markets, each with the goal, the
+              features, and why it matters for Stellar. Have one of your own? Submit it, and the team will
+              feature the ones worth building.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <SubmitIdeaButton variant="solid" />
+              <Link
+                href="/docs"
+                className="inline-flex min-h-10 items-center gap-2 rounded-md px-2 font-mono text-[0.72rem] uppercase tracking-[0.16em] text-muted-foreground transition-colors duration-150 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              >
+                Read the Soroban docs
+                <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-6 py-10 md:py-14">
-        <div className="flex gap-2 overflow-x-auto pb-2" role="tablist" aria-label="Idea themes">
+      <section className="mx-auto max-w-7xl px-6 py-10 lg:py-14">
+        <div className="flex gap-1.5 overflow-x-auto pb-2" role="tablist" aria-label="Idea themes">
           {themes.map((item) => {
             const selected = item.id === theme
             return (
@@ -64,8 +67,8 @@ export default async function IdeasPage({
                 aria-selected={selected}
                 className={
                   selected
-                    ? 'inline-flex h-10 shrink-0 items-center rounded-full bg-brand px-4 text-sm font-semibold text-brand-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background'
-                    : 'inline-flex h-10 shrink-0 items-center rounded-full border border-border px-4 text-sm text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background'
+                    ? 'inline-flex min-h-9 shrink-0 items-center rounded-sm border border-foreground bg-card px-3 font-mono text-[0.68rem] uppercase tracking-[0.14em] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background'
+                    : 'inline-flex min-h-9 shrink-0 items-center rounded-sm border border-border px-3 font-mono text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors duration-150 hover:border-foreground/30 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background'
                 }
               >
                 {item.label}
@@ -76,14 +79,15 @@ export default async function IdeasPage({
         <p className="mt-4 max-w-2xl text-sm text-muted-foreground">{activeTheme.blurb}</p>
 
         {visible.length === 0 ? (
-          <div className="mt-10 rounded-xl border border-border bg-card px-6 py-12 text-center">
-            <p className="font-display text-lg font-semibold">No briefs in this theme</p>
+          <div className="figure mt-10 max-w-xl p-6">
+            <p className="eyebrow">Empty theme</p>
+            <p className="mt-4 font-display text-xl font-medium">No briefs in this theme.</p>
             <p className="mt-2 text-sm text-muted-foreground">The bank has {ideas.length} ideas across {themes.length - 1} themes.</p>
             <Link
               href="/ideas"
-              className="mt-5 inline-flex h-10 items-center rounded-full bg-brand px-4 text-sm font-semibold text-brand-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="mt-5 inline-flex min-h-10 items-center gap-2 rounded-md border border-border px-4 text-sm font-medium text-foreground transition-colors duration-150 hover:border-foreground/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
-              Show all ideas
+              Show all ideas <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
         ) : (
@@ -92,16 +96,16 @@ export default async function IdeasPage({
               <li key={idea.slug}>
                 <Link
                   href={`/ideas/${idea.slug}`}
-                  className="group flex h-full flex-col rounded-xl border border-border bg-card p-5 transition-[border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-brand/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:hover:translate-y-0"
+                  className="group flex h-full flex-col rounded-lg border border-border bg-card p-5 transition-colors duration-150 hover:border-foreground/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 >
                   <div className="flex items-start justify-between gap-4">
-                    <span className="font-mono text-sm text-brand">{idea.number}</span>
-                    <span className="rounded-full border border-border bg-muted px-2.5 py-1 text-[11px] font-medium text-foreground">
+                    <Index className="text-brand">{idea.number}</Index>
+                    <span className="rounded-sm border border-border px-1.5 py-0.5 font-mono text-[0.6rem] uppercase tracking-[0.14em] text-muted-foreground">
                       {idea.category}
                     </span>
                   </div>
-                  <h2 className="font-display mt-4 text-xl font-semibold tracking-tight">{idea.title}</h2>
-                  <p className="mt-1 text-xs text-muted-foreground">
+                  <h2 className="mt-6 font-display text-xl font-medium">{idea.title}</h2>
+                  <p className="mt-1 font-mono text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground">
                     {themeLabel(idea.theme)}
                     {idea.by && (
                       <>
@@ -110,17 +114,17 @@ export default async function IdeasPage({
                       </>
                     )}
                   </p>
-                  <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">{idea.tagline}</p>
+                  <p className="mt-3 flex-1 text-sm leading-6 text-muted-foreground">{idea.tagline}</p>
                   <ul className="mt-4 flex flex-wrap gap-1.5">
                     {idea.buildWith.slice(0, 4).map((tool) => (
-                      <li key={tool} className="rounded-md border border-border bg-background px-2 py-1 font-mono text-[11px] text-muted-foreground">
+                      <li key={tool} className="rounded-sm border border-border px-1.5 py-0.5 font-mono text-[0.62rem] text-muted-foreground">
                         {tool}
                       </li>
                     ))}
                   </ul>
-                  <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-foreground">
+                  <span className="mt-5 inline-flex items-center gap-1.5 border-t border-border pt-4 font-mono text-[0.68rem] uppercase tracking-[0.14em] text-foreground">
                     Open the brief
-                    <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+                    <ArrowRight className="h-3.5 w-3.5 transition-transform duration-150 group-hover:translate-x-0.5 motion-reduce:transform-none" />
                   </span>
                 </Link>
               </li>
@@ -130,31 +134,36 @@ export default async function IdeasPage({
       </section>
 
       {community.length > 0 && (
-        <section className="border-t border-border/60">
-          <div className="mx-auto max-w-6xl px-6 py-10 md:py-14">
-            <p className="eyebrow text-brand">From the community</p>
-            <h2 className="font-display mt-3 text-2xl font-semibold tracking-tight">Ideas people sent in</h2>
-            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-              Submitted through the Idea Bank and picked by the WebSoroban team.
-            </p>
+        <section className="border-t border-border">
+          <div className="mx-auto max-w-7xl px-6 py-10 lg:py-14">
+            <div className="grid gap-6 lg:grid-cols-12 lg:items-end">
+              <div className="lg:col-span-7">
+                <p className="eyebrow">From the community</p>
+                <h2 className="mt-4 font-display text-display font-medium">Ideas people sent in.</h2>
+              </div>
+              <p className="text-sm leading-6 text-muted-foreground lg:col-span-5">
+                Submitted through the Idea Bank and picked by the WebSoroban team.
+              </p>
+            </div>
             <ul className="mt-8 grid gap-4 md:grid-cols-2">
-              {community.map((idea) => (
-                <li key={idea.id} className="flex flex-col rounded-xl border border-border bg-card p-5">
-                  <h3 className="font-display text-xl font-semibold tracking-tight">{idea.title}</h3>
-                  <p className="mt-1 text-xs text-muted-foreground">by {idea.author}</p>
-                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{idea.goal}</p>
+              {community.map((idea, index) => (
+                <li key={idea.id} className="flex flex-col rounded-lg border border-border bg-card p-5">
+                  <Index>{String(index + 1).padStart(2, '0')}</Index>
+                  <h3 className="mt-4 font-display text-xl font-medium">{idea.title}</h3>
+                  <p className="mt-1 font-mono text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground">by {idea.author}</p>
+                  <p className="mt-3 text-sm leading-6 text-muted-foreground">{idea.goal}</p>
                   <details className="group mt-4 flex-1">
-                    <summary className="inline-flex h-10 cursor-pointer list-none items-center gap-1.5 text-sm font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                    <summary className="inline-flex min-h-10 cursor-pointer list-none items-center gap-1.5 font-mono text-[0.68rem] uppercase tracking-[0.14em] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                       Read the idea
-                      <ArrowRight className="h-4 w-4 transition-transform duration-200 group-open:rotate-90" />
+                      <ArrowRight className="h-3.5 w-3.5 transition-transform duration-150 group-open:rotate-90 motion-reduce:transform-none" />
                     </summary>
-                    <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
+                    <p className="mt-2 whitespace-pre-line text-sm leading-6 text-muted-foreground">
                       {idea.description}
                     </p>
                     {idea.alignment && (
                       <>
-                        <p className="mt-4 text-sm font-medium">Stellar alignment</p>
-                        <p className="mt-1 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
+                        <p className="eyebrow mt-4">Stellar alignment</p>
+                        <p className="mt-2 whitespace-pre-line text-sm leading-6 text-muted-foreground">
                           {idea.alignment}
                         </p>
                       </>
@@ -165,10 +174,10 @@ export default async function IdeasPage({
                       href={idea.link}
                       target="_blank"
                       rel="noreferrer nofollow ugc"
-                      className="mt-4 inline-flex h-10 items-center gap-1.5 self-start text-sm text-muted-foreground transition-colors duration-200 hover:text-foreground"
+                      className="mt-4 inline-flex min-h-10 items-center gap-1.5 self-start font-mono text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors duration-150 hover:text-foreground"
                     >
                       Discussion
-                      <ArrowUpRight className="h-4 w-4" />
+                      <ArrowUpRight className="h-3.5 w-3.5" />
                     </a>
                   )}
                 </li>
@@ -178,11 +187,12 @@ export default async function IdeasPage({
         </section>
       )}
 
-      <section className="border-t border-border/60">
-        <div className="mx-auto flex max-w-6xl flex-col items-start gap-5 px-6 py-12 md:flex-row md:items-center md:justify-between">
+      <section className="border-t border-border">
+        <div className="mx-auto flex max-w-7xl flex-col items-start gap-5 px-6 py-12 md:flex-row md:items-center md:justify-between">
           <div>
-            <h2 className="font-display text-xl font-semibold">Got an idea for Stellar?</h2>
-            <p className="mt-1 max-w-xl text-sm text-muted-foreground">
+            <p className="eyebrow">Submit</p>
+            <h2 className="mt-3 font-display text-xl font-medium">Got an idea for Stellar?</h2>
+            <p className="mt-1 max-w-xl text-sm leading-6 text-muted-foreground">
               Send it in. The team reviews every submission and features the ones worth building, with credit to you.
             </p>
           </div>

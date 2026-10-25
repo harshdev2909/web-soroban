@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { motion, useReducedMotion } from "framer-motion"
 import {
   ChevronRight,
   File,
@@ -24,6 +25,7 @@ import {
 
 import { ProjectFile } from "@/lib/api"
 import { buildFileTree, pathOf, type TreeNode } from "@/lib/paths"
+import { cn } from "@/lib/utils"
 
 interface FileTreeProps {
   files: ProjectFile[]
@@ -39,12 +41,16 @@ interface FileTreeProps {
 }
 
 function fileIcon(name: string, active: boolean) {
-  const base = "h-4 w-4 shrink-0"
+  const base = "h-3.5 w-3.5 shrink-0"
   if (name.endsWith(".rs")) return <FileCode2 className={`${base} ${active ? "text-brand" : "text-brand/70"}`} />
   if (name.endsWith(".toml")) return <FileCog className={`${base} text-warning/70`} />
   if (name.endsWith(".json")) return <FileJson className={`${base} text-info/70`} />
   return <File className={`${base} text-muted-foreground`} />
 }
+
+// Quiet row actions: revealed on hover or focus, explicit transition properties.
+const rowAction =
+  "grid h-6 w-6 place-items-center rounded-sm text-muted-foreground opacity-0 transition-[opacity,background-color,color] duration-150 group-hover:opacity-100 focus-visible:opacity-100"
 
 // Props each row needs — a subset of FileTreeProps plus tree-walk state. Note it
 // intentionally omits `files`/`extraFolders` (only the top-level component needs
@@ -93,7 +99,7 @@ export function FileTree(props: FileTreeProps) {
   }
 
   return (
-    <div className="space-y-0.5" role="tree" aria-label="Project files">
+    <div className="space-y-px" role="tree" aria-label="Project files">
       {tree.map((node) => (
         <TreeRow key={node.path} node={node} depth={0} {...rowProps} />
       ))}
@@ -115,6 +121,7 @@ function TreeRow({
   onDeleteFolder,
   canDelete,
 }: RowProps) {
+  const reduce = useReducedMotion()
   const indent = { paddingLeft: `${depth * 12 + 8}px` }
   const isOpen = !collapsed.has(node.path)
 
@@ -126,16 +133,16 @@ function TreeRow({
             <button
               onClick={() => toggle(node.path)}
               style={indent}
-              className="group flex w-full items-center gap-1.5 rounded-md py-1.5 pr-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              className="group flex h-7 w-full items-center gap-1.5 rounded-sm pr-1.5 text-muted-foreground transition-colors duration-150 hover:bg-accent hover:text-foreground"
               title={node.path}
             >
-              <ChevronRight className={`h-3.5 w-3.5 shrink-0 transition-transform ${isOpen ? "rotate-90" : ""}`} />
+              <ChevronRight className={cn("h-3 w-3 shrink-0 transition-transform duration-150", isOpen && "rotate-90")} />
               {isOpen ? (
-                <FolderOpen className="h-4 w-4 shrink-0 text-warning/80" />
+                <FolderOpen className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
               ) : (
-                <Folder className="h-4 w-4 shrink-0 text-warning/80" />
+                <Folder className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
               )}
-              <span className="truncate font-mono text-[13px]">{node.name}</span>
+              <span className="truncate font-mono text-[0.75rem]">{node.name}</span>
             </button>
           </ContextMenuTrigger>
           <ContextMenuContent className="w-44">
@@ -187,20 +194,32 @@ function TreeRow({
       <ContextMenuTrigger asChild>
         <div
           style={indent}
-          className={`group relative flex cursor-pointer items-center justify-between rounded-md py-1.5 pr-1.5 text-sm transition-colors ${
-            isActive ? "bg-brand/10 text-foreground" : "text-muted-foreground hover:bg-accent hover:text-foreground"
-          }`}
+          className={cn(
+            "group relative flex h-7 cursor-pointer items-center justify-between rounded-sm pr-1 transition-colors duration-150",
+            isActive ? "bg-accent text-foreground" : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
+          )}
         >
-          {isActive && <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-brand" />}
+          {isActive && (
+            reduce ? (
+              <span className="absolute inset-y-1 left-0 w-0.5 bg-brand" aria-hidden />
+            ) : (
+              <motion.span
+                layoutId="file-active-bar"
+                className="absolute inset-y-1 left-0 w-0.5 bg-brand"
+                transition={{ type: "spring", stiffness: 500, damping: 40 }}
+                aria-hidden
+              />
+            )
+          )}
           <button onClick={() => onSelect(file)} className="flex min-w-0 flex-1 items-center gap-1.5 text-left">
-            <span className="w-3.5 shrink-0" />
+            <span className="w-3 shrink-0" />
             {fileIcon(node.name, isActive)}
-            <span className="truncate font-mono text-[13px]">{node.name}</span>
+            <span className="truncate font-mono text-[0.75rem]">{node.name}</span>
           </button>
-          <div className="ml-2 flex shrink-0 items-center gap-1">
+          <div className="ml-1 flex shrink-0 items-center">
             <button
               onClick={(e) => { e.stopPropagation(); onRename(file) }}
-              className="rounded p-1 text-muted-foreground opacity-0 transition-all hover:bg-accent hover:text-foreground group-hover:opacity-100 focus-visible:opacity-100"
+              className={cn(rowAction, "hover:bg-background hover:text-foreground")}
               title={`Rename ${node.name}`}
               aria-label={`Rename ${node.name}`}
             >
@@ -209,7 +228,7 @@ function TreeRow({
             {canDelete && (
               <button
                 onClick={(e) => { e.stopPropagation(); onDelete(node.path) }}
-                className="rounded p-1 text-muted-foreground opacity-0 transition-all hover:bg-destructive/15 hover:text-destructive group-hover:opacity-100 focus-visible:opacity-100"
+                className={cn(rowAction, "hover:bg-destructive/15 hover:text-destructive")}
                 title={`Delete ${node.path}`}
                 aria-label={`Delete ${node.path}`}
               >

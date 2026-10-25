@@ -229,9 +229,9 @@ export function ProjectSelector({ currentProject, onProjectSelect, onProjectCrea
           <Button
             variant="outline"
             size="sm"
-            className="max-w-[220px] gap-2 border-brand/40 bg-brand/10 font-medium text-brand hover:border-brand/60 hover:bg-brand/15"
+            className="h-8 max-w-[220px] gap-2 border-border bg-card font-mono text-[0.72rem] text-foreground hover:border-foreground/30 hover:bg-accent"
           >
-            <FolderClosed className="h-4 w-4 shrink-0" />
+            <FolderClosed className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
             <span className="truncate">{currentProject?.name || "Select Project"}</span>
           </Button>
         </DialogTrigger>
@@ -286,9 +286,9 @@ export function ProjectSelector({ currentProject, onProjectSelect, onProjectCrea
                   size="sm"
                   variant="outline"
                   disabled={isCreating}
-                  className="flex-1 gap-2 border-brand/40 bg-brand/10 text-brand hover:border-brand/60 hover:bg-brand/15"
+                  className="flex-1 gap-2"
                 >
-                  <Wand2 className="h-4 w-4" />
+                  <Wand2 className="h-4 w-4 text-brand" />
                   Customise a contract
                 </Button>
               </div>
@@ -305,7 +305,7 @@ export function ProjectSelector({ currentProject, onProjectSelect, onProjectCrea
                   {userTemplates.map((t) => (
                     <div
                       key={t.id}
-                      className="group flex items-center gap-2 rounded-lg border border-border bg-card/40 p-2.5 transition-colors hover:border-border hover:bg-accent"
+                      className="group flex items-center gap-2 rounded-md border border-border bg-card/40 p-2.5 transition-colors duration-150 hover:bg-accent"
                     >
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-sm font-medium text-foreground/90">{t.name}</div>
@@ -353,7 +353,7 @@ export function ProjectSelector({ currentProject, onProjectSelect, onProjectCrea
                   <Loader2 className="h-4 w-4 animate-spin" /> Loading projects…
                 </div>
               ) : projects.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-border py-8 text-center text-sm text-muted-foreground">
+                <div className="rounded-md border border-dashed border-border py-8 text-center font-mono text-xs text-muted-foreground">
                   No projects yet — create one above.
                 </div>
               ) : (
@@ -374,14 +374,14 @@ export function ProjectSelector({ currentProject, onProjectSelect, onProjectCrea
                           setIsDialogOpen(false)
                         }
                       }}
-                      className={`group relative flex cursor-pointer items-center justify-between gap-3 rounded-lg border p-3 transition-colors ${
+                      className={`group relative flex cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-md border p-3 transition-colors duration-150 ${
                         isActive
-                          ? "border-brand/50 bg-brand/10"
-                          : "border-border bg-card/40 hover:border-border hover:bg-accent"
+                          ? "border-border bg-accent"
+                          : "border-border bg-card/40 hover:bg-accent"
                       }`}
                     >
                       {isActive && (
-                        <span className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-brand" aria-hidden />
+                        <span className="absolute inset-y-0 left-0 w-0.5 bg-brand" aria-hidden />
                       )}
                       <div className="min-w-0 flex-1">
                         <div className={`truncate font-medium ${isActive ? "text-foreground" : "text-foreground/90"}`}>
@@ -400,7 +400,7 @@ export function ProjectSelector({ currentProject, onProjectSelect, onProjectCrea
                           e.stopPropagation()
                           handleDeleteProject(project._id)
                         }}
-                        className="h-8 w-8 shrink-0 text-muted-foreground opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
+                        className="h-8 w-8 shrink-0 text-muted-foreground opacity-0 transition-[opacity,background-color,color] duration-150 hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
                         title="Delete project"
                         aria-label={`Delete ${project.name}`}
                       >

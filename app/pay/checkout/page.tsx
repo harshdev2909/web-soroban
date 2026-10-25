@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { NovaMark } from '@/components/nova-mark'
 import { StellarMark } from '@/components/stellar-mark'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Index } from '@/components/landing/chapter'
 import { useWalletKit } from '@/contexts/WalletKitContext'
 import {
   PAY_API_BASE_URL, PayWallet, TrustlineReport, isPayNetwork, payApi, payNetwork, payRpcUrl,
@@ -67,6 +68,8 @@ function paymentRequiredError(httpClient: x402HTTPClient, response: Response): s
 function priceNumber(price: string) {
   return Number(price.replace(/^\$/, ''))
 }
+
+const STEPS = ['Connect', 'Approve', 'Receipt']
 
 function CheckoutContent() {
   const searchParams = useSearchParams()
@@ -215,88 +218,111 @@ function CheckoutContent() {
 
   const checkoutWallets = wallets.filter((wallet) => wallet.checkout)
   const amount = challenge?.price.replace(/^\$/, '')
+  // Which step of the flow the visitor is on, for the mono stepper.
+  const stage = receipt ? 2 : address ? 1 : 0
 
   return (
-    <main className="nova-landing min-h-screen bg-background text-foreground">
-      <header className="px-4 pt-4 sm:px-6">
-        <nav className="mx-auto flex h-14 max-w-5xl items-center justify-between rounded-2xl border border-border/70 bg-background/85 px-4 shadow-sm backdrop-blur-xl">
-          <Link href="/pay" className="flex min-h-10 items-center gap-2.5 rounded-xl focus-visible:ring-2 focus-visible:ring-ring">
-            <NovaMark className="h-8 w-8 rounded-xl" />
-            <span className="font-display text-lg font-semibold">WebSoroban Pay</span>
+    <main className="relative min-h-screen bg-background text-foreground">
+      <header className="border-b border-border">
+        <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6" aria-label="Checkout">
+          <Link href="/pay" className="flex min-h-10 items-center gap-3 rounded-md pr-2 focus-visible:ring-2 focus-visible:ring-ring">
+            <NovaMark className="h-7 w-7 rounded-md" />
+            <span className="font-display text-[0.95rem] font-semibold tracking-[-0.02em]">WebSoroban Pay</span>
           </Link>
-          <span className="hidden items-center gap-2 font-mono text-xs text-muted-foreground sm:flex"><span className={cn('h-2 w-2 rounded-full', network.dotClass)} /> Stellar {network.label}</span>
+          <span className="flex items-center gap-2 font-mono text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground"><span className={cn('h-1.5 w-1.5 rounded-full', network.dotClass)} aria-hidden="true" /> Stellar {network.label}</span>
         </nav>
       </header>
 
-      <section className="relative mx-auto max-w-5xl px-4 py-14 sm:px-6 sm:py-20">
-        <div className="nova-grid pointer-events-none absolute inset-0 opacity-50" aria-hidden="true" />
-        <div className="relative grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
-          <div className="pt-3">
-            <Link href="/pay" className="inline-flex min-h-10 items-center gap-2 rounded-xl text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"><ArrowLeft className="h-4 w-4" /> Payment studio</Link>
-            <p className="mt-8 font-mono text-[0.68rem] uppercase tracking-[0.18em] text-brand">Browser checkout</p>
-            <h1 className="mt-4 max-w-xl font-display text-5xl font-semibold leading-[0.98] tracking-tight sm:text-6xl">Approve once. Unlock instantly.</h1>
-            <p className="mt-6 max-w-lg text-base leading-7 text-muted-foreground">Connect a Stellar wallet, review the exact charge, and approve a single-use authorization. Your secret key never leaves the wallet.</p>
-            <div className="mt-8 grid grid-cols-3 gap-3 border-t border-border/70 pt-5 font-mono text-[0.62rem] text-muted-foreground">
-              <span>01 · Connect</span><span>02 · Approve</span><span>03 · Receipt</span>
-            </div>
+      <section className="relative mx-auto max-w-6xl px-6 py-14 sm:py-20">
+        <div className="pointer-events-none absolute inset-0 grain" aria-hidden="true" />
+        <div className="relative grid gap-10 lg:grid-cols-12 lg:items-start">
+          <div className="lg:col-span-5">
+            <Link href="/pay" className="group inline-flex min-h-10 items-center gap-2 rounded-md font-mono text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors duration-150 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"><ArrowLeft className="h-3.5 w-3.5 transition-transform duration-150 motion-safe:group-hover:-translate-x-0.5" aria-hidden="true" /> Payment studio</Link>
+            <p className="mt-10 font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-muted-foreground">Browser checkout</p>
+            <h1 className="mt-6 font-display text-display font-medium">Approve once. Unlock instantly.</h1>
+            <p className="lead mt-6 text-base">Connect a Stellar wallet, review the exact charge, and approve a single-use authorization. Your secret key never leaves the wallet.</p>
+            <ol className="mt-10 border-t border-border" aria-label="Checkout steps">
+              {STEPS.map((step, index) => (
+                <li key={step} className={cn('flex items-center gap-4 border-b border-border py-3 text-sm transition-colors duration-150', index <= stage ? 'text-foreground' : 'text-muted-foreground')} aria-current={index === stage ? 'step' : undefined}>
+                  <Index className={index <= stage ? 'text-foreground' : undefined}>0{index + 1}</Index>
+                  {step}
+                  {index < stage ? <CheckCircle2 className="ml-auto h-3.5 w-3.5 text-success" aria-hidden="true" /> : index === stage ? <span className="blink ml-auto h-1.5 w-1.5 rounded-full bg-brand" aria-hidden="true" /> : null}
+                </li>
+              ))}
+            </ol>
           </div>
 
-          <div className="overflow-hidden rounded-3xl border border-foreground/15 bg-card shadow-xl">
-            <div className="flex items-center justify-between gap-4 border-b border-border px-5 py-4 sm:px-7">
-              <div className="flex items-center gap-3"><span className="grid h-11 w-11 place-items-center rounded-2xl bg-brand text-brand-foreground"><StellarMark className="h-6 w-7" /></span><div><p className="font-display font-semibold">Stellar payment</p><p className="font-mono text-[0.62rem] text-muted-foreground">x402 · exact scheme</p></div></div>
-              <span className={cn('rounded-full border px-3 py-1.5 font-mono text-[0.62rem] uppercase', network.badgeClass)}>{network.label}</span>
+          <div className="figure ticks overflow-hidden lg:col-span-7">
+            <div className="flex items-center justify-between gap-4 border-b border-border px-5 py-4 sm:px-6">
+              <div className="flex items-center gap-3">
+                <span className="grid h-10 w-10 place-items-center rounded-md border border-border bg-background text-foreground"><StellarMark className="h-5 w-6" /></span>
+                <div><p className="text-sm font-medium">Stellar payment</p><p className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">x402 · exact scheme</p></div>
+              </div>
+              <span className={cn('rounded-sm border px-2 py-1 font-mono text-[0.62rem] uppercase tracking-[0.12em]', network.badgeClass)}>{network.label}</span>
             </div>
 
-            {loading ? <div className="space-y-4 p-6 sm:p-8"><Skeleton className="h-5 w-32" /><Skeleton className="h-14 w-48" /><Skeleton className="h-24 w-full rounded-2xl" /><Skeleton className="h-12 w-full rounded-full" /></div>
-              : error && !challenge ? <div className="p-6 sm:p-8"><div role="alert" className="rounded-2xl border border-destructive/25 bg-destructive/5 p-5"><XCircle className="h-5 w-5 text-destructive" /><h2 className="mt-3 font-display text-xl font-semibold">Checkout unavailable</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">{error}</p><Button type="button" variant="outline" onClick={loadChallenge} className="mt-5 rounded-xl"><RefreshCw className="h-4 w-4" /> Retry</Button></div></div>
-              : receipt ? <div className="p-6 sm:p-8"><span className="grid h-14 w-14 place-items-center rounded-2xl bg-success/10 text-success"><CheckCircle2 className="h-7 w-7" /></span><p className="mt-5 font-mono text-[0.65rem] uppercase tracking-[0.16em] text-success">Payment settled</p><h2 className="mt-2 font-display text-3xl font-semibold">Resource unlocked.</h2><p className="mt-3 text-sm leading-6 text-muted-foreground">{String(receipt.body.message || 'The paid response is ready.')}</p><div className="mt-6 rounded-2xl border border-border bg-muted/45 p-4"><p className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">Transaction</p><p className="mt-2 truncate font-mono text-xs">{receipt.transaction}</p></div><Button asChild size="lg" className="mt-6 h-12 w-full rounded-full"><a href={explorerTx(network.id, receipt.transaction)} target="_blank" rel="noreferrer">View settlement receipt <ExternalLink className="h-4 w-4" /></a></Button></div>
-              : <div className="p-6 sm:p-8">
-              <p className="font-mono text-[0.65rem] uppercase tracking-[0.15em] text-muted-foreground">{challenge?.endpoint}</p>
-              <div className="mt-3 flex items-end gap-2"><span className="font-display text-5xl font-semibold tracking-tight">{amount}</span><span className="pb-1.5 font-mono text-sm text-muted-foreground">{challenge?.asset}</span></div>
-              {network.isMainnet ? <p role="note" className="mt-4 flex items-start gap-2 rounded-2xl border border-warning/30 bg-warning/10 p-3 text-xs leading-5"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" /> This charges real USDC on Stellar Mainnet.</p> : null}
-              <div className="mt-6 rounded-2xl border border-border bg-muted/40 p-4"><div className="flex items-center justify-between gap-3"><span className="flex items-center gap-2 text-sm text-muted-foreground"><ShieldCheck className="h-4 w-4 text-success" /> Fee sponsored</span><span className="font-mono text-xs">Single authorization</span></div></div>
+            {loading ? <div className="space-y-4 p-5 sm:p-6"><Skeleton className="h-3 w-32" /><Skeleton className="h-12 w-48" /><Skeleton className="h-20 w-full" /><Skeleton className="h-12 w-full" /></div>
+              : error && !challenge ? <div className="p-5 sm:p-6"><div role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 p-5"><XCircle className="h-5 w-5 text-destructive" aria-hidden="true" /><h2 className="mt-3 font-display text-xl font-medium">Checkout unavailable</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">{error}</p><Button type="button" variant="outline" onClick={loadChallenge} className="mt-5"><RefreshCw className="h-4 w-4" aria-hidden="true" /> Retry</Button></div></div>
+              : receipt ? <div className="p-5 sm:p-6"><span className="grid h-12 w-12 place-items-center rounded-md border border-success/40 bg-success/10 text-success"><CheckCircle2 className="h-6 w-6" aria-hidden="true" /></span><p className="mt-5 font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-success">Payment settled</p><h2 className="mt-2 font-display text-display font-medium">Resource unlocked.</h2><p className="mt-3 text-sm leading-6 text-muted-foreground">{String(receipt.body.message || 'The paid response is ready.')}</p><dl className="mt-6 border-t border-border font-mono text-xs"><div className="flex items-center justify-between gap-4 border-b border-border py-3"><dt className="uppercase tracking-[0.14em] text-muted-foreground">Transaction</dt><dd className="truncate">{receipt.transaction}</dd></div>{receipt.payer ? <div className="flex items-center justify-between gap-4 border-b border-border py-3"><dt className="uppercase tracking-[0.14em] text-muted-foreground">Payer</dt><dd className="truncate">{truncateAddress(receipt.payer)}</dd></div> : null}</dl><Button asChild size="lg" className="lit mt-6 h-12 w-full gap-2"><a href={explorerTx(network.id, receipt.transaction)} target="_blank" rel="noreferrer">View settlement receipt <ExternalLink className="h-4 w-4" aria-hidden="true" /></a></Button></div>
+              : <div className="p-5 sm:p-6">
+              <p className="font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-muted-foreground">{challenge?.endpoint}</p>
+              <div className="mt-3 flex items-end gap-2"><span className="font-display text-5xl font-medium tabular-nums tracking-tightest">{amount}</span><span className="pb-1.5 font-mono text-sm text-muted-foreground">{challenge?.asset}</span></div>
+              {network.isMainnet ? <p role="note" className="mt-4 flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 p-3 text-xs leading-5 text-warning"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /> This charges real USDC on Stellar Mainnet.</p> : null}
+              <dl className="mt-6 border-t border-border font-mono text-xs">
+                <div className="flex items-center justify-between gap-3 border-b border-border py-3"><dt className="flex items-center gap-2 uppercase tracking-[0.14em] text-muted-foreground"><ShieldCheck className="h-3.5 w-3.5 text-success" aria-hidden="true" /> Network fee</dt><dd>Sponsored by the facilitator</dd></div>
+                <div className="flex items-center justify-between gap-3 border-b border-border py-3"><dt className="uppercase tracking-[0.14em] text-muted-foreground">Signature</dt><dd>One authorization entry</dd></div>
+              </dl>
 
-              {address ? <div className="mt-5 rounded-2xl border border-brand/20 bg-brand/5 p-4">
-                <div className="flex items-center justify-between gap-4"><div className="min-w-0"><p className="text-xs text-muted-foreground">Paying with {selectedWallet?.name || 'your wallet'}</p><p className="mt-1 truncate font-mono text-sm">{truncateAddress(address)}</p></div><button type="button" onClick={() => { disconnect(); setTrustline(null) }} className="min-h-10 rounded-xl px-3 text-xs text-muted-foreground transition-colors hover:bg-brand/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">Disconnect</button></div>
+              {address ? <div className="mt-5 rounded-md border border-brand/40 bg-brand/5 p-4">
+                <div className="flex items-center justify-between gap-4"><div className="min-w-0"><p className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">Paying with {selectedWallet?.name || 'your wallet'}</p><p className="mt-1 truncate font-mono text-sm">{truncateAddress(address)}</p></div><button type="button" onClick={() => { disconnect(); setTrustline(null) }} className="min-h-10 rounded-md px-3 font-mono text-[0.68rem] uppercase tracking-[0.12em] text-muted-foreground transition-colors duration-150 hover:bg-brand/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">Disconnect</button></div>
                 <PayerStatus checking={checkingTrustline} trustline={trustline} shortfall={Boolean(shortfall)} price={amount || ''} />
                 {selectedWallet && selectedWallet.id !== 'freighter' ? <p className="mt-3 text-xs leading-5 text-muted-foreground">Make sure {selectedWallet.name} is set to Stellar {network.label} before approving.</p> : null}
               </div> : null}
 
-              {error ? <div role="alert" className="mt-5 rounded-2xl border border-destructive/25 bg-destructive/5 p-4 text-sm text-destructive"><div className="flex gap-2"><XCircle className="mt-0.5 h-4 w-4 shrink-0" /><span>{error}</span></div>{checkoutFix(error, network.label) ? <p className="mt-2 text-xs leading-5 text-foreground">{checkoutFix(error, network.label)}</p> : null}</div> : null}
+              {error ? <div role="alert" className="mt-5 rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive"><div className="flex gap-2"><XCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /><span>{error}</span></div>{checkoutFix(error, network.label) ? <p className="mt-2 text-xs leading-5 text-foreground">{checkoutFix(error, network.label)}</p> : null}</div> : null}
 
               {!address ? (
                 <div className="mt-6">
                   <p className="text-sm font-medium">Choose a wallet</p>
-                  {mobile ? <p role="status" className="mt-3 rounded-2xl border border-warning/30 bg-warning/10 p-3 text-xs leading-5">Freighter Mobile cannot sign auth entries. Open this checkout in a desktop browser with a supported extension.</p> : null}
+                  {mobile ? <p role="status" className="mt-3 rounded-md border border-warning/40 bg-warning/10 p-3 text-xs leading-5 text-warning">Freighter Mobile cannot sign auth entries. Open this checkout in a desktop browser with a supported extension.</p> : null}
                   <div className="mt-3 grid gap-2 sm:grid-cols-2">
                     {checkoutWallets.map((wallet) => (
-                      <Button key={wallet.id} type="button" variant={wallet.id === 'freighter' ? 'default' : 'outline'} size="lg" disabled={!isInitialized || connecting} onClick={() => connect(wallet.id)} className="h-12 justify-start rounded-2xl">
-                        {connecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wallet2 className="h-4 w-4" />} {wallet.name}
+                      <Button key={wallet.id} type="button" variant={wallet.id === 'freighter' ? 'default' : 'outline'} size="lg" disabled={!isInitialized || connecting} onClick={() => connect(wallet.id)} className={cn('h-12 justify-start gap-2', wallet.id === 'freighter' && 'lit')}>
+                        {connecting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Wallet2 className="h-4 w-4" aria-hidden="true" />} {wallet.name}
                       </Button>
                     ))}
                   </div>
                 </div>
               ) : (
-                <Button type="button" size="lg" disabled={paying || checkingTrustline || blocked} aria-busy={paying} onClick={pay} className="mt-6 h-12 w-full rounded-full">
-                  {paying ? <Loader2 className="h-4 w-4 animate-spin" /> : <CircleDollarSign className="h-4 w-4" />} {paying ? 'Waiting for approval…' : `Pay ${amount} ${challenge?.asset}`}
+                <Button type="button" size="lg" disabled={paying || checkingTrustline || blocked} aria-busy={paying} onClick={pay} className="lit mt-6 h-12 w-full gap-2">
+                  {paying ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <CircleDollarSign className="h-4 w-4" aria-hidden="true" />} {paying ? 'Waiting for approval…' : `Pay ${amount} ${challenge?.asset}`}
                 </Button>
               )}
-              <p className="mt-3 text-center text-xs leading-5 text-muted-foreground">{network.isMainnet ? 'Real funds.' : 'Testnet assets only.'} Your wallet shows the authorization before anything settles.</p>
+              <p className="mt-3 text-center font-mono text-[0.68rem] leading-5 text-muted-foreground">{network.isMainnet ? 'Real funds.' : 'Testnet assets only.'} Your wallet shows the authorization before anything settles.</p>
             </div>}
           </div>
         </div>
-        <section className="relative mt-8 rounded-3xl border border-foreground/15 bg-card p-5 shadow-sm sm:p-7">
-          <p className="font-mono text-[0.65rem] uppercase tracking-[0.18em] text-brand">Wallet compatibility</p>
-          <h2 className="mt-2 font-display text-2xl font-semibold">Auth entries, not a transaction signature</h2>
-          <p className="mt-4 text-sm leading-6 text-muted-foreground">x402 on Stellar asks the wallet to sign one Soroban authorization entry. These wallets can do that; the first group also works in this checkout.</p>
-          <ul className="mt-5 grid gap-3 sm:grid-cols-2">
-            {wallets.map((wallet) => (
-              <li key={wallet.id} className="text-sm">
-                <p className="flex items-center gap-2 font-medium">{wallet.name}{wallet.checkout ? <span className="rounded-full bg-success/10 px-2 py-0.5 font-mono text-[0.6rem] text-success">checkout</span> : !wallet.authEntry ? <span className="rounded-full bg-destructive/10 px-2 py-0.5 font-mono text-[0.6rem] text-destructive">unsupported</span> : null}</p>
-                <p className="mt-1 text-xs leading-5 text-muted-foreground">{wallet.guidance}</p>
-              </li>
-            ))}
-          </ul>
+
+        <section className="relative mt-16 border-t border-border pt-8">
+          <div className="grid gap-8 lg:grid-cols-12">
+            <div className="lg:col-span-5">
+              <p className="eyebrow">Wallet compatibility</p>
+              <h2 className="mt-3 font-display text-title font-medium">Auth entries, not a transaction signature.</h2>
+              <p className="mt-3 max-w-md text-sm leading-6 text-muted-foreground">x402 on Stellar asks the wallet to sign one Soroban authorization entry. These wallets can do that; the first group also works in this checkout.</p>
+            </div>
+            <ul className="lg:col-span-7">
+              {wallets.map((wallet, index) => (
+                <li key={wallet.id} className="grid grid-cols-[3rem_1fr_auto] items-start gap-4 border-t border-border py-3 text-sm last:border-b">
+                  <Index className="pt-1">{String(index + 1).padStart(2, '0')}</Index>
+                  <div>
+                    <p className="font-medium">{wallet.name} <span className="font-mono text-xs text-muted-foreground">{wallet.platform}</span></p>
+                    <p className="mt-1 text-xs leading-5 text-muted-foreground">{wallet.guidance}</p>
+                  </div>
+                  {wallet.checkout ? <span className="rounded-sm border border-success/40 px-2 py-0.5 font-mono text-[0.6rem] uppercase text-success">checkout</span> : !wallet.authEntry ? <span className="rounded-sm border border-destructive/40 px-2 py-0.5 font-mono text-[0.6rem] uppercase text-destructive">unsupported</span> : <span className="rounded-sm border border-border px-2 py-0.5 font-mono text-[0.6rem] uppercase text-muted-foreground">client</span>}
+                </li>
+              ))}
+            </ul>
+          </div>
         </section>
       </section>
     </main>
@@ -304,13 +330,13 @@ function CheckoutContent() {
 }
 
 function PayerStatus({ checking, trustline, shortfall, price }: { checking: boolean; trustline: TrustlineReport | null; shortfall: boolean; price: string }) {
-  if (checking) return <p className="mt-3 flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3.5 w-3.5 animate-spin" /> Checking USDC trustline…</p>
+  if (checking) return <p className="mt-3 flex items-center gap-2 font-mono text-[0.68rem] text-muted-foreground"><Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> Checking USDC trustline…</p>
   if (!trustline) return null
   if (shortfall) {
     return <p role="status" className="mt-3 text-xs leading-5 text-destructive">This account holds {trustline.balance} USDC, less than the {price} USDC charge. Add USDC, then retry.</p>
   }
   if (trustline.ready) {
-    return trustline.balance != null ? <p className="mt-3 flex items-center gap-1.5 text-xs text-success"><CheckCircle2 className="h-3.5 w-3.5" /> {trustline.balance} USDC available</p> : null
+    return trustline.balance != null ? <p className="mt-3 flex items-center gap-1.5 font-mono text-[0.68rem] text-success"><CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" /> {trustline.balance} USDC available</p> : null
   }
   return (
     <div role="status" className={cn('mt-3 text-xs leading-5', trustline.status === 'unknown' ? 'text-muted-foreground' : 'text-destructive')}>
@@ -336,5 +362,5 @@ function checkoutFix(message: string, networkLabel: string) {
 }
 
 export default function CheckoutPage() {
-  return <Suspense fallback={<main className="nova-landing grid min-h-screen place-items-center bg-background"><Loader2 className="h-6 w-6 animate-spin text-brand" /></main>}><CheckoutContent /></Suspense>
+  return <Suspense fallback={<main className="grid min-h-screen place-items-center bg-background"><Loader2 className="h-6 w-6 animate-spin text-brand" aria-hidden="true" /></main>}><CheckoutContent /></Suspense>
 }

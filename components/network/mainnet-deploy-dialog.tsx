@@ -51,10 +51,10 @@ export function MainnetDeployDialog({
       <DialogContent className="sm:max-w-[440px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <span className="grid h-7 w-7 place-items-center rounded-md bg-warning/15 text-warning">
+            <span className="grid h-7 w-7 place-items-center rounded-sm border border-warning/40 bg-warning/10 text-warning">
               <AlertTriangle className="h-4 w-4" />
             </span>
-            Deploy to Mainnet
+            <span className="font-display font-medium">Deploy to Mainnet</span>
           </DialogTitle>
         </DialogHeader>
 
@@ -65,9 +65,9 @@ export function MainnetDeployDialog({
               be undone.
             </p>
 
-            <dl className="space-y-2 rounded-lg border border-border bg-card/50 p-3 text-[13px]">
+            <dl className="space-y-2 rounded-md border border-border bg-card/50 p-3 text-[13px]">
               <Row label="Network">
-                <span className="rounded-full border border-warning/40 bg-warning/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-warning">
+                <span className="rounded-sm border border-warning/40 bg-warning/10 px-1.5 py-0.5 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-warning">
                   Mainnet
                 </span>
               </Row>
@@ -109,7 +109,7 @@ export function MainnetDeployDialog({
 
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={() => onResolve(false)}>Cancel</Button>
-          <Button className="gap-1.5 bg-warning text-background hover:bg-warning/90" onClick={() => onResolve(true)}>
+          <Button className="gap-1.5 bg-warning text-warning-foreground hover:bg-warning/90" onClick={() => onResolve(true)}>
             <Rocket className="h-3.5 w-3.5" /> Deploy to Mainnet
           </Button>
         </div>

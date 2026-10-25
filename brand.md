@@ -8,36 +8,45 @@ component conventions live in `DESIGN_NOTES.md`; this file is the quick brief th
 
 ## Feel
 
-Stellar product studio. The landing experience is warm, editorial, and
-tool-forward; the IDE remains dense and dark. One electric-iris accent connects
-both surfaces. The product should feel inventive without looking like a toy.
+"Observatory." One dark, warm near-black canvas on every surface: the landing
+story, the product pages, the docs, and the IDE. Warm-white ink, hairline
+structure, mono instrument labels, and a single electric-iris accent used like
+light: the hero sculpture, active states, and the one primary action on screen.
+Precise and sculptural, never neon, never a toy.
 
 ## Palette (HSL — see `app/globals.css`)
 
-- **Brand / primary (electric iris):** dark `250 86% 66%`, light `250 80% 58%`
-- **Cosmic (secondary, gradients only):** `280 78% 66%`
-- **Landing canvas:** warm paper `48 33% 97%`, ink `246 18% 10%`
-- **IDE canvas:** background `234 32% 5%`, card `233 26% 8%`
-- **Text:** foreground `220 18% 96%`, muted `224 12% 62%`
-- **Status:** success `152 58% 48%`, warning `38 94% 60%`, destructive `0 72% 58%`
+- **Canvas:** background `40 7% 5%`, card `40 7% 7%`, popover `40 8% 9%`
+- **Ink:** foreground `40 20% 93%`, muted `40 8% 60%`
+- **Structure:** border `40 7% 14%`, input `40 7% 18%`
+- **Iris (brand / primary):** `251 95% 75%` with dark ink on top (`250 30% 8%`)
+- **Cosmic:** `280 70% 70%`, charts only
+- **Status:** success `152 60% 54%`, warning `38 95% 64%`, destructive `0 75% 64%`, info `200 90% 66%`
+- **Light (docs toggle only):** warm paper `42 30% 97%`, ink `40 10% 9%`, iris `251 76% 56%`
 
 Use semantic Tailwind classes (`bg-background`, `text-brand`, `text-muted-foreground`,
-`text-success`…). Never hardcode hex or `slate-*`/`gray-*`.
+`text-success`…). Never hardcode hex or `slate-*`/`gray-*`. No gradients in the UI.
 
 ## Typography
 
-- Display (headings): **Space Grotesk** → `font-display`
-- UI sans: **Geist Sans** → `font-sans`
-- Mono (code/addresses/numbers): **Geist Mono** → `font-mono`
+- UI and display: **Geist Sans** → `font-sans`; headings add `font-display`
+  (tight tracking, balanced wrap) at weight 500.
+- Mono: **Geist Mono** → `font-mono`. Labels, eyebrows, indices, addresses,
+  amounts (`font-mono-tnum`), code.
+- Three weights at most: 400 body, 500 headings and labels, 600 the wordmark.
 
 All wired via `next/font` in `app/layout.tsx`.
+
+## Geometry and motion
+
+- Radius `0.5rem` base: `rounded-md` for controls, `rounded-lg` for panels.
+  `rounded-full` only for status dots and avatars.
+- Hairlines over shadows. `.figure` frames for product surfaces, `.rule` for
+  labelled rules, `Index` numerals for lists, `.lit` for the one primary action.
+- Springs, no bounce: entrances 300–600ms, micro-interactions ≤150ms with
+  explicit transition properties. Everything respects `prefers-reduced-motion`.
 
 ## Voice
 
 Concise, active, technical-but-warm. "Deploy to testnet", not "Click here to
-deploy your contract to the test network." Confident, never hypey.
-
-## Mode
-
-Warm-light marketing surface via `.nova-landing`; dark-first product shell. Both
-share typography, iris accents, and sharp, technical component geometry.
+deploy your contract to the test network." Specific over aspirational; no hype.

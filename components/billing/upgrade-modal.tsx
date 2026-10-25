@@ -6,10 +6,13 @@
  */
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { Coins, Loader2, Sparkles } from 'lucide-react'
+import { Coins, Loader2 } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Index } from '@/components/landing/chapter'
 import { billingApi, type CreditPack } from '@/lib/billingApi'
+import { cn } from '@/lib/utils'
 
 export function UpgradeModal({
   open,
@@ -50,8 +53,8 @@ export function UpgradeModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Coins className="h-5 w-5 text-brand" />
+          <DialogTitle className="flex items-center gap-2 font-display font-medium">
+            <Coins className="h-4 w-4 text-brand" />
             {outOfCredits ? 'You’re out of credits' : 'Buy AI credits'}
           </DialogTitle>
           <DialogDescription>
@@ -62,27 +65,31 @@ export function UpgradeModal({
         </DialogHeader>
 
         {loading ? (
-          <div className="flex items-center justify-center py-10 text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin" /></div>
+          <div className="grid gap-px border border-border bg-border sm:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="bg-background p-4">
+                <Skeleton className="h-3 w-8" />
+                <Skeleton className="mt-5 h-6 w-16" />
+                <Skeleton className="mt-2 h-3 w-20" />
+                <Skeleton className="mt-4 h-8 w-full rounded-md" />
+              </div>
+            ))}
+          </div>
         ) : (
-          <div className="grid gap-2.5 sm:grid-cols-3">
+          <div className="grid gap-px border border-border bg-border sm:grid-cols-3">
             {plans.map((p, i) => (
-              <div
-                key={p.key}
-                className={`relative flex flex-col rounded-xl border p-3 ${i === 1 ? 'border-brand/50 bg-brand/5' : 'border-border bg-card/50'}`}
-              >
-                {i === 1 && (
-                  <span className="absolute -top-2 left-1/2 -translate-x-1/2 rounded-full bg-brand px-2 py-0.5 text-[9px] font-semibold text-brand-foreground">
-                    Popular
-                  </span>
-                )}
-                <span className="text-sm font-semibold text-foreground">{p.name}</span>
-                <span className="mt-1 text-2xl font-bold text-foreground">{p.priceLabel}</span>
-                <span className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
-                  <Sparkles className="h-3 w-3 text-brand" /> {p.credits.toLocaleString()} credits
-                </span>
+              <div key={p.key} className="flex flex-col bg-background p-4">
+                <div className="flex items-center justify-between">
+                  <Index>{String(i + 1).padStart(2, '0')}</Index>
+                  {i === 1 && <Index className="text-brand">popular</Index>}
+                </div>
+                <span className="mt-4 text-sm font-medium text-foreground">{p.name}</span>
+                <span className="mt-1 font-display text-2xl font-medium text-foreground">{p.priceLabel}</span>
+                <span className="mt-1 font-mono-tnum text-xs text-muted-foreground">{p.credits.toLocaleString()} credits</span>
                 <Button
                   size="sm"
-                  className="mt-3 w-full"
+                  variant={i === 1 ? 'default' : 'outline'}
+                  className={cn('mt-4 w-full', i === 1 && 'lit')}
                   disabled={!p.available || buying !== null}
                   onClick={() => buy(p)}
                 >
@@ -92,8 +99,8 @@ export function UpgradeModal({
             ))}
           </div>
         )}
-        <p className="text-center text-[10px] text-muted-foreground">
-          Secure checkout via Dodo Payments — {crypto ? 'card or stablecoin (USDC/USDT)' : 'card'}. New accounts start with 50 free credits.
+        <p className="font-mono text-[0.65rem] leading-5 text-muted-foreground">
+          Secure checkout via Dodo Payments, {crypto ? 'card or stablecoin (USDC/USDT)' : 'card'}. New accounts start with 50 free credits.
         </p>
       </DialogContent>
     </Dialog>

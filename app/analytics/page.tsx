@@ -37,13 +37,13 @@ interface DailyUsagePoint {
 
 // Brand-aligned chart colors (literal hsl, recharts needs concrete values).
 const CHART = {
-  compile: "hsl(200 90% 62%)", // info
-  deploy: "hsl(152 58% 48%)", // success
-  function_test: "hsl(280 78% 66%)", // cosmic
-  invoke: "hsl(250 86% 66%)", // brand
-  grid: "hsl(233 16% 16%)",
-  axis: "hsl(224 12% 62%)",
-  surface: "hsl(233 28% 9%)",
+  compile: "hsl(200 90% 66%)", // info
+  deploy: "hsl(152 60% 54%)", // success
+  function_test: "hsl(280 70% 70%)", // cosmic
+  invoke: "hsl(251 95% 75%)", // brand
+  grid: "hsl(40 7% 14%)",
+  axis: "hsl(40 8% 60%)",
+  surface: "hsl(40 8% 9%)",
 }
 
 export default function AnalyticsPage() {
@@ -139,52 +139,55 @@ export default function AnalyticsPage() {
     : users
 
   return (
-    <div className="relative min-h-screen bg-background">
-      <div className="pointer-events-none fixed inset-0 -z-10 bg-radial-fade" aria-hidden />
+    <div className="relative min-h-screen bg-background text-foreground">
       <PlaygroundNavbar />
 
-      <main className="mx-auto max-w-6xl px-4 sm:px-6">
+      <main className="mx-auto max-w-7xl px-6">
         {/* Hero */}
-        <section className="pb-8 pt-12 sm:pt-16">
-          <Reveal>
-            <p className="eyebrow">Platform analytics</p>
-            <h1 className="mt-3 font-display text-title font-semibold tracking-tight">
-              WebSoroban <span className="text-gradient-brand">at a glance</span>
-            </h1>
-            <p className="lead mt-3 max-w-2xl text-[15px]">
+        <section className="border-b border-border pb-10 pt-14 lg:pt-20">
+          <Reveal className="grid gap-8 lg:grid-cols-12 lg:items-end">
+            <div className="lg:col-span-7">
+              <p className="eyebrow">Platform analytics</p>
+              <h1 className="mt-4 font-display text-display-lg font-medium">WebSoroban at a glance.</h1>
+            </div>
+            <p className="lead text-base lg:col-span-5">
               Platform-wide usage, backend health, transactions, and activity across all users.
             </p>
           </Reveal>
         </section>
 
         {error && (
-          <Alert variant="destructive" className="mb-6">
+          <Alert variant="destructive" className="mb-6 mt-8">
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
 
         {/* KPI tiles */}
-        <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <section className="mt-10 grid grid-cols-2 gap-px border border-border bg-border sm:grid-cols-3 lg:grid-cols-6">
           {loading
-            ? Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)
+            ? Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="bg-background p-4">
+                  <Skeleton className="h-3 w-20" />
+                  <Skeleton className="mt-5 h-7 w-16" />
+                  <Skeleton className="mt-2 h-3 w-12" />
+                </div>
+              ))
             : kpis.map((k, i) => {
                 const Icon = k.icon
                 return (
-                  <Reveal key={k.label} delay={Math.min(i * 0.04, 0.2)}>
-                    <div className="rounded-xl border border-border bg-card/40 p-4">
-                      <div className="flex items-center justify-between">
-                        <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{k.label}</span>
-                        <Icon className={cn("h-3.5 w-3.5", k.tint)} />
-                      </div>
-                      <div className="mt-2 font-mono-tnum text-2xl font-semibold text-foreground">
-                        {k.value.toLocaleString()}
-                      </div>
-                      {(k as any).split ? (
-                        <DeploySplit split={(k as any).split} />
-                      ) : (
-                        <div className="mt-0.5 text-[11px] text-muted-foreground">{k.hint}</div>
-                      )}
+                  <Reveal key={k.label} delay={Math.min(i * 0.04, 0.2)} className="bg-background p-4">
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-[0.6rem] uppercase tracking-[0.14em] text-muted-foreground">{k.label}</span>
+                      <Icon className={cn("h-3.5 w-3.5", k.tint)} />
                     </div>
+                    <div className="mt-4 font-mono-tnum text-2xl font-medium text-foreground">
+                      {k.value.toLocaleString()}
+                    </div>
+                    {(k as any).split ? (
+                      <DeploySplit split={(k as any).split} />
+                    ) : (
+                      <div className="mt-1 font-mono text-[0.62rem] text-muted-foreground">{k.hint}</div>
+                    )}
                   </Reveal>
                 )
               })}
@@ -202,13 +205,13 @@ export default function AnalyticsPage() {
             }
           >
             {loading ? (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-                {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)}
+              <div className="grid grid-cols-2 gap-px border border-border bg-border sm:grid-cols-3 lg:grid-cols-6">
+                {Array.from({ length: 6 }).map((_, i) => <div key={i} className="bg-card p-4"><Skeleton className="h-3 w-20" /><Skeleton className="mt-5 h-7 w-16" /></div>)}
               </div>
             ) : !billing ? (
               <EmptyHint>No billing data yet.</EmptyHint>
             ) : (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+              <div className="grid grid-cols-2 gap-px border border-border bg-border sm:grid-cols-3 lg:grid-cols-6">
                 <CreditTile icon={Wallet} tint="text-brand" label="Outstanding" value={billing.outstandingCredits} hint="unspent credits (liability)" />
                 <CreditTile icon={ShoppingCart} tint="text-success" label="Purchased" value={billing.purchased} hint={`${billing.purchaseCount.toLocaleString()} purchase${billing.purchaseCount === 1 ? "" : "s"}`} />
                 <CreditTile icon={Zap} tint="text-cosmic" label="Spent" value={billing.spent} hint="consumed by runs" />
@@ -241,12 +244,13 @@ export default function AnalyticsPage() {
                     value={userQuery}
                     onChange={(e) => setUserQuery(e.target.value)}
                     placeholder="Search by email or name…"
-                    className="w-full rounded-lg border border-border bg-background/60 py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-brand/50 focus:outline-none"
+                    aria-label="Search users"
+                    className="h-10 w-full rounded-md border border-border bg-background pl-9 pr-3 font-mono text-sm text-foreground transition-colors duration-150 placeholder:text-muted-foreground focus-visible:border-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   />
                 </div>
 
                 {/* Column header (md+) */}
-                <div className="hidden items-center gap-3 border-b border-border/60 px-3 pb-2 font-mono text-[10px] uppercase tracking-wider text-muted-foreground md:flex">
+                <div className="hidden items-center gap-3 border-b border-border px-3 pb-2 font-mono text-[0.6rem] uppercase tracking-[0.14em] text-muted-foreground md:flex">
                   <span className="min-w-0 flex-1">User</span>
                   <span className="w-14 text-center">Plan</span>
                   <span className="w-16 text-right">Credits</span>
@@ -257,7 +261,7 @@ export default function AnalyticsPage() {
                   <span className="w-16 text-right">Status</span>
                 </div>
 
-                <div className="max-h-[460px] space-y-1.5 overflow-y-auto">
+                <div className="max-h-[460px] divide-y divide-border overflow-y-auto rounded-md border border-border">
                   {filteredUsers.length === 0 ? (
                     <EmptyHint>No users match “{userQuery}”.</EmptyHint>
                   ) : (
@@ -266,7 +270,7 @@ export default function AnalyticsPage() {
                 </div>
 
                 {usersTotal > users.length && (
-                  <p className="px-1 text-[11px] text-muted-foreground/70">
+                  <p className="px-1 font-mono text-[0.62rem] text-muted-foreground">
                     Showing the newest {users.length.toLocaleString()} of {usersTotal.toLocaleString()} users.
                   </p>
                 )}
@@ -276,11 +280,11 @@ export default function AnalyticsPage() {
         </section>
 
         {/* Health + chart */}
-        <section className="mt-6 grid gap-5 lg:grid-cols-[1fr_320px]">
+        <section className="mt-6 grid gap-6 lg:grid-cols-12">
           {/* Usage timeline */}
-          <Panel icon={BarChart3} title="Usage timeline" subtitle="Compile, deploy, and function-test activity over time.">
+          <Panel icon={BarChart3} title="Usage timeline" subtitle="Compile, deploy, and function-test activity over time." className="lg:col-span-8">
             {loading ? (
-              <Skeleton className="h-72 w-full rounded-lg" />
+              <Skeleton className="h-72 w-full rounded-md" />
             ) : dailyUsage.length === 0 ? (
               <EmptyHint>No usage data yet. Compile, deploy, or test a contract in the IDE to populate this chart.</EmptyHint>
             ) : (
@@ -291,13 +295,14 @@ export default function AnalyticsPage() {
                     <XAxis dataKey="date" tick={{ fill: CHART.axis, fontSize: 11 }} stroke={CHART.grid} />
                     <YAxis allowDecimals={false} tick={{ fill: CHART.axis, fontSize: 11 }} stroke={CHART.grid} />
                     <Tooltip
-                      cursor={{ fill: "hsl(233 20% 16% / 0.4)" }}
+                      cursor={{ fill: "hsl(40 7% 13% / 0.5)" }}
                       contentStyle={{
                         background: CHART.surface,
                         border: `1px solid ${CHART.grid}`,
-                        borderRadius: 8,
+                        borderRadius: 6,
                         fontSize: 12,
-                        color: "hsl(220 18% 96%)",
+                        fontFamily: "var(--font-mono)",
+                        color: "hsl(40 20% 93%)",
                       }}
                       labelStyle={{ color: CHART.axis }}
                     />
@@ -310,7 +315,7 @@ export default function AnalyticsPage() {
               </div>
             )}
             {!loading && dailyUsage.length > 0 && (
-              <div className="mt-3 flex items-center gap-4 font-mono text-[11px] text-muted-foreground">
+              <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-border pt-3 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
                 <Legend color={CHART.compile} label="Compile" />
                 <Legend color={CHART.deploy} label="Deploy" />
                 <Legend color={CHART.function_test} label="Function tests" />
@@ -320,29 +325,29 @@ export default function AnalyticsPage() {
           </Panel>
 
           {/* Backend health */}
-          <Panel icon={Server} title="Backend health" subtitle="Live status from the API.">
+          <Panel icon={Server} title="Backend health" subtitle="Live status from the API." className="lg:col-span-4">
             {loading ? (
               <div className="space-y-3">
                 <Skeleton className="h-5 w-full" />
                 <Skeleton className="h-5 w-2/3" />
               </div>
             ) : (
-              <dl className="space-y-3 text-sm">
-                <div className="flex items-center justify-between">
-                  <dt className="text-muted-foreground">Status</dt>
+              <dl className="divide-y divide-border text-sm">
+                <div className="flex items-center justify-between py-3">
+                  <dt className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">Status</dt>
                   <dd>
-                    <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-mono text-[10px]", healthy ? "bg-success/12 text-success" : "bg-destructive/12 text-destructive")}>
+                    <span className={cn("inline-flex items-center gap-1.5 font-mono text-[0.68rem] uppercase tracking-[0.14em]", healthy ? "text-success" : "text-destructive")}>
                       <span className={cn("h-1.5 w-1.5 rounded-full", healthy ? "bg-success" : "bg-destructive")} />
                       {health?.status ?? "unknown"}
                     </span>
                   </dd>
                 </div>
-                <div className="flex items-center justify-between">
-                  <dt className="text-muted-foreground">Database</dt>
-                  <dd className="font-mono text-xs text-foreground/90">{health?.database ?? "unknown"}</dd>
+                <div className="flex items-center justify-between py-3">
+                  <dt className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">Database</dt>
+                  <dd className="font-mono text-xs text-foreground">{health?.database ?? "unknown"}</dd>
                 </div>
-                <div className="flex items-center justify-between gap-3">
-                  <dt className="text-muted-foreground">Last check</dt>
+                <div className="flex items-center justify-between gap-3 py-3">
+                  <dt className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">Last check</dt>
                   <dd className="truncate font-mono-tnum text-xs text-muted-foreground">
                     {health?.timestamp ? new Date(health.timestamp).toLocaleString() : "—"}
                   </dd>
@@ -360,28 +365,29 @@ export default function AnalyticsPage() {
             ) : transactionHistory.length === 0 ? (
               <EmptyHint>No transactions yet.</EmptyHint>
             ) : (
-              <div className="max-h-[360px] space-y-1.5 overflow-y-auto">
+              <div className="max-h-[360px] divide-y divide-border overflow-y-auto rounded-md border border-border">
                 {transactionHistory.map((tx) => (
-                  <div key={tx._id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/60 bg-card/40 px-3 py-2 text-sm">
+                  <div key={tx._id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-3 text-sm">
                     <div className="flex min-w-0 flex-col gap-0.5">
                       <span className="font-medium text-foreground">
                         {tx.plan === "plan2" ? "Pro" : "Team"} · {tx.amount} {tx.currency}
                       </span>
                       {tx.user?.email && <span className="truncate text-xs text-muted-foreground">{tx.user.email}</span>}
-                      <span className="max-w-[220px] truncate font-mono text-[11px] text-muted-foreground">{tx.txHash}</span>
+                      <span className="max-w-[220px] truncate font-mono text-[0.68rem] text-muted-foreground">{tx.txHash}</span>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       <StatusBadge status={tx.status} />
                       <a
                         href={explorerTx((tx.network as NetworkId) || "testnet", tx.txHash)}
                         target="_blank" rel="noreferrer"
-                        className="text-muted-foreground transition-colors hover:text-brand"
+                        className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-colors duration-150 hover:text-brand"
                         title="View on Stellar Expert"
+                        aria-label="View on Stellar Expert"
                       >
                         <ExternalLink className="h-3.5 w-3.5" />
                       </a>
                     </div>
-                    <div className="w-full font-mono-tnum text-[11px] text-muted-foreground/70">
+                    <div className="w-full font-mono-tnum text-[0.68rem] text-muted-foreground">
                       {tx.createdAt ? new Date(tx.createdAt).toLocaleString() : "—"}
                     </div>
                   </div>
@@ -392,16 +398,16 @@ export default function AnalyticsPage() {
         </section>
 
         {/* Activity log */}
-        <section className="mb-16 mt-6">
+        <section className="mb-24 mt-6">
           <Panel icon={ListTodo} title="User activity" subtitle="Recent compile, deploy, and test activity across all users.">
             {loading ? (
               <ListSkeleton />
             ) : activityLogs.length === 0 ? (
               <EmptyHint>No activity yet.</EmptyHint>
             ) : (
-              <div className="max-h-[420px] space-y-1.5 overflow-y-auto">
+              <div className="max-h-[420px] divide-y divide-border overflow-y-auto rounded-md border border-border">
                 {activityLogs.map((log, idx) => (
-                  <div key={log._id ?? idx} className="flex flex-col gap-2 rounded-lg border border-border/60 bg-card/40 px-3 py-2 text-sm">
+                  <div key={log._id ?? idx} className="flex flex-col gap-2 px-3 py-3 text-sm">
                     <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
                       <div className="flex min-w-0 flex-wrap items-center gap-2">
                         <ActionBadge action={log.action} />
@@ -412,28 +418,30 @@ export default function AnalyticsPage() {
                         {log.user?.email && <span className="max-w-[160px] truncate text-xs text-muted-foreground">{log.user.email}</span>}
                         {log.functionName && <span className="font-mono text-xs text-muted-foreground">{log.functionName}()</span>}
                       </div>
-                      <span className="shrink-0 font-mono-tnum text-[11px] text-muted-foreground/70">
+                      <span className="shrink-0 font-mono-tnum text-[0.68rem] text-muted-foreground">
                         {log.createdAt ? new Date(log.createdAt).toLocaleString() : "—"}
                       </span>
                     </div>
                     {log.contractAddress && (
                       <div className="flex flex-wrap items-center gap-2">
-                        <code className="min-w-0 break-all rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-foreground/80">
+                        <code className="min-w-0 break-all rounded-sm border border-border px-1.5 py-0.5 font-mono text-[0.68rem] text-foreground">
                           {log.contractAddress}
                         </code>
                         <button
                           type="button"
                           onClick={() => copyContractAddress(log.contractAddress!, log._id)}
-                          className="shrink-0 rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                          className="grid h-8 w-8 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors duration-150 hover:bg-accent hover:text-foreground"
                           title="Copy address"
+                          aria-label="Copy address"
                         >
                           {copiedId === log._id ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
                         </button>
                         <a
                           href={explorerContract((log.network as NetworkId) || "testnet", log.contractAddress!)}
                           target="_blank" rel="noreferrer"
-                          className="shrink-0 rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-brand"
+                          className="grid h-8 w-8 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors duration-150 hover:bg-accent hover:text-brand"
                           title="View on Stellar Expert"
+                          aria-label="View on Stellar Expert"
                         >
                           <ExternalLink className="h-3.5 w-3.5" />
                         </a>
@@ -454,17 +462,15 @@ export default function AnalyticsPage() {
 
 /* ---- small presentational helpers ---- */
 
-function Panel({ icon: Icon, title, subtitle, children }: { icon: any; title: string; subtitle?: string; children: React.ReactNode }) {
+function Panel({ icon: Icon, title, subtitle, className, children }: { icon: any; title: string; subtitle?: string; className?: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-xl border border-border bg-card/40 p-5">
-      <div className="mb-4 flex items-center gap-2.5">
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-brand/12 text-brand">
-          <Icon className="h-4 w-4" />
-        </span>
+    <section className={cn("figure p-5", className)}>
+      <div className="mb-5 flex items-start justify-between gap-4 border-b border-border pb-4">
         <div>
-          <h2 className="text-sm font-semibold text-foreground">{title}</h2>
-          {subtitle && <p className="text-[11px] text-muted-foreground">{subtitle}</p>}
+          <h2 className="font-display text-lg font-medium text-foreground">{title}</h2>
+          {subtitle && <p className="mt-1 text-xs leading-5 text-muted-foreground">{subtitle}</p>}
         </div>
+        <Icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
       </div>
       {children}
     </section>
@@ -473,8 +479,8 @@ function Panel({ icon: Icon, title, subtitle, children }: { icon: any; title: st
 
 function EmptyHint({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-2 rounded-lg border border-dashed border-border/70 px-4 py-6 text-[13px] text-muted-foreground">
-      <Activity className="h-4 w-4 shrink-0 text-muted-foreground/50" />
+    <div className="flex items-center gap-3 rounded-md border border-dashed border-border px-4 py-6 font-mono text-[0.72rem] text-muted-foreground">
+      <Activity className="h-4 w-4 shrink-0 text-muted-foreground/60" />
       {children}
     </div>
   )
@@ -484,7 +490,7 @@ function ListSkeleton() {
   return (
     <div className="space-y-1.5">
       {Array.from({ length: 4 }).map((_, i) => (
-        <Skeleton key={i} className="h-12 w-full rounded-lg" />
+        <Skeleton key={i} className="h-12 w-full rounded-md" />
       ))}
     </div>
   )
@@ -494,13 +500,13 @@ function PlanBadge({ plan }: { plan: string }) {
   const label = plan === "plan3" || plan === "team" ? "Team" : plan === "plan2" || plan === "pro" ? "Pro" : "Free"
   const cls =
     label === "Team" ? "bg-cosmic/15 text-cosmic" : label === "Pro" ? "bg-brand/15 text-brand" : "bg-muted text-muted-foreground"
-  return <span className={cn("inline-block rounded-full px-2 py-0.5 font-mono text-[10px]", cls)}>{label}</span>
+  return <span className={cn("inline-block rounded-sm px-1.5 py-0.5 font-mono text-[0.6rem] uppercase tracking-[0.14em]", cls)}>{label}</span>
 }
 
 function Stat({ label, value, className }: { label: string; value: number; className?: string }) {
   return (
-    <div className={cn("text-right font-mono-tnum text-xs text-foreground/90", className)}>
-      <span className="mr-1 text-[10px] text-muted-foreground md:hidden">{label}</span>
+    <div className={cn("text-right font-mono-tnum text-xs text-foreground", className)}>
+      <span className="mr-1 text-[0.6rem] uppercase tracking-[0.12em] text-muted-foreground md:hidden">{label}</span>
       {value.toLocaleString()}
     </div>
   )
@@ -520,15 +526,15 @@ function CreditTile({
   hint: string
 }) {
   return (
-    <div className="rounded-xl border border-border bg-card/40 p-4">
+    <div className="bg-card p-4">
       <div className="flex items-center justify-between">
-        <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{label}</span>
+        <span className="font-mono text-[0.6rem] uppercase tracking-[0.14em] text-muted-foreground">{label}</span>
         <Icon className={cn("h-3.5 w-3.5", tint)} />
       </div>
-      <div className="mt-2 font-mono-tnum text-2xl font-semibold text-foreground">
+      <div className="mt-4 font-mono-tnum text-2xl font-medium text-foreground">
         {typeof value === "number" ? value.toLocaleString() : value}
       </div>
-      <div className="mt-0.5 truncate text-[11px] text-muted-foreground">{hint}</div>
+      <div className="mt-1 truncate font-mono text-[0.62rem] text-muted-foreground">{hint}</div>
     </div>
   )
 }
@@ -536,33 +542,33 @@ function CreditTile({
 function UserRow({ u }: { u: AdminUserItem }) {
   const initials = (u.name || u.email).replace(/[^a-zA-Z0-9]/g, "").slice(0, 2).toUpperCase() || "U"
   return (
-    <div className="flex flex-col gap-2 rounded-lg border border-border/60 bg-card/40 px-3 py-2 md:flex-row md:items-center md:gap-3">
+    <div className="flex flex-col gap-2 px-3 py-2.5 md:flex-row md:items-center md:gap-3">
       <div className="flex min-w-0 flex-1 items-center gap-2.5">
-        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-brand/12 font-mono text-[10px] font-semibold text-brand">
+        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-border bg-accent font-mono text-[0.6rem] text-foreground">
           {initials}
         </span>
         <div className="min-w-0">
           <div className="truncate text-sm text-foreground">{u.name || u.email}</div>
-          {u.name && <div className="truncate text-[11px] text-muted-foreground">{u.email}</div>}
+          {u.name && <div className="truncate font-mono text-[0.68rem] text-muted-foreground">{u.email}</div>}
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-9 md:flex-nowrap md:pl-0">
         <div className="w-14 text-center"><PlanBadge plan={u.plan} /></div>
-        <div className="flex w-16 items-center justify-end gap-1 font-mono-tnum text-[11px] tabular-nums">
-          <span className="text-[10px] text-muted-foreground md:hidden">credits</span>
+        <div className="flex w-16 items-center justify-end gap-1 font-mono-tnum text-[0.68rem] tabular-nums">
+          <span className="text-[0.6rem] uppercase tracking-[0.12em] text-muted-foreground md:hidden">credits</span>
           <Coins className="h-3 w-3 text-brand" />
           <span className={cn(u.credits <= 0 ? "text-destructive" : "text-foreground")}>{(u.credits ?? 0).toLocaleString()}</span>
         </div>
         <Stat className="w-16" label="proj" value={u.projects} />
         <Stat className="w-16" label="dep" value={u.deployments} />
         <Stat className="w-16" label="inv" value={u.invocations} />
-        <div className="w-24 text-right font-mono-tnum text-[11px] text-muted-foreground">
+        <div className="w-24 text-right font-mono-tnum text-[0.68rem] text-muted-foreground">
           {new Date(u.createdAt).toLocaleDateString()}
         </div>
         <div className="w-16 text-right">
           <span
             className={cn(
-              "rounded-full px-2 py-0.5 font-mono text-[10px]",
+              "rounded-sm px-1.5 py-0.5 font-mono text-[0.6rem] uppercase tracking-[0.14em]",
               u.isActive ? "bg-success/12 text-success" : "bg-destructive/12 text-destructive",
             )}
           >
@@ -577,7 +583,7 @@ function UserRow({ u }: { u: AdminUserItem }) {
 function Legend({ color, label }: { color: string; label: string }) {
   return (
     <span className="flex items-center gap-1.5">
-      <span className="h-2 w-2 rounded-[3px]" style={{ background: color }} />
+      <span className="h-2 w-2 rounded-sm" style={{ background: color }} />
       {label}
     </span>
   )
@@ -590,7 +596,7 @@ function StatusBadge({ status }: { status: string }) {
       : status === "pending"
       ? "bg-warning/12 text-warning"
       : "bg-destructive/12 text-destructive"
-  return <span className={cn("rounded-full px-2 py-0.5 font-mono text-[10px]", cls)}>{status}</span>
+  return <span className={cn("rounded-sm px-1.5 py-0.5 font-mono text-[0.6rem] uppercase tracking-[0.14em]", cls)}>{status}</span>
 }
 
 function DeploySplit({ split }: { split: { testnet: number; mainnet: number } }) {
@@ -598,11 +604,11 @@ function DeploySplit({ split }: { split: { testnet: number; mainnet: number } })
   const testnetPct = total > 0 ? (split.testnet / total) * 100 : 0
   return (
     <div className="mt-1">
-      <div className="flex h-1 w-full overflow-hidden rounded-full bg-muted">
+      <div className="mt-2 flex h-1 w-full overflow-hidden rounded-sm bg-muted">
         <span className="h-full bg-success" style={{ width: `${testnetPct}%` }} />
         <span className="h-full bg-warning" style={{ width: `${100 - testnetPct}%` }} />
       </div>
-      <div className="mt-1 flex items-center gap-2 font-mono-tnum text-[10px] text-muted-foreground">
+      <div className="mt-1.5 flex items-center gap-2 font-mono-tnum text-[0.6rem] text-muted-foreground">
         <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-success" />{split.testnet} testnet</span>
         <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-warning" />{split.mainnet} mainnet</span>
       </div>
@@ -613,7 +619,7 @@ function DeploySplit({ split }: { split: { testnet: number; mainnet: number } })
 function NetworkBadge({ network }: { network?: string }) {
   const net = getNetwork(network === "mainnet" ? "mainnet" : "testnet")
   return (
-    <span className={cn("shrink-0 rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider", net.badgeClass)}>
+    <span className={cn("shrink-0 rounded-sm border px-1.5 py-0.5 font-mono text-[0.6rem] uppercase tracking-[0.14em]", net.badgeClass)}>
       {net.label}
     </span>
   )
@@ -629,7 +635,7 @@ function ActionBadge({ action }: { action: string }) {
       ? "bg-brand/12 text-brand"
       : "bg-cosmic/12 text-cosmic"
   return (
-    <span className={cn("shrink-0 rounded-full px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider", cls)}>
+    <span className={cn("shrink-0 rounded-sm px-1.5 py-0.5 font-mono text-[0.6rem] uppercase tracking-[0.14em]", cls)}>
       {action.replace("_", " ")}
     </span>
   )

@@ -29,10 +29,12 @@ interface CommandPaletteProps {
   commands: PaletteCommand[]
 }
 
+const kbd = 'rounded-sm border border-border bg-muted px-1 py-0.5 font-mono text-[0.62rem] text-muted-foreground'
+
 /**
- * Cmd/Ctrl-K command palette — a signature surface. Raised, blurred backdrop,
- * grouped results (Files / Actions / Navigation), keyboard hints. Registers its
- * own global shortcut.
+ * Cmd/Ctrl-K command palette — a signature surface. A raised hairline panel,
+ * grouped results (Files / Actions / Navigation), mono keyboard hints.
+ * Registers its own global shortcut.
  */
 export function CommandPalette({ open, onOpenChange, commands }: CommandPaletteProps) {
   useEffect(() => {
@@ -51,16 +53,16 @@ export function CommandPalette({ open, onOpenChange, commands }: CommandPaletteP
   for (const c of commands) if (!groups.includes(c.group)) groups.push(c.group)
 
   return (
-    <CommandDialog open={open} onOpenChange={onOpenChange} className="max-w-xl">
+    <CommandDialog open={open} onOpenChange={onOpenChange} className="max-w-xl rounded-lg border border-border bg-popover p-0 shadow-lg">
       <CommandInput placeholder="Search files, run actions, navigate…" />
       <CommandList className="max-h-[60vh]">
         <CommandEmpty>
-          <span className="text-muted-foreground">No results found.</span>
+          <span className="font-mono text-xs text-muted-foreground">No results.</span>
         </CommandEmpty>
         {groups.map((group, gi) => (
           <div key={group}>
             {gi > 0 && <CommandSeparator />}
-            <CommandGroup heading={group}>
+            <CommandGroup heading={group} className="[&_[cmdk-group-heading]]:font-mono [&_[cmdk-group-heading]]:text-[0.62rem] [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.16em]">
               {commands
                 .filter((c) => c.group === group)
                 .map((c) => {
@@ -75,19 +77,15 @@ export function CommandPalette({ open, onOpenChange, commands }: CommandPaletteP
                         // defer so the dialog closes before side effects
                         requestAnimationFrame(() => c.perform())
                       }}
-                      className="gap-2.5"
+                      className="gap-2.5 rounded-sm aria-selected:bg-accent aria-selected:text-foreground"
                     >
                       {Icon && (
-                        <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md border border-border/60 bg-muted/40 text-muted-foreground">
+                        <span className="grid h-6 w-6 shrink-0 place-items-center rounded-sm border border-border bg-muted/40 text-muted-foreground">
                           <Icon className="h-3.5 w-3.5" />
                         </span>
                       )}
                       <span className="flex-1 truncate">{c.label}</span>
-                      {c.hint && (
-                        <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
-                          {c.hint}
-                        </kbd>
-                      )}
+                      {c.hint && <kbd className={kbd}>{c.hint}</kbd>}
                     </CommandItem>
                   )
                 })}
@@ -97,17 +95,17 @@ export function CommandPalette({ open, onOpenChange, commands }: CommandPaletteP
       </CommandList>
 
       {/* Keyboard hint footer */}
-      <div className="flex items-center justify-between border-t border-border px-3 py-2 font-mono text-[10px] text-muted-foreground">
+      <div className="flex items-center justify-between border-t border-border px-3 py-2 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-muted-foreground">
         <span className="flex items-center gap-1.5">
-          <kbd className="rounded border border-border bg-muted px-1 py-0.5">↑</kbd>
-          <kbd className="rounded border border-border bg-muted px-1 py-0.5">↓</kbd>
+          <kbd className={kbd}>↑</kbd>
+          <kbd className={kbd}>↓</kbd>
           navigate
         </span>
         <span className="flex items-center gap-1.5">
-          <kbd className="rounded border border-border bg-muted px-1 py-0.5">↵</kbd>
+          <kbd className={kbd}>↵</kbd>
           select
           <span className="text-border">·</span>
-          <kbd className="rounded border border-border bg-muted px-1 py-0.5">esc</kbd>
+          <kbd className={kbd}>esc</kbd>
           close
         </span>
       </div>

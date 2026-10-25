@@ -14,12 +14,12 @@ export function Steps({ children }: { children: ReactNode }) {
 
 export function Step({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="relative border-l border-border pb-6 pl-8 [counter-increment:step] last:border-l-transparent last:pb-0">
+    <div className="relative border-l border-border pb-7 pl-9 [counter-increment:step] last:border-l-transparent last:pb-0">
       <span
         aria-hidden
-        className="absolute -left-[13px] top-0 grid h-[26px] w-[26px] place-items-center rounded-full border border-border bg-card font-mono text-xs font-medium text-brand before:content-[counter(step)]"
+        className="absolute -left-[13px] top-0 grid h-[26px] w-[26px] place-items-center rounded-sm border border-border bg-card font-mono text-[0.68rem] text-brand before:content-[counter(step,decimal-leading-zero)]"
       />
-      <h3 className="!mt-0 mb-1 text-base font-semibold text-foreground">{title}</h3>
+      <h3 className="!mt-0 mb-1.5 font-display text-base font-medium text-foreground">{title}</h3>
       <div className="text-sm leading-relaxed text-foreground/90 [&>*+*]:mt-2 [&_a]:text-brand [&_a:hover]:underline">
         {children}
       </div>

@@ -8,7 +8,7 @@ import { useWalletKit } from '@/contexts/WalletKitContext'
 import { useNetwork } from '@/contexts/NetworkContext'
 import { getNetwork, MAINNET, TESTNET, type FrontendNetwork } from '@/lib/networks'
 import { toast } from 'sonner'
-import { Wallet2, Plug, Copy, Check, LogOut, Loader2, AlertTriangle } from 'lucide-react'
+import { Plug, Copy, Check, LogOut, Loader2, AlertTriangle } from 'lucide-react'
 
 /**
  * The CONNECTED BROWSER WALLET — the account that actually signs mainnet
@@ -75,7 +75,7 @@ export function ConnectedWalletChip({ className }: { className?: string }) {
         onClick={onConnect}
         disabled={connecting}
         aria-label="Connect signing wallet"
-        className={cn('h-9 gap-2 border-border bg-card/60 px-2.5 text-xs hover:bg-accent', className)}
+        className={cn('h-9 gap-2 rounded-md border-border bg-card px-2.5 font-mono text-[0.72rem] uppercase tracking-[0.12em] hover:border-foreground/30 hover:bg-accent', className)}
       >
         {connecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plug className="h-3.5 w-3.5" />}
         <span className="hidden sm:inline">Connect wallet</span>
@@ -91,66 +91,59 @@ export function ConnectedWalletChip({ className }: { className?: string }) {
           size="sm"
           aria-label="Signing wallet"
           className={cn(
-            'h-9 gap-2 border-border bg-card/60 px-2.5 font-mono text-xs hover:bg-accent',
+            'h-9 gap-2.5 rounded-md border-border bg-card px-2.5 font-mono text-xs hover:border-foreground/30 hover:bg-accent',
             mismatch && 'border-warning/50',
             className,
           )}
         >
-          <span className="relative flex h-2 w-2">
-            <span className={cn('relative inline-flex h-2 w-2 rounded-full', mismatch ? 'bg-warning' : walletNet?.dotClass ?? 'bg-muted-foreground')} />
-          </span>
+          <span className={cn('relative inline-flex h-1.5 w-1.5 rounded-full', mismatch ? 'bg-warning' : walletNet?.dotClass ?? 'bg-muted-foreground')} />
           <span className="text-foreground">{truncateAddress(address)}</span>
           {mismatch && <AlertTriangle className="h-3.5 w-3.5 text-warning" />}
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent align="end" className="w-80 p-0">
+      <PopoverContent align="end" className="w-80 rounded-lg border-border bg-popover p-0 shadow-lg">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
-          <div className="flex items-center gap-2">
-            <span className="grid h-7 w-7 place-items-center rounded-md bg-brand/15 text-brand">
-              <Wallet2 className="h-4 w-4" />
-            </span>
-            <div className="leading-tight">
-              <p className="text-sm font-semibold">Signing wallet</p>
-              <p className="text-[11px] text-muted-foreground">Signs your mainnet transactions</p>
-            </div>
+          <div className="leading-tight">
+            <p className="eyebrow">Signing wallet</p>
+            <p className="mt-1.5 text-xs text-muted-foreground">Signs your mainnet transactions</p>
           </div>
           {walletNet ? (
-            <span className={cn('rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide', walletNet.badgeClass)}>
+            <span className={cn('rounded-sm border px-1.5 py-0.5 font-mono text-[0.6rem] uppercase tracking-[0.14em]', walletNet.badgeClass)}>
               {walletNet.label}
             </span>
           ) : (
-            <span className="rounded-full border border-border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <span className="rounded-sm border border-border px-1.5 py-0.5 font-mono text-[0.6rem] uppercase tracking-[0.14em] text-muted-foreground">
               Unknown
             </span>
           )}
         </div>
 
         <div className="px-4 py-4">
-          <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Address</p>
+          <p className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">Address</p>
           <button
             onClick={onCopy}
-            className="group mt-1 flex w-full items-center justify-between gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-left transition-colors hover:bg-muted"
+            className="group mt-1.5 flex w-full items-center justify-between gap-2 rounded-md border border-border bg-card px-3 py-2 text-left transition-colors duration-150 hover:border-foreground/30"
           >
             <code className="truncate font-mono text-xs text-foreground">{address}</code>
             {copied ? (
               <Check className="h-3.5 w-3.5 shrink-0 text-success" />
             ) : (
-              <Copy className="h-3.5 w-3.5 shrink-0 text-muted-foreground group-hover:text-foreground" />
+              <Copy className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-colors duration-150 group-hover:text-foreground" />
             )}
           </button>
 
           {mismatch ? (
-            <div className="mt-3 flex items-start gap-1.5 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-[11px] text-warning">
+            <div className="mt-3 flex items-start gap-2 rounded-md border border-border border-l-2 border-l-warning bg-card px-3 py-2.5 text-xs leading-5 text-warning">
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               <span>
-                Your wallet is on <b>{walletNet?.label}</b>, but you&apos;re targeting <b>{target.label}</b>. Switch the
+                Your wallet is on <b className="font-medium">{walletNet?.label}</b>, but you&apos;re targeting <b className="font-medium">{target.label}</b>. Switch the
                 network in your wallet before signing.
               </span>
             </div>
           ) : (
-            <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
-              This account signs your {target.label} deploys and writes — separate from the server wallet above.
+            <p className="mt-3 text-xs leading-5 text-muted-foreground">
+              This account signs your {target.label} deploys and writes, separate from the server wallet.
             </p>
           )}
 

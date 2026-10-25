@@ -68,16 +68,16 @@ export function ProjectCard({
           }
         }}
         className={cn(
-          'group relative flex h-full cursor-pointer flex-col rounded-xl border border-border bg-card p-4 text-left shadow-xs transition-all duration-200',
-          'hover:-translate-y-0.5 hover:border-brand/45 hover:shadow-md',
-          'focus-visible:-translate-y-0.5 focus-visible:border-brand/45 focus-visible:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+          'group relative flex h-full cursor-pointer flex-col rounded-lg border border-border bg-card p-4 text-left transition-[border-color,background-color] duration-150',
+          'hover:border-foreground/30',
+          'focus-visible:border-foreground/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         )}
       >
         {/* Top: network badge + favorite + kebab */}
         <div className="mb-3 flex items-center justify-between gap-2">
           <span
             className={cn(
-              'inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
+              'inline-flex items-center gap-1.5 rounded-sm border px-1.5 py-0.5 font-mono text-[0.6rem] uppercase tracking-[0.14em]',
               meta.networkCfg.badgeClass,
             )}
             title={`Network: ${meta.networkCfg.label}`}
@@ -95,7 +95,7 @@ export function ProjectCard({
               aria-pressed={favorite}
               aria-label={favorite ? `Unfavorite ${project.name}` : `Favorite ${project.name}`}
               className={cn(
-                'grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground',
+                'grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-[opacity,background-color,color] duration-150 hover:bg-accent hover:text-foreground',
                 favorite
                   ? 'text-warning opacity-100'
                   : 'opacity-0 focus-visible:opacity-100 group-hover:opacity-100',
@@ -109,7 +109,7 @@ export function ProjectCard({
                 <button
                   onClick={stop}
                   aria-label={`Actions for ${project.name}`}
-                  className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground opacity-0 transition-colors hover:bg-accent hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100 data-[state=open]:opacity-100"
+                  className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground opacity-0 transition-[opacity,background-color,color] duration-150 hover:bg-accent hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100 data-[state=open]:opacity-100"
                 >
                   <MoreVertical className="h-4 w-4" />
                 </button>
@@ -141,18 +141,18 @@ export function ProjectCard({
 
         {/* Name + origin */}
         <div className="min-h-0 flex-1">
-          <h3 className="truncate font-display text-base font-semibold leading-tight text-foreground">
+          <h3 className="truncate font-display text-base font-medium leading-tight text-foreground">
             {project.name}
           </h3>
           {meta.origin && (
-            <p className="mt-1 truncate text-xs text-muted-foreground">
+            <p className="mt-1 truncate font-mono text-[0.68rem] text-muted-foreground">
               from <span className="text-foreground/70">{meta.origin}</span>
             </p>
           )}
         </div>
 
         {/* Metadata */}
-        <div className="mt-4 flex items-center gap-3 font-mono text-[11px] text-muted-foreground">
+        <div className="mt-4 flex items-center gap-3 border-t border-border pt-3 font-mono text-[0.68rem] text-muted-foreground">
           <span className="truncate">edited {meta.updated}</span>
           <span className="ml-auto flex shrink-0 items-center gap-1" title={`${meta.fileCount} file(s)`}>
             <FileCode2 className="h-3 w-3" /> {meta.fileCount}
@@ -163,7 +163,7 @@ export function ProjectCard({
         </div>
 
         {duplicating && (
-          <div className="absolute inset-0 grid place-items-center rounded-xl bg-card/70 backdrop-blur-sm">
+          <div className="absolute inset-0 grid place-items-center rounded-lg bg-card/85">
             <Loader2 className="h-5 w-5 animate-spin text-brand" />
           </div>
         )}

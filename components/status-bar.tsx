@@ -41,18 +41,16 @@ export function StatusBar({
   rightPanelOpen,
   onToggleRightPanel,
 }: StatusBarProps) {
-  const Sep = () => <span className="h-3 w-px bg-border/70" aria-hidden />
+  const Sep = () => <span className="h-3 w-px bg-border" aria-hidden />
+  const control = "flex h-5 items-center gap-1.5 rounded-sm px-1.5 transition-colors duration-150 hover:bg-accent hover:text-foreground"
 
   return (
-    <footer className="flex h-7 shrink-0 items-center justify-between border-t border-border bg-card/60 px-3 font-mono text-[11px] text-muted-foreground backdrop-blur-sm">
+    <footer className="flex h-7 shrink-0 items-center justify-between border-t border-border bg-sidebar px-2 font-mono text-[11px] text-muted-foreground">
       {/* Left: document/source facts */}
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-2">
         <button
           onClick={onToggleConsole}
-          className={cn(
-            "flex items-center gap-1.5 rounded px-1.5 py-0.5 transition-colors hover:bg-accent hover:text-foreground",
-            consoleOpen && "text-foreground",
-          )}
+          className={cn(control, consoleOpen && "text-foreground")}
           aria-pressed={consoleOpen}
           title="Toggle console (logs)"
         >
@@ -75,7 +73,7 @@ export function StatusBar({
             <Sep />
             {saveStatus === 'saving' && (
               <span className="flex items-center gap-1.5 text-muted-foreground">
-                <Loader2 className="h-3 w-3 animate-spin" />
+                <Loader2 className="h-3 w-3 animate-spin motion-reduce:animate-none" />
                 <span className="hidden sm:inline">Saving…</span>
               </span>
             )}
@@ -96,7 +94,7 @@ export function StatusBar({
       </div>
 
       {/* Right: position, metrics, problems, network */}
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-2">
         <span className="font-mono-tnum tabular-nums">
           Ln {cursor.line}, Col {cursor.col}
         </span>
@@ -108,7 +106,7 @@ export function StatusBar({
         {/* Problems — click jumps to console */}
         <button
           onClick={onToggleConsole}
-          className="flex items-center gap-2 rounded px-1.5 py-0.5 transition-colors hover:bg-accent hover:text-foreground"
+          className={cn(control, "gap-2")}
           title={`${errors} error${errors === 1 ? "" : "s"}, ${warnings} warning${warnings === 1 ? "" : "s"}`}
         >
           {errors === 0 && warnings === 0 ? (
@@ -127,7 +125,7 @@ export function StatusBar({
           )}
         </button>
         <Sep />
-        <span className={cn('flex items-center gap-1.5', isMainnet ? 'text-warning' : 'text-success')}>
+        <span className={cn('flex items-center gap-1.5 uppercase tracking-[0.12em]', isMainnet ? 'text-warning' : 'text-success')}>
           <span className="relative flex h-1.5 w-1.5">
             <span className={cn('absolute inline-flex h-full w-full animate-ping rounded-full opacity-60 motion-reduce:hidden', isMainnet ? 'bg-warning' : 'bg-success')} />
             <span className={cn('relative inline-flex h-1.5 w-1.5 rounded-full', isMainnet ? 'bg-warning' : 'bg-success')} />
@@ -139,10 +137,7 @@ export function StatusBar({
         <Sep />
         <button
           onClick={onToggleRightPanel}
-          className={cn(
-            "flex items-center gap-1.5 rounded px-1.5 py-0.5 transition-colors hover:bg-accent hover:text-foreground",
-            rightPanelOpen && "text-foreground",
-          )}
+          className={cn(control, rightPanelOpen && "text-foreground")}
           aria-pressed={rightPanelOpen}
           title={rightPanelOpen ? "Hide panel" : "Show panel"}
         >

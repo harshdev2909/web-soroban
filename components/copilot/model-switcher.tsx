@@ -51,10 +51,10 @@ export function ModelSwitcher({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <button className="flex items-center gap-1.5 rounded-md border border-border bg-card px-2 py-1 text-xs text-foreground transition hover:border-brand/50 hover:bg-accent">
+        <button className="flex h-7 items-center gap-1.5 rounded-sm border border-border bg-card px-2 font-mono text-[0.68rem] text-foreground transition-colors duration-150 hover:border-foreground/30 hover:bg-accent">
           {maxMode && <Sparkles className="h-3.5 w-3.5 text-brand" />}
           <span className="max-w-[120px] truncate">{currentLabel}</span>
-          {maxMode && <span className="rounded bg-brand/15 px-1 text-[9px] font-semibold text-brand">MAX</span>}
+          {maxMode && <span className="rounded-sm bg-brand/15 px-1 text-[0.6rem] font-semibold text-brand">MAX</span>}
           <ChevronDown className="h-3 w-3 text-muted-foreground" />
         </button>
       </PopoverTrigger>
@@ -82,7 +82,7 @@ export function ModelSwitcher({
                     onModel(m.id)
                     setOpen(false)
                   }}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left transition hover:bg-accent disabled:opacity-40"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left transition-colors duration-150 hover:bg-accent disabled:opacity-40"
                 >
                   <span className="flex h-4 w-4 items-center justify-center">
                     {m.id === model && <Check className="h-3.5 w-3.5 text-brand" />}
@@ -90,7 +90,7 @@ export function ModelSwitcher({
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <span className="truncate text-xs font-medium text-foreground">{m.label}</span>
-                      {m.recommended && <span className="rounded bg-brand/15 px-1 text-[9px] text-brand">★</span>}
+                      {m.recommended && <span className="rounded-sm bg-brand/15 px-1 text-[0.6rem] text-brand">★</span>}
                       {!m.available && <span className="text-[9px] text-muted-foreground">unavailable</span>}
                     </div>
                     <div className="flex items-center gap-2">
@@ -131,7 +131,7 @@ export function ModelSwitcher({
                     onModel(c.id)
                     setOpen(false)
                   }}
-                  className="flex w-full items-center justify-between px-3 py-2 text-left transition hover:bg-accent"
+                  className="flex w-full items-center justify-between px-3 py-2 text-left transition-colors duration-150 hover:bg-accent"
                 >
                   <span className="truncate text-xs text-foreground">{c.name}</span>
                   {c.contextLength ? (

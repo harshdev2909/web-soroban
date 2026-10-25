@@ -354,7 +354,7 @@ export function InvokePanel({ contractId }: InvokePanelProps) {
 
   if (specError) {
     return (
-      <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-border/70 px-4 py-8 text-center">
+      <div className="flex flex-col items-center gap-2 rounded-md border border-dashed border-border px-4 py-8 text-center">
         <AlertCircle className="h-6 w-6 text-muted-foreground/50" />
         <p className="text-xs text-foreground">{specError}</p>
         <button onClick={loadSpec} className="text-xs text-brand hover:underline">Retry</button>
@@ -473,7 +473,7 @@ export function InvokePanel({ contractId }: InvokePanelProps) {
       />
 
       {/* Saved tests */}
-      <div className="rounded-lg border border-border/60 bg-card/40 p-3">
+      <div className="rounded-md border border-border bg-card/40 p-3">
         <div className="mb-2.5 flex items-center justify-between">
           <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
             <FlaskConical className="h-3.5 w-3.5" /> Tests

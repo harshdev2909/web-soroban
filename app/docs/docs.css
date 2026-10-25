@@ -84,34 +84,38 @@
 }
 .docs-prose h1 {
   font-family: var(--font-display);
-  font-size: clamp(1.85rem, 3vw, 2.35rem);
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-  font-weight: 600;
+  font-size: clamp(2.1rem, 3.6vw, 2.9rem);
+  line-height: 1.04;
+  letter-spacing: -0.035em;
+  font-weight: 500;
   color: hsl(var(--foreground));
+  text-wrap: balance;
   margin-bottom: 0.35rem;
 }
 .docs-prose h2 {
   font-family: var(--font-display);
-  font-size: 1.45rem;
-  line-height: 1.25;
-  letter-spacing: -0.015em;
-  font-weight: 600;
+  font-size: 1.5rem;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+  font-weight: 500;
   color: hsl(var(--foreground));
-  margin-top: 2.75rem;
-  padding-top: 0.25rem;
+  margin-top: 3.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid hsl(var(--border));
   scroll-margin-top: 6rem;
 }
 .docs-prose h3 {
+  font-family: var(--font-display);
   font-size: 1.15rem;
-  font-weight: 600;
+  letter-spacing: -0.015em;
+  font-weight: 500;
   color: hsl(var(--foreground));
-  margin-top: 2rem;
+  margin-top: 2.25rem;
   scroll-margin-top: 6rem;
 }
 .docs-prose h4 {
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 0.95rem;
+  font-weight: 500;
   color: hsl(var(--foreground));
   margin-top: 1.5rem;
   scroll-margin-top: 6rem;
@@ -124,7 +128,7 @@
   text-underline-offset: 3px;
 }
 .docs-prose a:hover { text-decoration: underline; }
-.docs-prose strong { color: hsl(var(--foreground)); font-weight: 600; }
+.docs-prose strong { color: hsl(var(--foreground)); font-weight: 500; }
 
 /* Inline code (not inside a shiki block). */
 .docs-prose :not(pre) > code {
@@ -133,7 +137,7 @@
   background: hsl(var(--muted));
   color: hsl(var(--foreground));
   padding: 0.15em 0.4em;
-  border-radius: 0.3rem;
+  border-radius: 0.25rem;
   border: 1px solid hsl(var(--border));
   white-space: nowrap;
 }
@@ -154,24 +158,29 @@
 }
 .docs-prose hr { border-color: hsl(var(--border)); margin: 2.5rem 0; }
 
+/* Tables are hairline rows: no vertical rules, a mono header. */
 .docs-prose table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.875rem;
   display: block;
   overflow-x: auto;
+  border-top: 1px solid hsl(var(--border));
 }
 .docs-prose th,
 .docs-prose td {
-  border: 1px solid hsl(var(--border));
-  padding: 0.55rem 0.8rem;
+  border-bottom: 1px solid hsl(var(--border));
+  padding: 0.65rem 0.8rem 0.65rem 0;
   text-align: left;
   vertical-align: top;
 }
 .docs-prose th {
-  background: hsl(var(--muted) / 0.5);
-  font-weight: 600;
-  color: hsl(var(--foreground));
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: hsl(var(--muted-foreground));
   white-space: nowrap;
 }
 .docs-prose td code { white-space: nowrap; }

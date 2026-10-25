@@ -285,7 +285,7 @@ export function SkillsPanel({ onClose }: { onClose: () => void }) {
             <section className="space-y-2">
               <h3 className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Your skills</h3>
               {mine.length ? mine.map((s) => <Row key={s.id} s={s} />) : (
-                <button onClick={openNew} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border/70 py-4 text-[11px] text-muted-foreground transition hover:border-brand/40 hover:text-foreground">
+                <button onClick={openNew} className="flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-border py-4 font-mono text-[11px] text-muted-foreground transition-colors duration-150 hover:border-foreground/30 hover:text-foreground">
                   <Plus className="h-3.5 w-3.5" /> Create your first skill
                 </button>
               )}

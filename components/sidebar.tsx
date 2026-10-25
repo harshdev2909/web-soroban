@@ -176,7 +176,7 @@ export function Sidebar({
   return (
     <div className="flex h-full flex-col overflow-hidden border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
       {/* Project header */}
-      <div className="border-b border-sidebar-border p-3">
+      <div className="border-b border-sidebar-border px-3 pb-3 pt-2.5">
         {isEditingName ? (
           <div className="space-y-2">
             <Input
@@ -184,31 +184,32 @@ export function Sidebar({
               onChange={(e) => setEditName(e.target.value)}
               placeholder="Project name"
               autoFocus
+              className="h-8 font-mono text-xs"
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleNameSave()
                 if (e.key === "Escape") setIsEditingName(false)
               }}
             />
             <div className="flex gap-2">
-              <Button size="sm" variant="ghost" onClick={handleNameSave} className="text-brand">
+              <Button size="sm" variant="ghost" onClick={handleNameSave} className="h-7 text-brand">
                 <Check className="mr-1 h-3 w-3" /> Save
               </Button>
-              <Button size="sm" variant="ghost" onClick={() => setIsEditingName(false)} className="text-muted-foreground">
+              <Button size="sm" variant="ghost" onClick={() => setIsEditingName(false)} className="h-7 text-muted-foreground">
                 <X className="mr-1 h-3 w-3" /> Cancel
               </Button>
             </div>
           </div>
         ) : (
           <div className="group/header flex items-center justify-between gap-2">
-            <div className="flex min-w-0 items-center gap-2.5">
-              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-brand/12 text-brand">
-                <Code2 className="h-4 w-4" />
-              </span>
-              <h2 className="truncate font-display text-sm font-semibold text-foreground">{project.name}</h2>
+            <div className="min-w-0">
+              <p className="eyebrow flex items-center gap-1.5">
+                <Code2 className="h-3 w-3" aria-hidden="true" /> Project
+              </p>
+              <h2 className="mt-1.5 truncate font-display text-sm font-medium text-foreground">{project.name}</h2>
             </div>
             <button
               onClick={() => { setEditName(project.name); setIsEditingName(true) }}
-              className="rounded p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground focus-visible:opacity-100 group-hover/header:opacity-100"
+              className="grid h-7 w-7 place-items-center rounded-sm text-muted-foreground opacity-0 transition-[opacity,background-color,color] duration-150 hover:bg-accent hover:text-foreground focus-visible:opacity-100 group-hover/header:opacity-100"
               title="Rename project"
               aria-label="Rename project"
             >
@@ -231,15 +232,15 @@ export function Sidebar({
 
       {/* Explorer */}
       <div className="flex min-h-0 flex-1 flex-col">
-        <div className="flex items-center justify-between px-3 pb-1 pt-3">
+        <div className="flex h-9 shrink-0 items-center justify-between border-b border-sidebar-border px-3">
           <div className="flex items-center gap-2">
-            <h3 className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Explorer</h3>
-            <span className="font-mono-tnum text-[10px] text-muted-foreground/70">{project.files.length}</span>
+            <h3 className="eyebrow text-foreground">Explorer</h3>
+            <span className="font-mono-tnum text-[0.62rem] text-muted-foreground">{project.files.length}</span>
           </div>
           <div className="flex items-center gap-0.5">
             <button
               onClick={() => openNewFile()}
-              className="rounded p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              className="grid h-7 w-7 place-items-center rounded-sm text-muted-foreground transition-colors duration-150 hover:bg-accent hover:text-foreground"
               title="New file"
               aria-label="New file"
             >
@@ -247,7 +248,7 @@ export function Sidebar({
             </button>
             <button
               onClick={() => openNewFolder()}
-              className="rounded p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              className="grid h-7 w-7 place-items-center rounded-sm text-muted-foreground transition-colors duration-150 hover:bg-accent hover:text-foreground"
               title="New folder"
               aria-label="New folder"
             >
@@ -256,16 +257,16 @@ export function Sidebar({
             <button
               onClick={handleSaveProject}
               disabled={isSaving}
-              className="rounded p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+              className="grid h-7 w-7 place-items-center rounded-sm text-muted-foreground transition-colors duration-150 hover:bg-accent hover:text-foreground disabled:opacity-50"
               title="Save project"
               aria-label="Save project"
             >
-              {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+              {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" /> : <Save className="h-3.5 w-3.5" />}
             </button>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-2 pb-3">
+        <div className="flex-1 overflow-y-auto px-2 py-2">
           <FileTree
             files={project.files}
             extraFolders={extraFolders}
@@ -282,11 +283,11 @@ export function Sidebar({
 
         {/* mod-without-file warning */}
         {missingModules.length > 0 && (
-          <div className="mx-2 mb-2 rounded-md border border-warning/30 bg-warning/10 px-2.5 py-2">
-            <div className="flex items-center gap-1.5 text-[11px] font-medium text-warning">
+          <div className="mx-2 mb-2 rounded-sm border border-warning/30 bg-warning/10 px-2.5 py-2">
+            <div className="flex items-center gap-1.5 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-warning">
               <AlertTriangle className="h-3.5 w-3.5" /> Unresolved modules
             </div>
-            <ul className="mt-1 space-y-0.5 font-mono text-[10px] text-muted-foreground">
+            <ul className="mt-1.5 space-y-0.5 font-mono text-[0.62rem] text-muted-foreground">
               {missingModules.slice(0, 4).map((m) => (
                 <li key={`${m.file}:${m.module}`} className="truncate" title={`${m.file}: mod ${m.module};`}>
                   <span className="text-foreground/80">{baseName(m.file)}</span>: <code>mod {m.module};</code> has no file
@@ -298,28 +299,24 @@ export function Sidebar({
         )}
       </div>
 
-      <div className="border-t border-sidebar-border px-3 py-2.5">
-        <div className="flex items-center justify-between font-mono text-[10px] text-muted-foreground">
-          <span>WebSoroban</span>
-          <span className="flex items-center gap-1.5">
-            <span className="h-1 w-1 rounded-full bg-success" /> v1.0.0
-          </span>
-        </div>
+      <div className="flex h-7 items-center justify-between border-t border-sidebar-border px-3 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-muted-foreground">
+        <span>WebSoroban</span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-1 w-1 rounded-full bg-success" /> v1.0.0
+        </span>
       </div>
 
       {/* Path dialog (new file / new folder / rename-move) */}
       <Dialog open={dialogMode !== null} onOpenChange={(o) => !o && closeDialog()}>
         <DialogContent className="sm:max-w-[460px]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <span className="grid h-7 w-7 place-items-center rounded-md bg-brand/12 text-brand">
-                {dialogMode === "new-folder" ? <FolderPlus className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-              </span>
+            <DialogTitle className="flex items-center gap-2 font-display font-medium">
+              {dialogMode === "new-folder" ? <FolderPlus className="h-4 w-4 text-muted-foreground" /> : <Plus className="h-4 w-4 text-muted-foreground" />}
               {dialogTitle}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-2 pt-2">
-            <label htmlFor="path-input" className="block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+            <label htmlFor="path-input" className="eyebrow block">
               {dialogMode === "new-folder" ? "Folder path" : "File path"}
             </label>
             <Input

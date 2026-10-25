@@ -45,11 +45,10 @@ import {
 
 function IDELoading({ label = 'Loading IDE…' }: { label?: string }) {
   return (
-    <div className="relative grid h-screen place-items-center overflow-hidden bg-background">
-      <div className="pointer-events-none absolute inset-0 bg-radial-fade" aria-hidden />
-      <div className="relative text-center">
-        <Loader2 className="mx-auto h-9 w-9 animate-spin text-brand" />
-        <p className="mt-4 font-mono text-sm tracking-wide text-muted-foreground">{label}</p>
+    <div className="grid h-screen place-items-center bg-background px-6">
+      <div className="flex items-center gap-3 rounded-md border border-border px-5 py-4 font-mono text-[0.72rem] uppercase tracking-[0.16em] text-muted-foreground">
+        <Loader2 className="h-3.5 w-3.5 animate-spin text-brand motion-reduce:animate-none" />
+        {label}
       </div>
     </div>
   )
@@ -64,49 +63,51 @@ function IDESkeleton() {
   return (
     <div className="flex h-screen flex-col bg-background">
       {/* Navbar shell */}
-      <div className="flex h-14 items-center justify-between border-b border-border px-4">
+      <div className="flex h-12 items-center justify-between border-b border-border px-3">
         <div className="flex items-center gap-3">
-          <Skeleton className="h-7 w-7 rounded-md" />
-          <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-6 w-6 rounded-md" />
+          <Skeleton className="h-3.5 w-24 rounded-sm" />
         </div>
-        <Skeleton className="hidden h-9 w-80 rounded-lg lg:block" />
+        <Skeleton className="hidden h-8 w-80 rounded-md lg:block" />
         <div className="flex items-center gap-2">
-          <Skeleton className="h-7 w-16 rounded-full" />
-          <Skeleton className="h-9 w-9 rounded-lg" />
+          <Skeleton className="h-8 w-20 rounded-md" />
+          <Skeleton className="h-8 w-8 rounded-md" />
         </div>
       </div>
       <div className="flex min-h-0 flex-1">
         {/* Explorer */}
-        <div className="hidden w-[20%] flex-col gap-3 border-r border-border p-3 md:flex">
-          <Skeleton className="h-8 w-full rounded-md" />
-          <Skeleton className="h-3 w-24" />
-          <div className="mt-2 space-y-2">
+        <div className="hidden w-[20%] flex-col border-r border-border md:flex">
+          <div className="space-y-2 border-b border-border px-3 py-3">
+            <Skeleton className="h-2.5 w-14 rounded-sm" />
+            <Skeleton className="h-4 w-28 rounded-sm" />
+          </div>
+          <div className="space-y-1 p-2">
             {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-7 w-full rounded-md" style={{ opacity: 1 - i * 0.12 }} />
+              <Skeleton key={i} className="h-7 w-full rounded-sm" style={{ opacity: 1 - i * 0.12 }} />
             ))}
           </div>
         </div>
         {/* Editor (hero) */}
         <div className="flex flex-1 flex-col">
-          <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
-            <Skeleton className="h-6 w-24 rounded" />
-            <Skeleton className="h-6 w-24 rounded" />
-            <div className="ml-auto flex gap-2">
-              <Skeleton className="h-8 w-24 rounded-md" />
-              <Skeleton className="h-8 w-24 rounded-md" />
+          <div className="flex h-9 items-center gap-2 border-b border-border px-3">
+            <Skeleton className="h-5 w-24 rounded-sm" />
+            <Skeleton className="h-5 w-24 rounded-sm" />
+            <div className="ml-auto flex gap-1.5">
+              <Skeleton className="h-7 w-20 rounded-md" />
+              <Skeleton className="h-7 w-20 rounded-md" />
             </div>
           </div>
           <div className="flex-1 space-y-2.5 p-4">
             {Array.from({ length: 14 }).map((_, i) => (
-              <Skeleton key={i} className="h-3.5 rounded" style={{ width: `${35 + ((i * 37) % 55)}%` }} />
+              <Skeleton key={i} className="h-3.5 rounded-sm" style={{ width: `${35 + ((i * 37) % 55)}%` }} />
             ))}
           </div>
         </div>
         {/* Right panel */}
-        <div className="hidden w-[28%] flex-col gap-4 border-l border-border p-3 lg:flex">
-          <Skeleton className="h-8 w-32 rounded-md" />
-          <Skeleton className="h-24 w-full rounded-lg" />
-          <Skeleton className="h-40 w-full rounded-lg" />
+        <div className="hidden w-[28%] flex-col gap-3 border-l border-border p-3 lg:flex">
+          <Skeleton className="h-6 w-40 rounded-md" />
+          <Skeleton className="h-24 w-full rounded-md" />
+          <Skeleton className="h-40 w-full rounded-md" />
         </div>
       </div>
       {/* Status bar */}
@@ -1482,19 +1483,20 @@ impl From<Error> for soroban_sdk::Error {
   // Show login prompt if not authenticated
   if (!authLoading && !isAuthenticated) {
     return (
-      <div className="relative grid h-screen place-items-center overflow-hidden bg-background px-6">
-        <div className="pointer-events-none absolute inset-0 bg-radial-fade" aria-hidden />
-        <div className="pointer-events-none absolute inset-0 grain" aria-hidden />
-        <div className="relative max-w-md text-center">
+      <div className="grid h-screen place-items-center bg-background px-6">
+        <div className="w-full max-w-md rounded-lg border border-border p-8 sm:p-10">
           <LoginModal open={isLoginModalOpen} onOpenChange={setIsLoginModalOpen} />
-          <NovaMark className="mx-auto mb-6 h-14 w-14" />
-          <h1 className="font-display text-3xl font-semibold tracking-tight">
-            Sign in to <span className="text-gradient-brand">WebSoroban</span>
+          <div className="flex items-center justify-between">
+            <NovaMark className="h-8 w-8 rounded-md" />
+            <span className="eyebrow">WebSoroban · IDE</span>
+          </div>
+          <h1 className="mt-8 font-display text-3xl font-medium">
+            Sign in to <span className="text-brand">WebSoroban</span>
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Authentication is required to open the IDE.
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
+            Authentication is required to open the IDE. A funded testnet wallet is created for you on first sign-in.
           </p>
-          <Button className="mt-6" onClick={() => setIsLoginModalOpen(true)}>
+          <Button className="lit mt-8 w-full" onClick={() => setIsLoginModalOpen(true)}>
             Sign in to continue
           </Button>
         </div>
@@ -1509,7 +1511,7 @@ impl From<Error> for soroban_sdk::Error {
   if (!project || !activeFile) {
     return (
       <div className="grid h-screen place-items-center bg-background">
-        <p className="text-sm text-muted-foreground">No project loaded</p>
+        <p className="rounded-md border border-border px-5 py-4 font-mono text-[0.72rem] uppercase tracking-[0.16em] text-muted-foreground">No project loaded</p>
       </div>
     );
   }
@@ -1543,8 +1545,6 @@ impl From<Error> for soroban_sdk::Error {
 
   return (
     <div className="relative flex h-screen flex-col overflow-hidden bg-background">
-      {/* Ambient deep-space backdrop */}
-      <div className="pointer-events-none fixed inset-0 -z-10 bg-radial-fade" aria-hidden />
       <CommandPalette open={isCommandOpen} onOpenChange={setIsCommandOpen} commands={paletteCommands} />
       <Navbar
         user={user}
@@ -1583,18 +1583,18 @@ impl From<Error> for soroban_sdk::Error {
       <Dialog open={deployTargetChoices !== null} onOpenChange={(o) => !o && setDeployTargetChoices(null)}>
         <DialogContent className="sm:max-w-[460px]">
           <DialogHeader>
-            <DialogTitle>Choose a contract to deploy</DialogTitle>
+            <DialogTitle className="font-display font-medium">Choose a contract to deploy</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm leading-6 text-muted-foreground">
             This workspace has multiple deployable contracts. Pick which crate to deploy — it&apos;s saved as the
             project&apos;s deploy target and used for future deploys (you can change it later).
           </p>
-          <div className="mt-2 space-y-2">
+          <div className="mt-2 divide-y divide-border rounded-md border border-border">
             {(deployTargetChoices || []).map((c) => (
               <button
                 key={c.name}
                 onClick={() => chooseDeployTarget(c.name)}
-                className="flex w-full items-center justify-between rounded-md border border-border bg-card px-3 py-2.5 text-left transition-colors hover:border-brand/50 hover:bg-accent"
+                className="flex w-full items-center justify-between px-3 py-2.5 text-left transition-colors duration-150 first:rounded-t-md last:rounded-b-md hover:bg-accent"
               >
                 <span className="font-mono text-sm text-foreground">{c.name}</span>
                 <span className="font-mono text-[11px] text-muted-foreground">{c.dir || '(root)'}</span>
@@ -1689,10 +1689,10 @@ impl From<Error> for soroban_sdk::Error {
               setDockTab('copilot')
               setCopilotFocus((n) => n + 1)
             }}
-            className="fixed bottom-10 right-5 z-40 flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-2 text-xs font-medium text-foreground shadow-lg transition hover:border-brand/60 hover:bg-accent"
+            className="fixed bottom-10 right-4 z-40 flex h-9 items-center gap-2 rounded-md border border-border bg-card px-3 font-mono text-[0.68rem] uppercase tracking-[0.14em] text-foreground shadow-md transition-colors duration-150 hover:border-foreground/30 hover:bg-accent"
           >
-            <Sparkles className="h-4 w-4 text-brand" /> Copilot
-            <span className="rounded bg-muted px-1 font-mono text-[9px] text-muted-foreground">⌘I</span>
+            <Sparkles className="h-3.5 w-3.5 text-brand" /> Copilot
+            <kbd className="rounded-sm border border-border bg-muted px-1 py-0.5 text-[0.6rem] text-muted-foreground">⌘I</kbd>
           </button>
         )}
 

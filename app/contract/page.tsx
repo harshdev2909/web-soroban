@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { Loader2 } from 'lucide-react'
 
 // INVITE SYSTEM DISABLED - Redirect to IDE which uses Google OAuth
 export default function ContractPage() {
@@ -13,12 +14,15 @@ export default function ContractPage() {
   }, [router])
 
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center">
-      <div className="text-center">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-4">Redirecting...</h1>
-          <p className="text-gray-400">Please sign in with Google to access the IDE</p>
-        </div>
+    <div className="relative grid min-h-screen place-items-center bg-background px-6 text-foreground">
+      <div className="pointer-events-none absolute inset-0 grain" aria-hidden />
+      <div className="figure ticks relative w-full max-w-md p-8">
+        <p className="eyebrow flex items-center gap-3">
+          <Loader2 className="h-3.5 w-3.5 animate-spin text-brand motion-reduce:animate-none" aria-hidden />
+          Redirecting
+        </p>
+        <h1 className="mt-6 font-display text-title font-medium">Opening the IDE.</h1>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">Please sign in with Google to access the IDE.</p>
       </div>
     </div>
   )

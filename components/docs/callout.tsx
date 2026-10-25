@@ -4,15 +4,15 @@ import { cn } from "@/lib/utils"
 
 type CalloutType = "note" | "info" | "tip" | "warning" | "danger"
 
-const STYLES: Record<CalloutType, { icon: typeof Info; ring: string; tint: string; label: string }> = {
-  note: { icon: Info, ring: "border-info/30", tint: "bg-info/[0.06] text-info", label: "Note" },
-  info: { icon: Info, ring: "border-info/30", tint: "bg-info/[0.06] text-info", label: "Info" },
-  tip: { icon: Lightbulb, ring: "border-success/30", tint: "bg-success/[0.06] text-success", label: "Tip" },
-  warning: { icon: TriangleAlert, ring: "border-warning/30", tint: "bg-warning/[0.07] text-warning", label: "Warning" },
-  danger: { icon: OctagonAlert, ring: "border-destructive/30", tint: "bg-destructive/[0.06] text-destructive", label: "Danger" },
+const STYLES: Record<CalloutType, { icon: typeof Info; accent: string; text: string; label: string }> = {
+  note: { icon: Info, accent: "border-l-info", text: "text-info", label: "Note" },
+  info: { icon: Info, accent: "border-l-info", text: "text-info", label: "Info" },
+  tip: { icon: Lightbulb, accent: "border-l-success", text: "text-success", label: "Tip" },
+  warning: { icon: TriangleAlert, accent: "border-l-warning", text: "text-warning", label: "Warning" },
+  danger: { icon: OctagonAlert, accent: "border-l-destructive", text: "text-destructive", label: "Danger" },
 }
 
-/** Admonition. Usage: <Callout type="warning" title="...">body</Callout> */
+/** Admonition: a hairline frame with a 2px semantic rule on the left. Usage: <Callout type="warning" title="...">body</Callout> */
 export function Callout({
   type = "note",
   title,
@@ -25,10 +25,10 @@ export function Callout({
   const s = STYLES[type] ?? STYLES.note
   const Icon = s.icon
   return (
-    <div className={cn("my-5 flex gap-3 rounded-lg border px-4 py-3", s.ring, s.tint.split(" ")[0])}>
-      <Icon className={cn("mt-0.5 h-4 w-4 shrink-0", s.tint.split(" ")[1])} aria-hidden />
-      <div className="min-w-0 text-sm leading-relaxed text-foreground/90 [&>*+*]:mt-2 [&_a]:text-brand [&_a:hover]:underline [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-[0.85em]">
-        <p className={cn("font-medium", s.tint.split(" ")[1])}>{title ?? s.label}</p>
+    <div className={cn("my-5 flex gap-3 rounded-md border border-border border-l-2 bg-card px-4 py-3.5", s.accent)}>
+      <Icon className={cn("mt-0.5 h-4 w-4 shrink-0", s.text)} aria-hidden />
+      <div className="min-w-0 text-sm leading-relaxed text-foreground/90 [&>*+*]:mt-2 [&_a]:text-brand [&_a:hover]:underline [&_code]:rounded-sm [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-[0.85em]">
+        <p className={cn("font-mono text-[0.68rem] uppercase tracking-[0.16em]", s.text)}>{title ?? s.label}</p>
         {children}
       </div>
     </div>

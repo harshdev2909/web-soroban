@@ -30,15 +30,15 @@ export function ModeSelector({ mode, onChange }: { mode: CopilotMode; onChange: 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="flex items-center gap-1.5 rounded-md border border-border bg-card px-2 py-1 text-xs font-medium text-foreground transition hover:border-brand/50 hover:bg-accent">
+        <button className="flex h-7 items-center gap-1.5 rounded-sm border border-border bg-card px-2 font-mono text-[0.68rem] uppercase tracking-[0.12em] text-foreground transition-colors duration-150 hover:border-foreground/30 hover:bg-accent">
           <Icon className="h-3.5 w-3.5 text-brand" />
           {current.label}
           <ChevronDown className="h-3 w-3 text-muted-foreground" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-72">
-        <div className="px-2 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-          Mode · <kbd className="rounded bg-muted px-1">⇧Tab</kbd> to rotate
+        <div className="eyebrow px-2 py-1.5">
+          Mode · <kbd className="rounded-sm border border-border bg-muted px-1">⇧Tab</kbd> to rotate
         </div>
         {MODES.map((m) => {
           const MIcon = m.icon
