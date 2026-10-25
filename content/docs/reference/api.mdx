@@ -4,8 +4,9 @@ description: The public WebSoroban backend endpoints, request bodies, responses,
 ---
 
 Every endpoint is under the base path `/api` and requires a `Bearer` token unless
-marked otherwise. All operations run against the Stellar **testnet**, mainnet is
-never used.
+marked otherwise. IDE operations (compile, deploy, invoke, test, wallet) run
+against the Stellar **testnet**. Payments and PayLoop also run on **mainnet**
+when you ask for it explicitly, as described in their sections.
 
 <Callout type="note" title="Reading the badges">
   <Badge tone="read-only">read-only</Badge> never signs.
@@ -184,6 +185,44 @@ only payments to the endpoint's payout address, in USDC, on the endpoint's
 network, and allows 120 calls per endpoint per minute. Developer credentials
 are removed before the server adds its own facilitator credentials. See
 [x402 payments](/docs/payments) for the complete flow.
+
+## PayLoop
+
+Every PayLoop route takes `?network=testnet` (default) or `?network=mainnet`.
+A network without a deployed contract returns `404`. All routes are public
+except reconcile. See [PayLoop subscriptions](/docs/payloop).
+
+### GET /api/payloop/config
+
+<Badge tone="read-only">read-only</Badge>
+
+Return the network's contract id, USDC token, explorer base, and demo merchant,
+plus `networks` (each network and whether it is deployed) and `audited` (whether
+the mainnet deployment recorded an independent audit; `null` when not deployed).
+
+### GET /api/payloop/policies
+
+<Badge tone="read-only">read-only</Badge>
+
+List indexed policies, newest first, up to 100. Requires `subscriber` or
+`merchant`; `status` filters by `active`, `paused`, `revoked`, or `completed`.
+Amounts are strings in stroops, with `amountUsdc`, `capUsdc`, and `spentUsdc`
+alongside.
+
+### GET /api/payloop/policies/:policyId
+
+<Badge tone="read-only">read-only</Badge>
+
+One policy and its last 50 charges. Each charge has `outcome` (`charged`,
+`insufficient_balance`, or `insufficient_allowance`), `txHash`, `dueAt`, and
+`delaySeconds`.
+
+### GET /api/payloop/stats
+
+<Badge tone="read-only">read-only</Badge>
+
+Policies by status, charge outcomes, and on-schedule metrics (share of
+recurring charges within a minute of their due time, p50 and p95 lateness).
 
 ## Wallet
 

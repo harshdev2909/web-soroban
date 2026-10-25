@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useWalletKit } from '@/contexts/WalletKitContext'
-import { getNetwork } from '@/lib/networks'
+import { getNetwork, type NetworkId } from '@/lib/networks'
 import {
   PayLoopCharge, PayLoopConfig, PayLoopPolicy, WalletFunds, explainPayLoopError, formatInterval,
   payloopApi, readFunds, toStroops,
@@ -23,6 +23,12 @@ import {
 /** The Stellar SDK loads only when the user signs something. */
 const chain = () => import('@/lib/payloop-chain')
 import { cn, truncateAddress } from '@/lib/utils'
+
+const DEFAULT_FORM: Record<NetworkId, { amount: string; interval: number; cap: string }> = {
+  testnet: { amount: '0.1', interval: 60, cap: '2' },
+  // Real money: a monthly plan by default, never the one-minute demo.
+  mainnet: { amount: '1', interval: 30 * 86_400, cap: '12' },
+}
 
 const INTERVALS = [
   { label: '1 minute (demo)', seconds: 60 },
@@ -39,7 +45,8 @@ const STATUS_STYLE: Record<string, string> = {
 }
 
 export default function PayLoopPage() {
-  const { address, connect, connecting, disconnect, signTransaction, isInitialized } = useWalletKit()
+  const { address, connect, connecting, disconnect, signTransaction, isInitialized, getWalletNetwork } = useWalletKit()
+  const [selected, setSelected] = useState<NetworkId>('testnet')
   const [config, setConfig] = useState<PayLoopConfig | null>(null)
   const [configError, setConfigError] = useState('')
   const [funds, setFunds] = useState<WalletFunds | null>(null)
@@ -47,25 +54,47 @@ export default function PayLoopPage() {
   const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
   const [notice, setNotice] = useState<{ text: string; hash?: string } | null>(null)
-  const [form, setForm] = useState({ merchant: '', amount: '0.1', interval: 60, cap: '2' })
+  const [form, setForm] = useState({ merchant: '', ...DEFAULT_FORM.testnet })
 
   const network = config ? getNetwork(config.network) : null
   const wallet = useMemo(() => address ? { address, signTransaction } : null, [address, signTransaction])
 
+  // ?network=mainnet opens the mainnet view directly.
   useEffect(() => {
-    payloopApi.config()
+    if (new URLSearchParams(window.location.search).get('network') === 'mainnet') setSelected('mainnet')
+  }, [])
+
+  useEffect(() => {
+    setConfig(null)
+    setConfigError('')
+    setPolicies([])
+    setFunds(null)
+    setNotice(null)
+    setError('')
+    payloopApi.config(selected)
       .then((value) => {
         setConfig(value)
-        if (value.demoMerchant) setForm((current) => current.merchant ? current : { ...current, merchant: value.demoMerchant! })
+        setForm({ merchant: value.demoMerchant || '', ...DEFAULT_FORM[selected] })
       })
       .catch((cause) => setConfigError(explainPayLoopError(cause)))
-  }, [])
+  }, [selected])
+
+  const mainnetAvailable = Boolean(config?.networks?.find((item) => item.network === 'mainnet')?.enabled)
+
+  /** Signing on the wrong network would fail on-chain; stop before the wallet prompt. */
+  async function assertWalletNetwork() {
+    if (!network) return
+    const current = await getWalletNetwork().catch(() => null)
+    if (current?.networkPassphrase && current.networkPassphrase !== network.passphrase) {
+      throw new Error(`Your wallet is on a different network. Switch it to Stellar ${network.label}, then try again.`)
+    }
+  }
 
   const refresh = useCallback(async () => {
     if (!config || !address) return
     const [nextFunds, list] = await Promise.all([
       readFunds(config.network, address).catch(() => null),
-      payloopApi.policies(address).then((result) => result.policies).catch(() => []),
+      payloopApi.policies(address, config.network).then((result) => result.policies).catch(() => []),
     ])
     if (nextFunds) setFunds(nextFunds)
     setPolicies(list)
@@ -105,6 +134,7 @@ export default function PayLoopPage() {
     event.preventDefault()
     void run('create', async () => {
       if (!wallet || !config) return
+      await assertWalletNetwork()
       const { allowanceLiveUntil, invokePayLoop, scv } = await chain()
       const amount = toStroops(form.amount)
       const cap = toStroops(form.cap)
@@ -120,6 +150,7 @@ export default function PayLoopPage() {
 
   const act = (policy: PayLoopPolicy, method: 'pause' | 'resume' | 'revoke') => run(`${method}-${policy.policyId}`, async () => {
     if (!wallet || !config) return
+    await assertWalletNetwork()
     const { invokePayLoop, scv } = await chain()
     const result = await invokePayLoop(config, wallet, method, [scv.u64(policy.policyId)])
     const verb = method === 'pause' ? 'paused' : method === 'resume' ? 'resumed' : 'revoked'
@@ -130,6 +161,7 @@ export default function PayLoopPage() {
   // Re-grant exactly what live policies may still charge, with a fresh ~100-day expiry.
   const renewAllowance = () => run('renew', async () => {
     if (!wallet || !config) return
+    await assertWalletNetwork()
     const { allowanceLiveUntil, invokePayLoop, scv } = await chain()
     const result = await invokePayLoop(config, wallet, 'refresh_allowance', [scv.address(wallet.address), scv.u32(await allowanceLiveUntil(config))])
     return { text: 'Allowance renewed and trimmed to what your live policies may still charge.', hash: result.hash }
@@ -171,11 +203,29 @@ export default function PayLoopPage() {
           <div className="space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap items-center gap-2 font-mono text-xs text-muted-foreground">
-                <span className={cn('rounded-full border px-3 py-1.5 uppercase', network?.badgeClass)}>{network?.label}</span>
+                <div role="radiogroup" aria-label="Network" className="inline-flex rounded-full border border-border bg-card p-1">
+                  {(['testnet', 'mainnet'] as NetworkId[]).map((id) => {
+                    const item = getNetwork(id)
+                    const disabled = id === 'mainnet' && !mainnetAvailable && selected !== 'mainnet'
+                    return (
+                      <button key={id} type="button" role="radio" aria-checked={selected === id} disabled={disabled || Boolean(busy)} onClick={() => setSelected(id)} title={disabled ? 'PayLoop is not deployed on mainnet yet' : undefined} className={cn('min-h-9 rounded-full px-3 uppercase transition-colors disabled:cursor-not-allowed disabled:opacity-40', selected === id ? item.badgeClass + ' border' : 'text-muted-foreground hover:text-foreground')}>
+                        {item.label}
+                      </button>
+                    )
+                  })}
+                </div>
                 {config.contractId ? <a href={`${config.explorerBase}/contract/${config.contractId}`} target="_blank" rel="noreferrer" className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-border px-3 hover:bg-muted">Contract {truncateAddress(config.contractId, 4, 4)} <ExternalLink className="h-3.5 w-3.5" /></a> : null}
               </div>
               {address ? <div className="flex items-center gap-2 text-sm"><span className="font-mono text-xs text-muted-foreground">{truncateAddress(address)}</span><Button type="button" size="sm" variant="ghost" onClick={disconnect}>Disconnect</Button></div> : null}
             </div>
+
+            {config.network === 'mainnet' ? (
+              <p role="note" className="rounded-2xl border border-warning/40 bg-warning/10 p-4 text-sm leading-6">
+                <strong>Mainnet: real USDC.</strong> Every charge moves real money from your wallet to the merchant.
+                {config.audited === false ? ' This contract has not yet completed an independent security review; only commit amounts you are prepared to risk.' : ''}
+                {!config.enabled ? ' PayLoop is not deployed on mainnet yet.' : ''}
+              </p>
+            ) : null}
 
             {error ? <p role="alert" className="rounded-2xl border border-destructive/25 bg-destructive/5 p-4 text-sm text-destructive">{error}</p> : null}
             {notice ? <p role="status" className="flex flex-wrap items-center gap-2 rounded-2xl border border-success/25 bg-success/10 p-4 text-sm"><CheckCircle2 className="h-4 w-4 text-success" />{notice.text}{notice.hash && network ? <a href={`${network.explorerBase}/tx/${notice.hash}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-brand underline-offset-4 hover:underline">Receipt <ExternalLink className="h-3.5 w-3.5" /></a> : null}</p> : null}
@@ -247,7 +297,7 @@ export default function PayLoopPage() {
                 </div>
                 {!policies.length ? <p className="mt-8 rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">{address ? 'No policies yet. Sign one to see charges arrive here.' : 'Connect a wallet to see its policies.'}</p> : (
                   <ul className="mt-6 space-y-4">
-                    {policies.map((policy) => <PolicyCard key={policy.policyId} policy={policy} busy={busy} explorerBase={config.explorerBase} onAct={act} />)}
+                    {policies.map((policy) => <PolicyCard key={`${config.network}-${policy.policyId}`} policy={policy} network={config.network} busy={busy} explorerBase={config.explorerBase} onAct={act} />)}
                   </ul>
                 )}
               </div>
@@ -299,12 +349,12 @@ function useCountdown(target: string) {
   return `in ${Math.round(seconds / 86_400)} days`
 }
 
-function PolicyCard({ policy, busy, explorerBase, onAct }: { policy: PayLoopPolicy; busy: string; explorerBase: string; onAct: (policy: PayLoopPolicy, method: 'pause' | 'resume' | 'revoke') => void }) {
+function PolicyCard({ policy, network, busy, explorerBase, onAct }: { policy: PayLoopPolicy; network: NetworkId; busy: string; explorerBase: string; onAct: (policy: PayLoopPolicy, method: 'pause' | 'resume' | 'revoke') => void }) {
   const [charges, setCharges] = useState<PayLoopCharge[]>([])
   const countdown = useCountdown(policy.nextChargeAt)
   useEffect(() => {
-    payloopApi.policy(policy.policyId).then((result) => setCharges(result.charges)).catch(() => undefined)
-  }, [policy.policyId, policy.charges, policy.failedAttempts])
+    payloopApi.policy(policy.policyId, network).then((result) => setCharges(result.charges)).catch(() => undefined)
+  }, [policy.policyId, policy.charges, policy.failedAttempts, network])
   const live = policy.status === 'active' || policy.status === 'paused'
   const used = Math.min(100, Math.round((Number(policy.spent) / Number(policy.cap)) * 100))
   return (

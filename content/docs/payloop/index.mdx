@@ -9,9 +9,13 @@ the total. Funds stay in the subscriber's wallet until a charge is due. A
 relayer submits each charge on schedule, and the subscriber can pause, resume,
 or revoke from their own wallet at any time.
 
-<Callout type="note" title="Testnet">
-  PayLoop runs on Stellar Testnet. Mainnet deployment is blocked until an
-  independent security review of the contract is complete.
+<Callout type="note" title="Testnet and Mainnet">
+  PayLoop runs on **Stellar Testnet** (test USDC) and **Stellar Mainnet** (real
+  Circle USDC), each with its own contract and relayer. Pick the network with
+  the switch on the [PayLoop](/payloop) page, or `?network=mainnet` on every
+  API call. The mainnet contract has had an internal security review;
+  `GET /api/payloop/config?network=mainnet` reports `audited`, and the page
+  shows a notice while no independent audit is recorded.
 </Callout>
 
 ## How a policy works
@@ -61,6 +65,38 @@ in one click, then sign a one-minute policy. Within a minute or two you will
 see the relayer's charges arrive, each with its Stellar Expert receipt. Pause,
 resume, or revoke from the same page.
 
+On mainnet, switch the page to **Mainnet** and set your wallet to Mainnet. The
+wallet needs a Circle USDC trustline and enough USDC for the first charge,
+which settles immediately. Start with a small amount and a low cap; you can
+revoke at any time.
+
+## Integrate with the SDK
+
+```bash
+npm install @web-soroban/payloop @stellar/stellar-sdk
+```
+
+```ts
+import { createPayLoopClient } from '@web-soroban/payloop'
+
+const payloop = createPayLoopClient({ network: 'mainnet', rpcUrl: process.env.MAINNET_RPC_URL })
+
+// Browser: the customer subscribes from their own wallet.
+await payloop.send(
+  () => payloop.buildCreatePolicy({ subscriber, merchant, amount: '9.99', intervalSeconds: 30 * 86_400, cap: '119.88' }),
+  (xdr) => signWithWallet(xdr),
+)
+
+// Server: gate access on an active policy.
+const plan = await payloop.activeSubscription({ subscriber, merchant, amount: '9.99', intervalSeconds: 30 * 86_400 })
+```
+
+The SDK builds unsigned transactions for any Stellar wallet (`buildPause`,
+`buildResume`, `buildRevoke`, `buildCancel`, `buildRefreshAllowance`), retries
+only failures the network confirmed, reads policies from the contract or the
+index, and verifies SEP-53 wallet signatures (`verifyWalletSignature`). There is
+no public SDF RPC on mainnet, so pass your provider's `rpcUrl`.
+
 ## Accept PayLoop as a merchant
 
 A merchant does not run any chain infrastructure. The WebSoroban relayer
@@ -69,10 +105,13 @@ submits charges, and the indexer exposes policies and payments.
 ### 1. Read a subscriber's policies
 
 ```http
-GET /api/payloop/policies?merchant=G…YOUR_MERCHANT&status=active
-GET /api/payloop/policies?subscriber=G…CUSTOMER
-GET /api/payloop/policies/:policyId        # policy + its charge history
+GET /api/payloop/policies?merchant=G…YOUR_MERCHANT&status=active&network=mainnet
+GET /api/payloop/policies?subscriber=G…CUSTOMER&network=mainnet
+GET /api/payloop/policies/:policyId?network=mainnet   # policy + its charge history
 ```
+
+`network` is `testnet` (the default) or `mainnet`. Policy ids are per network.
+A network without a deployed contract returns `404`.
 
 Treat a customer as subscribed when they have an `active` policy to your
 merchant address whose `amount` and `intervalSeconds` match your plan.
@@ -84,12 +123,9 @@ wallet to sign a short message (SEP-53 `signMessage`, supported by Freighter),
 then verify it server-side before granting access:
 
 ```ts
-import { Keypair, hash } from '@stellar/stellar-sdk'
+import { verifyWalletSignature } from '@web-soroban/payloop'
 
-function ownsWallet(address: string, message: string, signatureBase64: string) {
-  const digest = hash(Buffer.from(`Stellar Signed Message:\n${message}`))
-  return Keypair.fromPublicKey(address).verify(digest, Buffer.from(signatureBase64, 'base64'))
-}
+if (!verifyWalletSignature(address, message, signatureBase64)) throw new Error('Not your wallet')
 ```
 
 Include a timestamp or nonce in the message and reject stale ones.

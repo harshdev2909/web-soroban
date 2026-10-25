@@ -27,6 +27,10 @@ export interface PayLoopConfig {
   minIntervalSeconds: number
   explorerBase: string
   demoMerchant: string | null
+  /** Mainnet: whether an independent review preceded the deployment (null when unknown). */
+  audited?: boolean | null
+  /** Which networks have a deployed PayLoop contract. */
+  networks?: Array<{ network: NetworkId; enabled: boolean; contractId: string | null }>
 }
 
 export interface PayLoopPolicy {
@@ -113,11 +117,12 @@ async function getJson<T>(path: string): Promise<T> {
 }
 
 export const payloopApi = {
-  config: () => getJson<PayLoopConfig & { success: true }>('/payloop/config'),
-  policies: (subscriber: string) =>
-    getJson<{ success: true; policies: PayLoopPolicy[] }>(`/payloop/policies?subscriber=${encodeURIComponent(subscriber)}`),
-  policy: (policyId: string) =>
-    getJson<{ success: true; policy: PayLoopPolicy; charges: PayLoopCharge[] }>(`/payloop/policies/${policyId}`),
+  config: (network: NetworkId = 'testnet') =>
+    getJson<PayLoopConfig & { success: true }>(`/payloop/config?network=${network}`),
+  policies: (subscriber: string, network: NetworkId = 'testnet') =>
+    getJson<{ success: true; policies: PayLoopPolicy[] }>(`/payloop/policies?network=${network}&subscriber=${encodeURIComponent(subscriber)}`),
+  policy: (policyId: string, network: NetworkId = 'testnet') =>
+    getJson<{ success: true; policy: PayLoopPolicy; charges: PayLoopCharge[] }>(`/payloop/policies/${policyId}?network=${network}`),
 }
 
 export interface WalletFunds {

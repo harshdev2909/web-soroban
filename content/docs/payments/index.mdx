@@ -8,10 +8,11 @@ USDC on Stellar. You create and monitor the endpoint in Payment Studio. A buyer
 opens its public checkout, approves one authorization in their wallet, and gets
 the protected response with an on-chain receipt.
 
-<Callout type="note" title="Testnet first">
-  New endpoints default to **Stellar Testnet**. Mainnet appears in Payment Studio
-  only when the WebSoroban server has a mainnet facilitator configured, and
-  every mainnet screen is marked in amber before a wallet asks for approval.
+<Callout type="note" title="Testnet and Mainnet">
+  Endpoints run on **Stellar Testnet** (test USDC) or **Stellar Mainnet** (real
+  Circle USDC). New endpoints default to testnet. Every mainnet screen is marked
+  in amber before a wallet asks for approval. Both networks settle through the
+  OpenZeppelin x402 facilitator, which sponsors the network fee.
 </Callout>
 
 ## Create a paid endpoint
@@ -63,6 +64,20 @@ The network comes from the key prefix, so a testnet key can never guard a
 mainnet route. The fastest start is the **Paid API endpoint** template. It runs
 the preflight on startup and includes `pnpm pay`, which makes a real paid
 testnet request from your terminal.
+
+## Go live on mainnet
+
+1. In Payment Studio, create a new endpoint with **Mainnet** selected. A
+   testnet endpoint cannot be switched; its key stays testnet-only.
+2. Use a payout address that exists on mainnet and holds a trustline to Circle
+   USDC (issuer `GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN`).
+3. Swap your server's `WEBSOROBAN_PAY_KEY` and `WEBSOROBAN_ENDPOINT_ID` for the
+   `wsp_live_` key and new endpoint id. `pay.preflight()` confirms the key and
+   the trustline on mainnet before you take traffic.
+4. Make one small real payment (for example $0.01) from a mainnet wallet and
+   check the receipt on Stellar Expert before announcing the endpoint.
+
+Buyers need mainnet USDC and a USDC trustline. There is no faucet on mainnet.
 
 ## Pay from a wallet
 
@@ -116,7 +131,10 @@ are listed but do not count against the success rate.
 
 - **No USDC trustline**: add USDC from the wallet's asset list, then retry.
 - **Insufficient USDC**: fund the paying account. Testnet USDC is available at
-  [faucet.circle.com](https://faucet.circle.com).
+  [faucet.circle.com](https://faucet.circle.com); on mainnet, buy or transfer
+  Circle USDC.
+- **Fee below minimum**: the network fee rose between quote and settlement.
+  The checkout retries once automatically; otherwise approve again.
 - **Switch Freighter to Testnet/Mainnet**: change the active network in the
   extension and approve again.
 - **Signature for a different authorization**: reconnect the active account and
