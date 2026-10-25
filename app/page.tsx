@@ -168,6 +168,7 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* "The Stellar-native layer" section, hidden for now. Remove this comment wrapper to restore it.
       <section className="border-b border-border/60" id="stellar-stack">
         <div className="mx-auto max-w-7xl px-6 py-24 lg:py-32">
           <Reveal className="grid gap-8 lg:grid-cols-2 lg:items-end">
@@ -179,6 +180,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+      */}
 
       <IdeaBankBand />
 
