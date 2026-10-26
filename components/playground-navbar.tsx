@@ -36,6 +36,7 @@ export default function PlaygroundNavbar({ onSignInClick }: PlaygroundNavbarProp
   const pathname = usePathname()
   const reduce = useReducedMotion()
   const site = useSiteLink()
+  const activeHref = useActiveSection(pathname)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12)
@@ -62,19 +63,19 @@ export default function PlaygroundNavbar({ onSignInClick }: PlaygroundNavbarProp
 
         <ul className="hidden items-center gap-1 lg:flex">
           {links.map((link) => {
-            const base = link.href.split('#')[0] || '/'
-            const active = link.href.includes('#') ? false : pathname === base || pathname.startsWith(`${base}/`)
+            const active = activeHref === link.href
             return (
               <li key={link.href}>
                 <Link
                   {...site(link.href)}
+                  aria-current={active ? 'page' : undefined}
                   className={cn(
                     'relative flex min-h-10 items-center rounded-md px-3 font-mono text-[0.72rem] uppercase tracking-[0.14em] transition-colors duration-150',
-                    active ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
+                    active ? 'bg-accent text-brand' : 'text-muted-foreground hover:text-foreground',
                   )}
                 >
                   {link.label}
-                  {active && <span aria-hidden="true" className="absolute inset-x-3 -bottom-[1.35rem] h-px bg-brand" />}
+                  {active && <span aria-hidden="true" className="absolute inset-x-3 -bottom-3 h-0.5 rounded-full bg-brand" />}
                 </Link>
               </li>
             )
@@ -124,7 +125,7 @@ export default function PlaygroundNavbar({ onSignInClick }: PlaygroundNavbarProp
             <ul className="mx-auto max-w-7xl px-6 py-3">
               {links.map((link, index) => (
                 <li key={link.href} className={cn(index > 0 && 'border-t border-border')}>
-                  <Link {...site(link.href)} className="flex min-h-12 items-center justify-between font-mono text-[0.78rem] uppercase tracking-[0.14em] text-muted-foreground hover:text-foreground">
+                  <Link {...site(link.href)} aria-current={activeHref === link.href ? 'page' : undefined} className={cn('flex min-h-12 items-center justify-between font-mono text-[0.78rem] uppercase tracking-[0.14em]', activeHref === link.href ? 'text-brand' : 'text-muted-foreground hover:text-foreground')}>
                     {link.label}
                     <span className="text-[0.6rem]">0{index + 1}</span>
                   </Link>
@@ -146,4 +147,49 @@ export default function PlaygroundNavbar({ onSignInClick }: PlaygroundNavbarProp
       </AnimatePresence>
     </header>
   )
+}
+
+/** Landing chapters and the nav link each one lights up. */
+const SECTIONS = [
+  { id: 'build', href: '/#build' },
+  { id: 'pay', href: '/pay' },
+  { id: 'local', href: '/#local' },
+  { id: 'ideas', href: '/ideas' },
+] as const
+
+/**
+ * The nav link for what is on screen: the product subdomain, the current
+ * route, or, on the landing page, the chapter in the middle of the viewport.
+ */
+function useActiveSection(pathname: string): string | null {
+  const [host, setHost] = useState<string | null>(null)
+  const [section, setSection] = useState<string | null>(null)
+
+  useEffect(() => setHost(window.location.host), [])
+
+  useEffect(() => {
+    if (pathname !== '/') return
+    const targets = SECTIONS.map((item) => document.getElementById(item.id)).filter((node): node is HTMLElement => Boolean(node))
+    if (!targets.length) return
+    const visible = new Map<string, number>()
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) visible.set(entry.target.id, entry.isIntersecting ? entry.intersectionRatio : 0)
+        const best = [...visible.entries()].sort((a, b) => b[1] - a[1])[0]
+        const match = best && best[1] > 0 ? SECTIONS.find((item) => item.id === best[0]) : null
+        setSection(match ? match.href : null)
+      },
+      // A band across the middle of the viewport decides the active chapter.
+      { rootMargin: '-40% 0px -45% 0px', threshold: [0, 0.01, 0.25, 0.5, 1] },
+    )
+    targets.forEach((node) => observer.observe(node))
+    return () => observer.disconnect()
+  }, [pathname])
+
+  if (host === 'pay.websoroban.in') return '/pay'
+  if (host === 'payloop.websoroban.in') return '/payloop'
+  for (const base of ['/payloop', '/pay', '/ideas', '/docs']) {
+    if (pathname === base || pathname.startsWith(`${base}/`)) return base
+  }
+  return pathname === '/' ? section : null
 }

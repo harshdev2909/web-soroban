@@ -13,7 +13,7 @@ import { useEffect, useState } from 'react'
  * that land on the right host without a redirect hop. Everywhere else
  * (localhost, Vercel previews) every path stays on the current host.
  */
-export const MAIN_ORIGIN = 'https://websoroban.in'
+export const MAIN_ORIGIN = 'https://www.websoroban.in'
 export const PRODUCT_HOSTS = { pay: 'pay.websoroban.in', payloop: 'payloop.websoroban.in' } as const
 
 const ENABLED = process.env.NEXT_PUBLIC_VERCEL_ENV === 'production'

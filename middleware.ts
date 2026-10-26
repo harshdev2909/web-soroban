@@ -12,7 +12,7 @@ import { NextResponse, type NextRequest } from 'next/server'
  * Other hosts (localhost, Vercel previews) are untouched.
  */
 const MAIN_HOSTS = new Set(['websoroban.in', 'www.websoroban.in'])
-const MAIN_ORIGIN = 'https://websoroban.in'
+const MAIN_ORIGIN = 'https://www.websoroban.in'
 const PRODUCTS = [
   { prefix: '/payloop', host: 'payloop.websoroban.in' },
   { prefix: '/pay', host: 'pay.websoroban.in' },

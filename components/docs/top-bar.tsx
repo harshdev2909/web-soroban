@@ -1,10 +1,12 @@
 "use client"
 
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { ArrowUpRight, Menu } from "lucide-react"
 import { DocsSearch, type SearchEntry } from "./search"
 import { ThemeToggle } from "./theme"
 import { NovaMark } from "@/components/nova-mark"
+import { cn } from "@/lib/utils"
 
 const links = [
   { href: "/docs", label: "Docs" },
@@ -23,6 +25,9 @@ export function DocsTopBar({
   version: string
   onOpenNav?: () => void
 }) {
+  const pathname = usePathname()
+  // The most specific section wins; "Docs" covers every other page.
+  const section = links.slice(1).find((link) => pathname === link.href || pathname.startsWith(`${link.href}/`))?.href ?? "/docs"
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-xl">
       <div className="mx-auto flex h-16 w-full max-w-[1400px] items-center gap-3 px-4 lg:px-6">
@@ -44,15 +49,23 @@ export function DocsTopBar({
         </Link>
 
         <nav className="ml-6 hidden items-center gap-1 lg:flex" aria-label="Documentation sections">
-          {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="flex min-h-10 items-center rounded-md px-3 font-mono text-[0.72rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors duration-150 hover:text-foreground"
-            >
-              {link.label}
-            </Link>
-          ))}
+          {links.map((link) => {
+            const active = section === link.href
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "relative flex min-h-10 items-center rounded-md px-3 font-mono text-[0.72rem] uppercase tracking-[0.14em] transition-colors duration-150",
+                  active ? "bg-accent text-brand" : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {link.label}
+                {active && <span aria-hidden="true" className="absolute inset-x-3 -bottom-3 h-0.5 rounded-full bg-brand" />}
+              </Link>
+            )
+          })}
         </nav>
 
         <div className="ml-auto flex items-center gap-1.5">
