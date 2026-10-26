@@ -718,6 +718,28 @@ export interface WalletChallengeResponse {
   expiresAt: number;
 }
 
+const SHARED_TOKEN_COOKIE = 'ws_auth';
+
+/** `.websoroban.in` on the production hosts; null elsewhere (localhost, previews). */
+function sharedCookieDomain(): string | null {
+  const host = window.location.hostname;
+  return host === 'websoroban.in' || host.endsWith('.websoroban.in') ? '.websoroban.in' : null;
+}
+
+function readSharedToken(): string | null {
+  if (!sharedCookieDomain()) return null;
+  const entry = document.cookie.split('; ').find((row) => row.startsWith(`${SHARED_TOKEN_COOKIE}=`));
+  return entry ? decodeURIComponent(entry.slice(SHARED_TOKEN_COOKIE.length + 1)) : null;
+}
+
+function writeSharedToken(token: string | null): void {
+  const domain = sharedCookieDomain();
+  if (!domain) return;
+  const value = token ? encodeURIComponent(token) : '';
+  const maxAge = token ? 60 * 60 * 24 * 30 : 0;
+  document.cookie = `${SHARED_TOKEN_COOKIE}=${value}; Domain=${domain}; Path=/; Max-Age=${maxAge}; Secure; SameSite=Lax`;
+}
+
 export const authApi = {
   // Get current user
   async getCurrentUser(): Promise<{ success: boolean; user: User }> {
@@ -809,20 +831,31 @@ export const authApi = {
     return response.json();
   },
 
-  // Token management
+  // Token management. localStorage is per subdomain, so on websoroban.in the
+  // token is mirrored in a cookie on .websoroban.in: signing in on the main
+  // site also signs in pay.websoroban.in and payloop.websoroban.in.
   getToken(): string | null {
     if (typeof window === 'undefined') return null;
-    return localStorage.getItem('auth_token') || new URLSearchParams(window.location.search).get('token');
+    const stored = localStorage.getItem('auth_token');
+    if (stored) return stored;
+    const shared = readSharedToken();
+    if (shared) {
+      localStorage.setItem('auth_token', shared);
+      return shared;
+    }
+    return new URLSearchParams(window.location.search).get('token');
   },
 
   setToken(token: string): void {
     if (typeof window === 'undefined') return;
     localStorage.setItem('auth_token', token);
+    writeSharedToken(token);
   },
 
   clearToken(): void {
     if (typeof window === 'undefined') return;
     localStorage.removeItem('auth_token');
+    writeSharedToken(null);
   },
 };
 

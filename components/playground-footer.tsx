@@ -6,6 +6,7 @@ import { useReducedMotion } from 'framer-motion'
 import { ArrowUp, ArrowUpRight, Github, Twitter } from 'lucide-react'
 import { NovaMark } from '@/components/nova-mark'
 import { OrbitStatic } from '@/components/three/hero-sculpture'
+import { useSiteHref } from '@/lib/hosts'
 
 export const socials = [
   { href: 'https://github.com/WebSoroban', icon: <Github className="h-4 w-4" />, name: 'GitHub' },
@@ -43,6 +44,7 @@ const columns = [
 
 const PlaygroundFooter = () => {
   const reduce = useReducedMotion()
+  const site = useSiteHref()
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' })
 
   return (
@@ -52,7 +54,7 @@ const PlaygroundFooter = () => {
       <div className="relative mx-auto max-w-7xl px-6">
         <div className="grid gap-12 py-16 md:grid-cols-[1.5fr_1fr_1fr_1fr] md:py-20">
           <div>
-            <Link href="/" className="group inline-flex items-center gap-3 rounded-md">
+            <Link href={site('/')} className="group inline-flex items-center gap-3 rounded-md">
               <NovaMark className="h-7 w-7 rounded-md" />
               <span className="font-display text-[0.95rem] font-semibold tracking-[-0.02em]">WebSoroban</span>
             </Link>
@@ -92,7 +94,7 @@ const PlaygroundFooter = () => {
                 {column.links.map((link) => (
                   <li key={link.label}>
                     <Link
-                      href={link.href}
+                      href={site(link.href)}
                       className="group inline-flex min-h-9 items-center gap-1 rounded-md text-sm text-muted-foreground transition-colors duration-150 hover:text-foreground"
                     >
                       {link.label}
