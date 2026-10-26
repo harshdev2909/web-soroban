@@ -56,10 +56,18 @@ export function siteHref(path: string, host: string | null = null): string {
 
 export type SiteLinkProps = { href: string; target?: '_blank'; rel?: string }
 
-/** Link props for an app path: links to another host open in a new tab. */
-export function siteLink(path: string, host: string | null = null): SiteLinkProps {
+/**
+ * Link props for an app path. Pay and PayLoop always open in a new tab (unless
+ * the page is already on that product's subdomain), and so does any link to
+ * another host.
+ */
+export function siteLink(path: string, host: string | null = null, options: { sameTab?: boolean } = {}): SiteLinkProps {
   const href = siteHref(path, host)
-  return /^https?:\/\//.test(href) ? { href, target: '_blank', rel: 'noopener noreferrer' } : { href }
+  if (options.sameTab && !/^https?:\/\//.test(href)) return { href }
+  const product = productPath(path)
+  const sameProduct = product && currentProduct(host) === product.product
+  const newTab = (product && !sameProduct) || /^https?:\/\//.test(href)
+  return newTab ? { href, target: '_blank', rel: 'noopener noreferrer' } : { href }
 }
 
 /**
@@ -67,8 +75,8 @@ export function siteLink(path: string, host: string | null = null): SiteLinkProp
  * server and client markup match; links on a product subdomain update after
  * mount.
  */
-export function useSiteLink(): (path: string) => SiteLinkProps {
+export function useSiteLink(): (path: string, options?: { sameTab?: boolean }) => SiteLinkProps {
   const [host, setHost] = useState<string | null>(null)
   useEffect(() => setHost(window.location.host), [])
-  return (path: string) => siteLink(path, host)
+  return (path: string, options?: { sameTab?: boolean }) => siteLink(path, host, options)
 }

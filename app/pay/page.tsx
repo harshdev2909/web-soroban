@@ -382,7 +382,7 @@ function EndpointPanel({ overview, busyEndpoint, challenge, onToggle, onTest, on
                   </div>
                 </div>
                 <div className="mt-4 flex flex-wrap gap-2">
-                  {endpoint.active ? <Button asChild size="sm"><Link {...site(`/pay/checkout?resource=${encodeURIComponent(endpoint.resourceUrl)}`)}><Wallet2 className="h-4 w-4" aria-hidden="true" /> Open checkout</Link></Button> : <Button size="sm" disabled><Wallet2 className="h-4 w-4" aria-hidden="true" /> Open checkout</Button>}
+                  {endpoint.active ? <Button asChild size="sm"><Link {...site(`/pay/checkout?resource=${encodeURIComponent(endpoint.resourceUrl)}`, { sameTab: true })}><Wallet2 className="h-4 w-4" aria-hidden="true" /> Open checkout</Link></Button> : <Button size="sm" disabled><Wallet2 className="h-4 w-4" aria-hidden="true" /> Open checkout</Button>}
                   <Button type="button" size="sm" variant="outline" disabled={!endpoint.active || busy} onClick={() => onTest(endpoint)}>{busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Play className="h-4 w-4" aria-hidden="true" />} Inspect 402</Button>
                   <RotateKeyButton endpoint={endpoint} disabled={busy} onConfirm={onRotate} />
                   <a href={endpoint.resourceUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-9 items-center gap-2 rounded-md px-3 font-mono text-[0.68rem] uppercase tracking-[0.12em] text-muted-foreground transition-colors duration-150 hover:bg-accent hover:text-foreground">Raw endpoint <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" /></a>

@@ -227,7 +227,7 @@ function CheckoutContent() {
     <main className="relative min-h-screen bg-background text-foreground">
       <header className="border-b border-border">
         <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6" aria-label="Checkout">
-          <Link {...site('/pay')} className="flex min-h-10 items-center gap-3 rounded-md pr-2 focus-visible:ring-2 focus-visible:ring-ring">
+          <Link {...site('/pay', { sameTab: true })} className="flex min-h-10 items-center gap-3 rounded-md pr-2 focus-visible:ring-2 focus-visible:ring-ring">
             <NovaMark className="h-7 w-7 rounded-md" />
             <span className="font-display text-[0.95rem] font-semibold tracking-[-0.02em]">WebSoroban Pay</span>
           </Link>
@@ -239,7 +239,7 @@ function CheckoutContent() {
         <div className="pointer-events-none absolute inset-0 grain" aria-hidden="true" />
         <div className="relative grid gap-10 lg:grid-cols-12 lg:items-start">
           <div className="lg:col-span-5">
-            <Link {...site('/pay')} className="group inline-flex min-h-10 items-center gap-2 rounded-md font-mono text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors duration-150 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"><ArrowLeft className="h-3.5 w-3.5 transition-transform duration-150 motion-safe:group-hover:-translate-x-0.5" aria-hidden="true" /> Payment studio</Link>
+            <Link {...site('/pay', { sameTab: true })} className="group inline-flex min-h-10 items-center gap-2 rounded-md font-mono text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors duration-150 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"><ArrowLeft className="h-3.5 w-3.5 transition-transform duration-150 motion-safe:group-hover:-translate-x-0.5" aria-hidden="true" /> Payment studio</Link>
             <p className="mt-10 font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-muted-foreground">Browser checkout</p>
             <h1 className="mt-6 font-display text-display font-medium">Approve once. Unlock instantly.</h1>
             <p className="lead mt-6 text-base">Connect a Stellar wallet, review the exact charge, and approve a single-use authorization. Your secret key never leaves the wallet.</p>
