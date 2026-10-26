@@ -54,13 +54,21 @@ export function siteHref(path: string, host: string | null = null): string {
   return here ? `${MAIN_ORIGIN}${path}` : path
 }
 
+export type SiteLinkProps = { href: string; target?: '_blank'; rel?: string }
+
+/** Link props for an app path: links to another host open in a new tab. */
+export function siteLink(path: string, host: string | null = null): SiteLinkProps {
+  const href = siteHref(path, host)
+  return /^https?:\/\//.test(href) ? { href, target: '_blank', rel: 'noopener noreferrer' } : { href }
+}
+
 /**
- * `siteHref` bound to the current host. The first render uses no host, so
+ * `siteLink` bound to the current host. The first render uses no host, so
  * server and client markup match; links on a product subdomain update after
  * mount.
  */
-export function useSiteHref(): (path: string) => string {
+export function useSiteLink(): (path: string) => SiteLinkProps {
   const [host, setHost] = useState<string | null>(null)
   useEffect(() => setHost(window.location.host), [])
-  return (path: string) => siteHref(path, host)
+  return (path: string) => siteLink(path, host)
 }

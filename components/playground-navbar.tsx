@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { NovaMark } from '@/components/nova-mark'
-import { useSiteHref } from '@/lib/hosts'
+import { useSiteLink } from '@/lib/hosts'
 
 interface PlaygroundNavbarProps {
   onSignInClick?: () => void
@@ -35,7 +35,7 @@ export default function PlaygroundNavbar({ onSignInClick }: PlaygroundNavbarProp
   const { isAuthenticated } = useAuth()
   const pathname = usePathname()
   const reduce = useReducedMotion()
-  const site = useSiteHref()
+  const site = useSiteLink()
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12)
@@ -54,7 +54,7 @@ export default function PlaygroundNavbar({ onSignInClick }: PlaygroundNavbarProp
       )}
     >
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6" aria-label="Primary">
-        <Link href={site('/')} className="group flex min-h-10 items-center gap-3 rounded-md pr-2">
+        <Link {...site('/')} className="group flex min-h-10 items-center gap-3 rounded-md pr-2">
           <NovaMark className="h-7 w-7 rounded-md" />
           <span className="font-display text-[0.95rem] font-semibold tracking-[-0.02em]">WebSoroban</span>
           <span className="hidden font-mono text-[0.6rem] uppercase tracking-[0.18em] text-muted-foreground sm:inline">beta</span>
@@ -67,7 +67,7 @@ export default function PlaygroundNavbar({ onSignInClick }: PlaygroundNavbarProp
             return (
               <li key={link.href}>
                 <Link
-                  href={site(link.href)}
+                  {...site(link.href)}
                   className={cn(
                     'relative flex min-h-10 items-center rounded-md px-3 font-mono text-[0.72rem] uppercase tracking-[0.14em] transition-colors duration-150',
                     active ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
@@ -84,7 +84,7 @@ export default function PlaygroundNavbar({ onSignInClick }: PlaygroundNavbarProp
         <div className="hidden items-center gap-2 lg:flex">
           {isAuthenticated ? (
             <Button asChild size="sm" className="lit group gap-1.5">
-              <Link href={site('/projects')}>
+              <Link {...site('/projects')}>
                 Open app <ArrowRight className="h-4 w-4 transition-transform duration-150 motion-safe:group-hover:translate-x-0.5" />
               </Link>
             </Button>
@@ -124,7 +124,7 @@ export default function PlaygroundNavbar({ onSignInClick }: PlaygroundNavbarProp
             <ul className="mx-auto max-w-7xl px-6 py-3">
               {links.map((link, index) => (
                 <li key={link.href} className={cn(index > 0 && 'border-t border-border')}>
-                  <Link href={site(link.href)} className="flex min-h-12 items-center justify-between font-mono text-[0.78rem] uppercase tracking-[0.14em] text-muted-foreground hover:text-foreground">
+                  <Link {...site(link.href)} className="flex min-h-12 items-center justify-between font-mono text-[0.78rem] uppercase tracking-[0.14em] text-muted-foreground hover:text-foreground">
                     {link.label}
                     <span className="text-[0.6rem]">0{index + 1}</span>
                   </Link>
@@ -132,7 +132,7 @@ export default function PlaygroundNavbar({ onSignInClick }: PlaygroundNavbarProp
               ))}
               <li className="grid gap-2 border-t border-border pt-3">
                 {isAuthenticated ? (
-                  <Button asChild className="w-full"><Link href={site('/projects')}>Open app</Link></Button>
+                  <Button asChild className="w-full"><Link {...site('/projects')}>Open app</Link></Button>
                 ) : (
                   <>
                     <Button variant="outline" className="w-full" onClick={onSignInClick}>Sign in</Button>

@@ -18,7 +18,7 @@ import { Reveal } from '@/components/reveal'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/AuthContext'
 import { trackCta, trackLandingView } from '@/lib/analytics'
-import { useSiteHref } from '@/lib/hosts'
+import { useSiteLink } from '@/lib/hosts'
 
 /* Hero entrance storyboard (absolute from mount, slide only so the LCP copy
  * paints at full size in the server HTML):
@@ -47,7 +47,7 @@ export default function HomePage() {
   const router = useRouter()
   const { isAuthenticated } = useAuth()
   const [loginOpen, setLoginOpen] = useState(false)
-  const site = useSiteHref()
+  const site = useSiteLink()
   // The primary CTA reaches the IDE in one click; signed-in users go to their projects.
   const startBuilding = (cta: string) => {
     const destination = isAuthenticated ? '/projects' : '/ide'
@@ -139,8 +139,8 @@ export default function HomePage() {
           lead="Price an endpoint in USDC, take payment from a wallet, and settle on Stellar with a receipt. The payment layer lives in the product workflow, not in a second dashboard."
           aside={
             <div className="flex flex-wrap gap-2">
-              <Button asChild variant="outline" size="sm"><Link href={site('/pay')} onClick={() => trackCta('payments_pay', '/pay')}>Open WebSoroban Pay <ArrowRight className="h-4 w-4" /></Link></Button>
-              <Button asChild variant="ghost" size="sm"><Link href={site('/payloop')} onClick={() => trackCta('payments_payloop', '/payloop')}>Try PayLoop <ArrowUpRight className="h-4 w-4" /></Link></Button>
+              <Button asChild variant="outline" size="sm"><Link {...site('/pay')} onClick={() => trackCta('payments_pay', '/pay')}>Open WebSoroban Pay <ArrowRight className="h-4 w-4" /></Link></Button>
+              <Button asChild variant="ghost" size="sm"><Link {...site('/payloop')} onClick={() => trackCta('payments_payloop', '/payloop')}>Try PayLoop <ArrowUpRight className="h-4 w-4" /></Link></Button>
             </div>
           }
         />
